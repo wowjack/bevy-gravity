@@ -1,7 +1,7 @@
 use bevy_egui::{egui::{self, Frame, epaint::Shadow, Color32, Stroke, Margin, Align2, Rounding}, EguiContexts};
 use bevy::prelude::*;
 
-use crate::object::MassiveObject;
+use crate::{object::MassiveObject, MainCamera};
 
 
 #[derive(bevy::prelude::Resource, Default)]
@@ -13,8 +13,10 @@ pub fn ui_example_system(
     mut contexts: EguiContexts,
     mut resource: bevy::prelude::ResMut<ObjectDetailUIContext>,
     query: Query<(&GlobalTransform, &Transform, &MassiveObject)>,
-    camera_query: Query<(&GlobalTransform, &Camera)>,
+    camera_query: Query<(&GlobalTransform, &Camera), With<MainCamera>>,
+    window_query: Query<&Window>,
 ) {
+    let window = window_query.get_single().unwrap();
     let (camera_transform, camera) = camera_query.get_single().unwrap();
     let window_frame = Frame {
         inner_margin: Margin::same(5.),
@@ -30,12 +32,15 @@ pub fn ui_example_system(
     };
     match selected_entity {
         Some((t, tr, object)) => {
-            let ui_window_pos = camera.world_to_viewport(camera_transform, t.translation()).unwrap().to_array();
+            let mut ui_window_pos = camera.world_to_viewport(camera_transform, t.translation()).unwrap().to_array();
+            ui_window_pos[0] += tr.scale.x/2. + 10.; // move window to the right of the object
+            ui_window_pos[1] -= window.height();
+
             egui::Window::new(format!("{:?}", resource.selected))
                 .open(&mut resource.open)
                 .resizable(false)
                 .frame(window_frame)
-                .anchor(Align2::LEFT_BOTTOM, [ui_window_pos[0]+tr.scale.x/2. + 10.0, ui_window_pos[1]*-1.])
+                .anchor(Align2::LEFT_BOTTOM, ui_window_pos)
                 .show(contexts.ctx_mut(), |ui| {
                     ui.label(format!("Velocity: {}, {}", object.velocity.x, object.velocity.y));
                 });

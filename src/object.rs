@@ -1,9 +1,10 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-use bevy_mod_picking::{PickableBundle, prelude::{RaycastPickTarget, OnPointer, ListenedEvent, Bubble, Drag, PointerEvent}, selection::{Select, Deselect}};
+use bevy_mod_picking::{PickableBundle, prelude::*, selection::{Select, Deselect}};
 use bevy_prototype_lyon::prelude::*;
 
-use crate::{ui::ObjectDetailUIContext, ArrowHandle};
+use crate::{ui::ObjectDetailUIContext, ArrowHandle, MainCamera};
 
+#[derive(Event)]
 pub struct ObjectDragEvent {
     entity: Entity,
     position: Vec2
@@ -18,7 +19,6 @@ pub struct MassiveObject {
 pub struct MassiveObjectBundle {
     object: MassiveObject,
     pickable_bundle: PickableBundle,
-    pick_target: RaycastPickTarget,
     sprite_bundle: SpriteBundle
 }
 
@@ -28,35 +28,39 @@ pub fn spawn_object(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mu
             velocity: Vec2::new(0.5, 0.5)
         },
         PickableBundle::default(),
-        RaycastPickTarget::default(),
         MaterialMesh2dBundle {
             mesh: meshes.add(Mesh::from(shape::Circle::default())).into(),
             transform: Transform::default().with_translation(Vec3::from([20., 20., 0.])).with_scale(Vec3::splat(40.)),
             material: materials.add(ColorMaterial::from(Color::PURPLE)),
             ..default()
         },
-        OnPointer::<Drag>::run_callback(|In(event): In<ListenedEvent<Drag>>, mut events: EventWriter<ObjectDragEvent>| {
-            events.send(ObjectDragEvent {
-                entity: event.target,
-                position: event.pointer_location.position
-            });
-            return Bubble::Up;
+        On::<Pointer<Drag>>::run(object_drag),
+        On::<Pointer<Select>>::run(|event: Listener<Pointer<Select>>, mut detail_context: ResMut<ObjectDetailUIContext>| {
+            *detail_context = ObjectDetailUIContext {
+                open: true,
+                selected:  Some(event.target)
+            };
         }),
     ));
 }
 
-pub fn handle_object_drag(mut events: EventReader<ObjectDragEvent>, mut objects: Query<&mut Transform, With<MassiveObject>>, camera: Query<(&Camera, &GlobalTransform)>) {
-    let camera = camera.get_single().unwrap();
-    for e in events.iter() {
-        let pos = camera.0.viewport_to_world_2d(camera.1, e.position).unwrap();
-        let mut transform = objects.get_mut(e.entity).unwrap();
-        transform.translation = Vec3::from((pos, 0.));
-    }
+fn object_drag(
+    event: Listener<Pointer<Drag>>,
+    mut trans_query: Query<&mut Transform, With<MassiveObject>>,
+    projection_query: Query<&OrthographicProjection, With<MainCamera>>,
+) {
+    let projection = projection_query.single();
+    let mut trans = trans_query.get_mut(event.target).unwrap();
+    trans.translation.x += event.delta.x * projection.scale;
+    trans.translation.y -= event.delta.y * projection.scale;
 }
-
-
-
-pub fn object_selected(mut events: EventReader<PointerEvent<Select>>, mut detail_context: ResMut<ObjectDetailUIContext>, arrow_asset: Res<ArrowHandle>, mut commands: Commands) {
+/*
+pub fn object_selected(
+    mut events: EventReader<PointerEvent<Select>>,
+    mut detail_context: ResMut<ObjectDetailUIContext>,
+    arrow_asset: Res<ArrowHandle>,
+    mut commands: Commands
+) {
     for e in events.iter() {
         //open the ui window
         *detail_context = ObjectDetailUIContext {
@@ -80,3 +84,4 @@ pub fn object_selected(mut events: EventReader<PointerEvent<Select>>, mut detail
         }
     }
 }
+*/
