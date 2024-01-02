@@ -35,14 +35,61 @@ pub fn spawn_object(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mu
             ..default()
         },
         On::<Pointer<Drag>>::run(object_drag),
-        On::<Pointer<Select>>::run(|event: Listener<Pointer<Select>>, mut detail_context: ResMut<ObjectDetailUIContext>| {
-            *detail_context = ObjectDetailUIContext {
-                open: true,
-                selected:  Some(event.target)
-            };
-        }),
+        On::<Pointer<Select>>::send_event::<ObjectSelectedEvent>(),
     ));
 }
+
+#[derive(Event)]
+pub struct ObjectSelectedEvent(ListenerInput<bevy_mod_picking::prelude::Pointer<bevy_mod_picking::prelude::Select>>);
+impl From<ListenerInput<bevy_mod_picking::prelude::Pointer<bevy_mod_picking::prelude::Select>>> for ObjectSelectedEvent {
+    fn from(value: ListenerInput<bevy_mod_picking::prelude::Pointer<bevy_mod_picking::prelude::Select>>) -> Self {
+        return Self(value)
+    }
+}
+
+
+pub fn object_select(
+    mut events: EventReader<ObjectSelectedEvent>,
+    mut detail_context: ResMut<ObjectDetailUIContext>,
+    object_query: Query<&MassiveObject>,
+    //arrow_asset: Res<ArrowHandle>,
+    mut commands: Commands
+) {
+    
+    for event in events.read() {
+        //remove the children from the previously selected entity
+        if let Some(entity) = detail_context.selected {
+            commands.entity(entity).clear_children();
+        }
+
+        //change selected to the new entity
+        *detail_context = ObjectDetailUIContext {
+            open: true,
+            selected:  Some(event.0.target)
+        };
+        
+        //draw the velocity arrow
+        let mut cmds = commands.entity(event.0.target);
+        let object = object_query.get(event.0.target).unwrap();
+        let vel = shapes::Line(Vec2::from((0., 0.)), object.velocity);
+        cmds.with_children(|builder| {
+            builder.spawn((
+                ShapeBundle {
+                    path: GeometryBuilder::build_as(&vel),
+                    spatial: SpatialBundle {
+                        transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
+                        ..default()
+                    },
+                    ..default()
+                },
+                Pickable::IGNORE,
+                Fill::color(Color::CYAN),
+                Stroke::new(Color::BLACK, 0.05),
+            ));
+        });
+    }
+}
+
 
 fn object_drag(
     event: Listener<Pointer<Drag>>,
@@ -50,38 +97,8 @@ fn object_drag(
     projection_query: Query<&OrthographicProjection, With<MainCamera>>,
 ) {
     let projection = projection_query.single();
-    let mut trans = trans_query.get_mut(event.target).unwrap();
+    let Ok(mut trans) = trans_query.get_mut(event.target) else {return;};
     trans.translation.x += event.delta.x * projection.scale;
     trans.translation.y -= event.delta.y * projection.scale;
 }
-/*
-pub fn object_selected(
-    mut events: EventReader<PointerEvent<Select>>,
-    mut detail_context: ResMut<ObjectDetailUIContext>,
-    arrow_asset: Res<ArrowHandle>,
-    mut commands: Commands
-) {
-    for e in events.iter() {
-        //open the ui window
-        *detail_context = ObjectDetailUIContext {
-            open: true,
-            selected:  Some(e.target)
-        };
 
-        //draw the velocity arrow
-        if let Some(mut cmds) = commands.get_entity(e.target) {
-            let vel = shapes::Line(Vec2::from((0., 0.)), Vec2::from((1., 1.)));
-            cmds.with_children(|builder| {
-                builder.spawn((
-                    ShapeBundle {
-                        path: GeometryBuilder::build_as(&vel),
-                        ..default()
-                    },
-                    Fill::color(Color::CYAN),
-                    Stroke::new(Color::BLACK, 0.05),
-                ));
-            });
-        }
-    }
-}
-*/

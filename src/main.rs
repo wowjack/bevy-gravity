@@ -1,9 +1,8 @@
-use bevy::{prelude::*, input::mouse::{MouseWheel, self}, math::vec2};
+use bevy::{prelude::*, input::mouse::MouseWheel};
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::ShapePlugin;
-use object::{MassiveObject, spawn_object};
-use ui::ObjectDetailUIContext;
+use ui::sidebar;
 
 mod ui;
 mod object;
@@ -23,8 +22,9 @@ fn main() {
         .insert_resource(ui::ObjectDetailUIContext::default())
         .insert_resource(ArrowHandle(None))
         .add_event::<object::ObjectDragEvent>()
+        .add_event::<object::ObjectSelectedEvent>()
         .add_systems(Startup, (init, object::spawn_object))
-        .add_systems(Update, (ui::ui_example_system, mouse_zoom))
+        .add_systems(Update, (ui::ui_example_system, ui::sidebar, mouse_zoom, object::object_select))
         .run()
 }
 
