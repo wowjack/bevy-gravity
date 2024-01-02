@@ -2,7 +2,7 @@ use bevy::{prelude::*, sprite::MaterialMesh2dBundle, transform};
 use bevy_mod_picking::{PickableBundle, prelude::*, selection::{Select, Deselect}};
 use bevy_prototype_lyon::prelude::*;
 
-use crate::{ui::ObjectDetailUIContext, ArrowHandle, MainCamera};
+use crate::{ui::ObjectDetailUIContext, ArrowHandle, MainCamera, GameState};
 
 
 #[derive(Component, Default)]
@@ -101,7 +101,7 @@ pub fn object_select(
             };
             builder.spawn((
                 MaterialMesh2dBundle {
-                    mesh: bevy::sprite::Mesh2dHandle(meshes.add(Mesh::from(shape::RegularPolygon::new(1.5, 3)))),
+                    mesh: bevy::sprite::Mesh2dHandle(meshes.add(Mesh::from(shape::RegularPolygon::new(1.3, 3)))),
                     transform: arrowtip_transform,
                     material: materials.add(ColorMaterial::from(Color::BLACK)),
                     ..default()
@@ -147,3 +147,15 @@ fn object_drag(
     trans.translation.y -= event.delta.y * projection.scale;
 }
 
+
+
+pub fn move_object(
+    mut object_query: Query<(&mut Transform, &MassiveObject)>,
+    state: Res<GameState>
+) {
+    if state.play == false { return; }
+
+    for (mut trans, object) in object_query.iter_mut() {
+        trans.translation += object.velocity.extend(0.);
+    }
+}

@@ -1,7 +1,7 @@
 use bevy_egui::{egui::{self, Frame, epaint::Shadow, Color32, Stroke, Margin, Align2, Rounding}, EguiContexts};
 use bevy::prelude::*;
 
-use crate::{object::{MassiveObject, spawn_object}, MainCamera};
+use crate::{object::{MassiveObject, spawn_object}, MainCamera, GameState};
 
 
 #[derive(bevy::prelude::Resource, Default)]
@@ -57,17 +57,20 @@ pub fn ui_example_system(
 
 pub fn sidebar(
     mut contexts: EguiContexts,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>
+    commands: Commands,
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<ColorMaterial>>,
+    mut gamestate: ResMut<GameState>
 ) {
     egui::SidePanel::new(egui::panel::Side::Right, "sidebar")
         .min_width(150.)
         .resizable(false)
         .show(contexts.ctx_mut(), |ui| {
-            ui.label("sidepanela");
+            ui.label("");
             if ui.button("Spawn").clicked() {
                 spawn_object(commands, meshes, materials);
             }
+            ui.checkbox(&mut gamestate.play, "Run: ");
+
         });
 }
