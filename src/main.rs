@@ -21,7 +21,6 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
         .insert_resource(ui::ObjectDetailUIContext::default())
         .insert_resource(ArrowHandle(None))
-        .add_event::<object::ObjectDragEvent>()
         .add_event::<object::ObjectSelectedEvent>()
         .add_systems(Startup, (init, object::spawn_object))
         .add_systems(Update, (ui::ui_example_system, ui::sidebar, mouse_zoom, object::object_select))
