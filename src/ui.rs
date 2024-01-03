@@ -1,7 +1,7 @@
 use bevy_egui::{egui::{self, Frame, epaint::Shadow, Color32, Stroke, Margin, Align2, Rounding}, EguiContexts};
 use bevy::prelude::*;
 
-use crate::{object::{MassiveObject, spawn_object}, MainCamera, GameState};
+use crate::{object::{MassiveObject, spawn_object, SpawnObjectEvent}, MainCamera, GameState};
 
 
 #[derive(bevy::prelude::Resource, Default)]
@@ -32,19 +32,22 @@ pub fn ui_example_system(
     };
     match selected_entity {
         Some((t, tr, mut object)) => {
-            let mut ui_window_pos = camera.world_to_viewport(camera_transform, t.translation()).unwrap().to_array();
-            ui_window_pos[0] += (1./projection.scale) * tr.scale.x/2. + 10.; // move window to the right of the object
-            ui_window_pos[1] -= window.height();
+            let Some(mut ui_window_pos) = camera.world_to_viewport(camera_transform, t.translation()) else { return; };
+            ui_window_pos.x += (1./projection.scale) * tr.scale.x/2. + 10.; // move window to the right of the object
+            ui_window_pos.y -= window.height();
 
             egui::Window::new(format!("{:?}", resource.selected))
                 .open(&mut resource.open)
                 .resizable(false)
                 .frame(window_frame)
-                .anchor(Align2::LEFT_BOTTOM, ui_window_pos)
+                .anchor(Align2::LEFT_BOTTOM, ui_window_pos.to_array())
+                .fixed_size((200., 400.))
                 .show(contexts.ctx_mut(), |ui| {
-                    ui.label(format!("Velocity: {}, {}", object.velocity.x, object.velocity.y));
-                    ui.add(egui::DragValue::new(&mut object.velocity.x));
-                    ui.add(egui::DragValue::new(&mut object.velocity.y));
+                    ui.horizontal(|ui| {
+                        ui.add(egui::DragValue::new(&mut object.velocity.x).max_decimals(8).prefix("x:").speed(0.01));
+                        ui.add(egui::DragValue::new(&mut object.velocity.y).max_decimals(8).prefix("y:").speed(0.01));
+                    });
+                    ui.add(egui::DragValue::new(&mut object.mass).prefix("Mass: ").speed(100000.));
                 });
         },
         None => ()
@@ -57,10 +60,8 @@ pub fn ui_example_system(
 
 pub fn sidebar(
     mut contexts: EguiContexts,
-    commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<ColorMaterial>>,
-    mut gamestate: ResMut<GameState>
+    mut gamestate: ResMut<GameState>,
+    mut spawn_event_writer: EventWriter<SpawnObjectEvent>
 ) {
     egui::SidePanel::new(egui::panel::Side::Right, "sidebar")
         .min_width(150.)
@@ -68,7 +69,7 @@ pub fn sidebar(
         .show(contexts.ctx_mut(), |ui| {
             ui.label("");
             if ui.button("Spawn").clicked() {
-                spawn_object(commands, meshes, materials);
+                spawn_event_writer.send(SpawnObjectEvent);
             }
             ui.checkbox(&mut gamestate.play, "Run: ");
 

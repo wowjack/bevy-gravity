@@ -2,6 +2,7 @@ use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}};
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::ShapePlugin;
+use object::*;
 use ui::sidebar;
 
 mod ui;
@@ -27,9 +28,10 @@ fn main() {
         .insert_resource(ui::ObjectDetailUIContext::default())
         .insert_resource(ArrowHandle(None))
         .insert_resource(GameState { play: false })
-        .add_event::<object::ObjectSelectedEvent>()
-        .add_systems(Startup, (init, object::spawn_object))
-        .add_systems(Update, (ui::ui_example_system, ui::sidebar, mouse_zoom, object::object_select, object::move_object))
+        .add_event::<ObjectSelectedEvent>()
+        .add_event::<SpawnObjectEvent>()
+        .add_systems(Startup, init)
+        .add_systems(Update, (ui::ui_example_system, ui::sidebar, mouse_zoom, object_select, move_object, object_gravity, update_arrow, path_prediction, spawn_object))
         .run()
 }
 

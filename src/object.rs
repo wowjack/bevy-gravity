@@ -4,10 +4,12 @@ use bevy_prototype_lyon::prelude::*;
 
 use crate::{ui::ObjectDetailUIContext, ArrowHandle, MainCamera, GameState};
 
+const G: f32 = 0.0000000000667;
 
 #[derive(Component, Default)]
 pub struct MassiveObject {
     pub velocity: Vec2,
+    pub mass: f32
 }
 
 #[derive(Default)]
@@ -17,21 +19,27 @@ pub struct MassiveObjectBundle {
     sprite_bundle: SpriteBundle
 }
 
-pub fn spawn_object(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
-    commands.spawn((
-        MassiveObject {
-            velocity: Vec2::new(0.5, 0.5)
-        },
-        PickableBundle::default(),
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Mesh::from(shape::Circle::default())).into(),
-            transform: Transform::default().with_translation(Vec3::from([20., 20., 0.])).with_scale(Vec3::splat(40.)),
-            material: materials.add(ColorMaterial::from(Color::PURPLE)),
-            ..default()
-        },
-        On::<Pointer<Drag>>::run(object_drag),
-        On::<Pointer<Select>>::send_event::<ObjectSelectedEvent>(),
-    ));
+#[derive(Event)]
+pub struct SpawnObjectEvent;
+
+pub fn spawn_object(mut commands: Commands, mut events: EventReader<SpawnObjectEvent>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
+    for event in events.read() {
+        commands.spawn((
+            MassiveObject {
+                velocity: Vec2::new(0.5, 0.5),
+                mass: 10000000000.
+            },
+            PickableBundle::default(),
+            MaterialMesh2dBundle {
+                mesh: meshes.add(Mesh::from(shape::Circle::default())).into(),
+                transform: Transform::default().with_translation(Vec3::from([20., 20., 0.])).with_scale(Vec3::splat(40.)),
+                material: materials.add(ColorMaterial::from(Color::PURPLE)),
+                ..default()
+            },
+            On::<Pointer<Drag>>::run(object_drag),
+            On::<Pointer<Select>>::send_event::<ObjectSelectedEvent>(),
+        ));
+    }
 }
 
 #[derive(Event)]
@@ -43,9 +51,9 @@ impl From<ListenerInput<bevy_mod_picking::prelude::Pointer<bevy_mod_picking::pre
 }
 
 #[derive(Component)]
-struct VelocityArrow;
+pub struct VelocityArrow;
 #[derive(Component)]
-struct ArrowTip(Entity);
+pub struct ArrowTip(Entity);
 
 pub fn object_select(
     mut events: EventReader<ObjectSelectedEvent>,
@@ -117,23 +125,16 @@ pub fn object_select(
 fn arrow_drag(
     event: Listener<Pointer<Drag>>,
     projection_query: Query<&OrthographicProjection, With<MainCamera>>,
-    mut arrowtip_query: Query<(&Parent, &mut Transform, &ArrowTip), Without<VelocityArrow>>,
+    mut arrowtip_query: Query<&Parent, With<ArrowTip>>,
     mut object_query: Query<(&mut MassiveObject, &GlobalTransform)>,
-    mut arrow_query: Query<&mut Path, (With<VelocityArrow>, Without<MassiveObject>)>
 ) {
     let projection = projection_query.single();
-    let Ok((parent, mut arrowtip_trans, ArrowTip(arrow_entity))) = arrowtip_query.get_mut(event.target) else { return; };
+    let Ok(parent) = arrowtip_query.get_mut(event.target) else { return; };
     let Ok((mut object, object_gtrans)) = object_query.get_mut(parent.get()) else { return; };
-    let Ok(mut arrow) = arrow_query.get_mut(*arrow_entity) else { return; };
 
     let object_scale = object_gtrans.to_scale_rotation_translation().0;
-    arrowtip_trans.translation.x += event.delta.x*projection.scale / object_scale.x;
-    arrowtip_trans.translation.y -= event.delta.y*projection.scale / object_scale.y;
-    arrowtip_trans.rotation = Quat::from_rotation_z(Vec2::Y.angle_between(object.velocity));
-
-    let velocity = arrowtip_trans.translation.truncate();
-    object.velocity = velocity;
-    *arrow = GeometryBuilder::build_as(&shapes::Line(Vec2::from((0., 0.)), velocity));
+    object.velocity.x += event.delta.x*projection.scale / object_scale.x;
+    object.velocity.y -= event.delta.y*projection.scale / object_scale.y;
 }
 
 fn object_drag(
@@ -157,5 +158,58 @@ pub fn move_object(
 
     for (mut trans, object) in object_query.iter_mut() {
         trans.translation += object.velocity.extend(0.);
+    }
+}
+
+pub fn object_gravity(
+    state: Res<GameState>,
+    time: Res<Time>,
+    mut object_query: Query<(&GlobalTransform, &mut MassiveObject)>,
+) {
+    if state.play == false { return; }
+
+    let delta_time = time.delta().as_millis() as f32 / 1000.;
+
+    let mut v: Vec<_> = object_query.iter_mut().collect();
+    for i in 0..v.len() {
+        let (_, c2) = v.split_at_mut(i);
+        let ((trans, object), c2) = c2.split_first_mut().unwrap(); //safe
+
+        c2.iter_mut().for_each(|(other_trans, other_obj)| {
+            let force = G * object.mass * other_obj.mass / trans.translation().distance_squared(other_trans.translation());
+            let angle = (trans.translation() - other_trans.translation()).truncate().angle_between(Vec2::X);
+
+            let accel = force/object.mass; //a = f/m
+            object.velocity += Vec2::new(angle.cos()*accel*-1., angle.sin()*accel) * delta_time;
+
+            let other_accel = force/other_obj.mass; //a = f/m
+            other_obj.velocity += Vec2::new(angle.cos()*other_accel, angle.sin()*other_accel*-1.) * delta_time;
+        });
+    }
+}
+
+pub fn update_arrow(
+    mut arrow_query: Query<&mut Path, With<VelocityArrow>>,
+    mut arrowtip_query: Query<(&Parent, &mut ArrowTip, &mut Transform)>,
+    object_query: Query<&MassiveObject>,
+) {
+    arrowtip_query.iter_mut().for_each(|(object_entity, tip, mut trans)| {
+        let Ok(object) = object_query.get(object_entity.get()) else { return; };
+        let velocity = object.velocity;
+
+        trans.translation.x = velocity.x;
+        trans.translation.y = velocity.y;
+        trans.rotation = Quat::from_rotation_z(Vec2::Y.angle_between(object.velocity));
+
+        let Ok(mut arrow) = arrow_query.get_mut(tip.0) else { return; };
+        *arrow = GeometryBuilder::build_as(&shapes::Line(Vec2::from((0., 0.)), velocity));
+    });
+}
+
+pub fn path_prediction(
+    mut events: EventReader<ObjectSelectedEvent>,
+) {
+    for _event in events.read() {
+        //println!("Object selected");
     }
 }
