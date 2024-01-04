@@ -34,7 +34,7 @@ fn main() {
         .add_event::<ObjectSelectedEvent>()
         .add_event::<SpawnObjectEvent>()
         .add_systems(Startup, init)
-        .add_systems(Update, (ui::ui_example_system, ui::sidebar, mouse_zoom, object_select, move_object, object_gravity, update_arrow, spawn_object, path_prediction))
+        .add_systems(Update, (ui::object_detail_ui, ui::sidebar, mouse_zoom, object_select, move_object, object_gravity, update_arrow, spawn_object, path_prediction, update_object_radius))
         .run()
 }
 

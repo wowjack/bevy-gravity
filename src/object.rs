@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, transform};
+use bevy::prelude::*;
 use bevy_mod_picking::{PickableBundle, prelude::*, selection::{Select, Deselect}};
 use bevy_prototype_lyon::prelude::*;
 
@@ -10,7 +10,8 @@ pub const VELOCITY_ARROW_SCALE: f32 = 50.;
 #[derive(Component, Default)]
 pub struct MassiveObject {
     pub velocity: Vec2,
-    pub mass: f32
+    pub mass: f32,
+    pub radius: f32
 }
 
 #[derive(Default)]
@@ -28,7 +29,8 @@ pub fn spawn_object(mut commands: Commands, mut events: EventReader<SpawnObjectE
         commands.spawn((
             MassiveObject {
                 velocity: Vec2::new(0.5, 0.5),
-                mass: 10000000000.
+                mass: 10000000000.,
+                radius: 20.,
             },
             PickableBundle::default(),
             ShapeBundle {
@@ -63,7 +65,6 @@ pub fn object_select(
 ) {
     let perspective = perspective_query.single();
     for event in events.read() {
-        println!("Object selected");
         if object_query.contains(event.0.target) == false { return; }
 
         //remove the children from the previously selected entity
@@ -209,3 +210,15 @@ pub fn update_arrow(
     });
 }
 
+
+
+
+pub fn update_object_radius(
+    mut object_query: Query<(&MassiveObject, &mut Path)>,
+) {
+    
+    for (object, mut path) in  object_query.iter_mut() {
+        *path = GeometryBuilder::build_as(&shapes::Circle { radius: object.radius, ..default() });
+    }
+    
+}

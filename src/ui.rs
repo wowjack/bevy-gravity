@@ -1,7 +1,7 @@
 use bevy_egui::{egui::{self, Frame, epaint::Shadow, Color32, Stroke, Margin, Align2, Rounding}, EguiContexts};
 use bevy::prelude::*;
 
-use crate::{object::{MassiveObject, spawn_object, SpawnObjectEvent}, MainCamera, GameState};
+use crate::{object::{MassiveObject, SpawnObjectEvent}, MainCamera, GameState};
 
 
 #[derive(bevy::prelude::Resource, Default)]
@@ -9,7 +9,7 @@ pub struct ObjectDetailUIContext {
     pub open: bool,
     pub selected: Option<bevy::prelude::Entity>,
 }
-pub fn ui_example_system(
+pub fn object_detail_ui(
     mut contexts: EguiContexts,
     mut resource: bevy::prelude::ResMut<ObjectDetailUIContext>,
     mut query: Query<(&GlobalTransform, &Transform, &mut MassiveObject)>,
@@ -44,10 +44,13 @@ pub fn ui_example_system(
                 .fixed_size((200., 400.))
                 .show(contexts.ctx_mut(), |ui| {
                     ui.horizontal(|ui| {
-                        ui.add(egui::DragValue::new(&mut object.velocity.x).max_decimals(8).prefix("x:").speed(0.01));
-                        ui.add(egui::DragValue::new(&mut object.velocity.y).max_decimals(8).prefix("y:").speed(0.01));
+                        ui.columns(2, |ui| {
+                            ui[0].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut object.velocity.x).max_decimals(8).prefix("x: ").speed(0.01));});
+                            ui[1].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut object.velocity.y).max_decimals(8).prefix("y: ").speed(0.01));});
+                        });
                     });
-                    ui.add(egui::DragValue::new(&mut object.mass).prefix("Mass: ").speed(100000.));
+                    ui.add(egui::DragValue::new(&mut object.mass).prefix("Mass: ").speed(10000000.));
+                    ui.add(egui::Slider::new(&mut object.radius, (1.)..=(100_000.)).logarithmic(true));
                 });
         },
         None => ()
