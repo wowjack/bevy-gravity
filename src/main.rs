@@ -1,20 +1,24 @@
-use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}};
+use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}, sprite::Mesh2dHandle};
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::ShapePlugin;
 use object::*;
-use ui::sidebar;
+use path_prediction::*;
 
 mod ui;
 mod object;
+mod path_prediction;
 
 #[derive(Resource)]
 pub struct GameState {
     play: bool
 }
 
-#[derive(Resource)]
-pub struct ArrowHandle(Option<Handle<Image>>);
+//#[derive(Resource)]
+//pub struct ArrowHandle {
+//    arrow_mesh: Mesh2dHandle,
+//    arrow_material: 
+//};
 
 fn main() {
     App::new()
@@ -26,12 +30,11 @@ fn main() {
         ))
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
         .insert_resource(ui::ObjectDetailUIContext::default())
-        .insert_resource(ArrowHandle(None))
         .insert_resource(GameState { play: false })
         .add_event::<ObjectSelectedEvent>()
         .add_event::<SpawnObjectEvent>()
         .add_systems(Startup, init)
-        .add_systems(Update, (ui::ui_example_system, ui::sidebar, mouse_zoom, object_select, move_object, object_gravity, update_arrow, path_prediction, spawn_object))
+        .add_systems(Update, (ui::ui_example_system, ui::sidebar, mouse_zoom, object_select, move_object, object_gravity, update_arrow, spawn_object, path_prediction))
         .run()
 }
 
@@ -84,16 +87,13 @@ pub struct MainCamera;
 
 fn init(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut arrow_handle: ResMut<ArrowHandle>
+    mut meshes: ResMut<Assets<Mesh>>
 ) {
     commands.spawn((
         Camera2dBundle::default(),
         MainCamera
     ));
     
-    let arrow: Handle<Image> = asset_server.load("arrow.png");
-    *arrow_handle = ArrowHandle(Some(arrow));
 }
 
 
