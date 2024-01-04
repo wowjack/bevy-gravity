@@ -11,14 +11,14 @@ mod path_prediction;
 
 #[derive(Resource)]
 pub struct GameState {
-    play: bool
+    pub play: bool,
 }
 
-//#[derive(Resource)]
-//pub struct ArrowHandle {
-//    arrow_mesh: Mesh2dHandle,
-//    arrow_material: 
-//};
+#[derive(Resource, Default)]
+pub struct GameResources {
+    pub circle_mesh: Option<Mesh2dHandle>,
+    pub circle_material: Option<Handle<ColorMaterial>>
+}
 
 fn main() {
     App::new()
@@ -29,12 +29,15 @@ fn main() {
             ShapePlugin
         ))
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
-        .insert_resource(ui::ObjectDetailUIContext::default())
+        .insert_resource(ui::ObjectDetailContext::default())
+        .insert_resource(ui::ObjectDetailState::default())
         .insert_resource(GameState { play: false })
+        .insert_resource(GameResources::default())
+        .insert_resource(ObjectSpawnOptions::default())
         .add_event::<ObjectSelectedEvent>()
         .add_event::<SpawnObjectEvent>()
         .add_systems(Startup, init)
-        .add_systems(Update, (ui::object_detail_ui, ui::sidebar, mouse_zoom, object_select, move_object, object_gravity, update_arrow, spawn_object, path_prediction, update_object_radius))
+        .add_systems(Update, (ui::object_detail_ui, ui::sidebar, mouse_zoom, object_select, move_object, object_gravity, update_arrow, spawn_object, path_prediction, update_object_radius, escape_unselect, follow_object))
         .run()
 }
 
@@ -87,12 +90,17 @@ pub struct MainCamera;
 
 fn init(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut game_resources: ResMut<GameResources>,
+    mut materials: ResMut<Assets<ColorMaterial>>
 ) {
     commands.spawn((
         Camera2dBundle::default(),
         MainCamera
     ));
+
+    game_resources.circle_mesh = Some(meshes.add(shape::Circle {radius: 0.5, vertices: 100}.into()).into());
+    game_resources.circle_material = Some(materials.add(ColorMaterial::from(Color::PURPLE)));
     
 }
 

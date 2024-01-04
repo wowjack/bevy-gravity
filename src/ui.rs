@@ -1,18 +1,24 @@
 use bevy_egui::{egui::{self, Frame, epaint::Shadow, Color32, Stroke, Margin, Align2, Rounding}, EguiContexts};
 use bevy::prelude::*;
 
-use crate::{object::{MassiveObject, SpawnObjectEvent}, MainCamera, GameState};
+use crate::{object::{MassiveObject, SpawnObjectEvent, ObjectSpawnOptions}, MainCamera, GameState};
 
 
 #[derive(bevy::prelude::Resource, Default)]
-pub struct ObjectDetailUIContext {
+pub struct ObjectDetailContext {
     pub open: bool,
     pub selected: Option<bevy::prelude::Entity>,
 }
+#[derive(Resource, Default)]
+pub struct ObjectDetailState {
+    pub follow_selected: bool
+}
+
 pub fn object_detail_ui(
     mut contexts: EguiContexts,
-    mut resource: bevy::prelude::ResMut<ObjectDetailUIContext>,
-    mut query: Query<(&GlobalTransform, &Transform, &mut MassiveObject)>,
+    mut detail_context: ResMut<ObjectDetailContext>,
+    mut detail_state: ResMut<ObjectDetailState>,
+    mut query: Query<(&GlobalTransform, &mut Transform, &mut MassiveObject)>,
     camera_query: Query<(&GlobalTransform, &Camera, &OrthographicProjection), With<MainCamera>>,
     window_query: Query<&Window>,
 ) {
@@ -26,31 +32,31 @@ pub fn object_detail_ui(
         stroke: Stroke::new(1., Color32::BLACK),
         ..Frame::default()
     };
-    let selected_entity = match resource.selected {
+    let selected_entity = match detail_context.selected {
         Some(e) => query.get_mut(e).ok(),
         None => None
     };
     match selected_entity {
-        Some((t, tr, mut object)) => {
-            let Some(mut ui_window_pos) = camera.world_to_viewport(camera_transform, t.translation()) else { return; };
-            ui_window_pos.x += (1./projection.scale) * tr.scale.x/2. + 10.; // move window to the right of the object
-            ui_window_pos.y -= window.height();
-
-            egui::Window::new(format!("{:?}", resource.selected))
-                .open(&mut resource.open)
-                .resizable(false)
+        Some((gt, mut tr, mut object)) => {
+            egui::Window::new(format!("{:?}", detail_context.selected))
+                .open(&mut detail_context.open)
                 .frame(window_frame)
-                .anchor(Align2::LEFT_BOTTOM, ui_window_pos.to_array())
-                .fixed_size((200., 400.))
                 .show(contexts.ctx_mut(), |ui| {
+                    ui.horizontal(|ui| {
+                        ui.columns(2, |ui| {
+                            ui[0].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut tr.translation.x).max_decimals(8).prefix("x: ").speed(0.01));});
+                            ui[1].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut tr.translation.y).max_decimals(8).prefix("y: ").speed(0.01));})
+                        });
+                    });
                     ui.horizontal(|ui| {
                         ui.columns(2, |ui| {
                             ui[0].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut object.velocity.x).max_decimals(8).prefix("x: ").speed(0.01));});
                             ui[1].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut object.velocity.y).max_decimals(8).prefix("y: ").speed(0.01));});
                         });
                     });
-                    ui.add(egui::DragValue::new(&mut object.mass).prefix("Mass: ").speed(10000000.));
-                    ui.add(egui::Slider::new(&mut object.radius, (1.)..=(100_000.)).logarithmic(true));
+                    ui.add(egui::DragValue::new(&mut object.mass).prefix("Mass: ").speed(10000000.).prefix("Mass: "));
+                    ui.add(egui::Slider::new(&mut object.radius, (1.)..=(1_000.)).logarithmic(true).prefix("Radius: "));
+                    ui.checkbox(&mut detail_state.follow_selected, "Follow Object");
                 });
         },
         None => ()
@@ -64,16 +70,36 @@ pub fn object_detail_ui(
 pub fn sidebar(
     mut contexts: EguiContexts,
     mut gamestate: ResMut<GameState>,
+    mut spawn_options: ResMut<ObjectSpawnOptions>,
     mut spawn_event_writer: EventWriter<SpawnObjectEvent>
 ) {
     egui::SidePanel::new(egui::panel::Side::Right, "sidebar")
-        .min_width(150.)
+        .default_width(200.)
         .resizable(false)
         .show(contexts.ctx_mut(), |ui| {
-            ui.label("");
-            if ui.button("Spawn").clicked() {
-                spawn_event_writer.send(SpawnObjectEvent);
-            }
+            ui.vertical_centered(|ui| {
+                ui.heading("Spawn");
+                ui.columns(3, |ui| {
+                    ui[0].label("Position: ");
+                    ui[1].vertical_centered(|ui| {ui.add(egui::DragValue::new(&mut spawn_options.position.x).speed(1.).prefix("x: "));});
+                    ui[2].vertical_centered(|ui| {ui.add(egui::DragValue::new(&mut spawn_options.position.y).speed(1.).prefix("y: "));});
+                });
+                ui.columns(3, |ui| {
+                    ui[0].label("Velocity: ");
+                    ui[1].vertical_centered(|ui| {ui.add(egui::DragValue::new(&mut spawn_options.velocity.x).speed(0.01).prefix("x: "));});
+                    ui[2].vertical_centered(|ui| {ui.add(egui::DragValue::new(&mut spawn_options.velocity.y).speed(0.01).prefix("y: "));});
+                });
+                ui.columns(2, |ui| {
+                    ui[0].label("Mass: ");
+                    ui[0].add(egui::DragValue::new(&mut spawn_options.mass).speed(100_000.));
+                    ui[1].label("Radius: ");
+                    ui[1].add(egui::DragValue::new(&mut spawn_options.radius).speed(1.));
+                });
+                if ui.button("Spawn").clicked() {
+                    spawn_event_writer.send(SpawnObjectEvent);
+                }
+            });
+            
             ui.checkbox(&mut gamestate.play, "Run: ");
 
         });

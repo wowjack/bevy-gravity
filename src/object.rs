@@ -1,8 +1,8 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, input::keyboard::KeyboardInput};
 use bevy_mod_picking::{PickableBundle, prelude::*, selection::{Select, Deselect}};
 use bevy_prototype_lyon::prelude::*;
 
-use crate::{ui::ObjectDetailUIContext, MainCamera, GameState};
+use crate::{ui::{ObjectDetailContext, ObjectDetailState}, MainCamera, GameState, GameResources};
 
 const G: f32 = 0.0000000000667;
 pub const VELOCITY_ARROW_SCALE: f32 = 50.;
@@ -21,20 +21,39 @@ pub struct MassiveObjectBundle {
     pub sprite_bundle: SpriteBundle
 }
 
+#[derive(Resource)]
+pub struct ObjectSpawnOptions {
+    pub position: Vec2,
+    pub velocity: Vec2,
+    pub mass: f32,
+    pub radius: f32,
+}
+impl Default for ObjectSpawnOptions {
+    fn default() -> Self {
+        Self { position: Vec2::ZERO, velocity: Vec2::ZERO, mass: 10_000., radius: 10. }
+    }
+}
+
 #[derive(Event)]
 pub struct SpawnObjectEvent;
 
-pub fn spawn_object(mut commands: Commands, mut events: EventReader<SpawnObjectEvent>) {
+pub fn spawn_object(mut commands: Commands, mut events: EventReader<SpawnObjectEvent>, game_resources: Res<GameResources>, spawn_options: Res<ObjectSpawnOptions>) {
     for _ in events.read() {
         commands.spawn((
             MassiveObject {
-                velocity: Vec2::new(0.5, 0.5),
-                mass: 10000000000.,
-                radius: 20.,
+                velocity: spawn_options.velocity,
+                mass: spawn_options.mass,
+                radius: spawn_options.radius,
             },
             PickableBundle::default(),
-            ShapeBundle {
-                path: GeometryBuilder::build_as(&shapes::Circle { radius: 10., center: Vec2::new(0., 0.) }),
+            ColorMesh2dBundle {
+                mesh: game_resources.circle_mesh.clone().unwrap_or_default(),
+                material: game_resources.circle_material.clone().unwrap(),
+                transform: Transform {
+                    translation: Vec3::from((spawn_options.position, 1.)),
+                    scale: Vec3::splat(spawn_options.radius),
+                    ..default()
+                },
                 ..default()
             },
             On::<Pointer<Drag>>::run(object_drag),
@@ -58,9 +77,9 @@ pub struct ArrowTip(Entity);
 
 pub fn object_select(
     mut events: EventReader<ObjectSelectedEvent>,
-    mut detail_context: ResMut<ObjectDetailUIContext>,
+    mut detail_context: ResMut<ObjectDetailContext>,
     perspective_query: Query<&OrthographicProjection>,
-    object_query: Query<&MassiveObject>,
+    object_query: Query<(&MassiveObject, &GlobalTransform)>,
     mut commands: Commands
 ) {
     let perspective = perspective_query.single();
@@ -73,15 +92,15 @@ pub fn object_select(
         }
 
         //change selected to the new entity
-        *detail_context = ObjectDetailUIContext {
+        *detail_context = ObjectDetailContext {
             open: true,
-            selected:  Some(event.0.target)
+            selected:  Some(event.0.target),
         };
         
         //draw the velocity arrow
         let mut cmds = commands.entity(event.0.target);
-        let Ok(object) = object_query.get(event.0.target) else { return; };
-        let scaled_velocity = object.velocity * VELOCITY_ARROW_SCALE;
+        let Ok((object, gtrans)) = object_query.get(event.0.target) else { return; };
+        let scaled_velocity = object.velocity / gtrans.to_scale_rotation_translation().0.truncate();
         let vel = shapes::Line(Vec2::from((0., 0.)), scaled_velocity);
         cmds.with_children(|builder| {
             let arrow_entity = builder.spawn((
@@ -102,13 +121,15 @@ pub fn object_select(
 
             let arrowtip_transform = Transform {
                 translation: Vec3::from((scaled_velocity, 2.)),
-                scale: Vec3::new(10.*perspective.scale, 10.*perspective.scale, 1.),
+                scale: Vec3::new(10.*perspective.scale, 10.*perspective.scale, 1.) / gtrans.to_scale_rotation_translation().0,
                 rotation: Quat::from_rotation_z(Vec2::Y.angle_between(object.velocity)),
                 ..Transform::default()
             };
             builder.spawn((
                 ShapeBundle {
-                    path: GeometryBuilder::build_as(&shapes::Polygon { closed: true, points: vec![Vec2::new(0.,0.8), Vec2::new(-1.,-0.5), Vec2::new(1.,-0.5)]}),
+                    path: GeometryBuilder::build_as(&shapes::Polygon { closed: true, points: vec![
+                        Vec2::new(0.,0.3), Vec2::new(-1.,-0.7), Vec2::new(-0.7, -1.), Vec2::new(0., -0.3), Vec2::new(0.7, -1.), Vec2::new(1., -0.7)
+                    ]}),
                     spatial: SpatialBundle::from_transform(arrowtip_transform),
                     ..default()
                 },
@@ -125,15 +146,14 @@ fn arrow_drag(
     event: Listener<Pointer<Drag>>,
     projection_query: Query<&OrthographicProjection, With<MainCamera>>,
     mut arrowtip_query: Query<&Parent, With<ArrowTip>>,
-    mut object_query: Query<(&mut MassiveObject, &GlobalTransform)>,
+    mut object_query: Query<&mut MassiveObject>,
 ) {
     let projection = projection_query.single();
     let Ok(parent) = arrowtip_query.get_mut(event.target) else { return; };
-    let Ok((mut object, object_gtrans)) = object_query.get_mut(parent.get()) else { return; };
+    let Ok(mut object) = object_query.get_mut(parent.get()) else { return; };
 
-    let object_scale = object_gtrans.to_scale_rotation_translation().0;
-    object.velocity.x += (event.delta.x*projection.scale) / (object_scale.x * VELOCITY_ARROW_SCALE);
-    object.velocity.y -= (event.delta.y*projection.scale) / (object_scale.y * VELOCITY_ARROW_SCALE);
+    object.velocity.x += event.delta.x*projection.scale/VELOCITY_ARROW_SCALE;
+    object.velocity.y -= event.delta.y*projection.scale/VELOCITY_ARROW_SCALE;
 }
 
 fn object_drag(
@@ -190,23 +210,23 @@ pub fn object_gravity(
 pub fn update_arrow(
     mut arrow_query: Query<(&mut Path, &mut Stroke), With<VelocityArrow>>,
     mut arrowtip_query: Query<(&Parent, &mut ArrowTip, &mut Transform)>,
-    object_query: Query<&MassiveObject>,
+    object_query: Query<(&MassiveObject, &GlobalTransform)>,
     perspective_query: Query<&OrthographicProjection>,
 ) {
     let perspective = perspective_query.single();
 
     arrowtip_query.iter_mut().for_each(|(object_entity, tip, mut trans)| {
-        let Ok(object) = object_query.get(object_entity.get()) else { return; };
-        let velocity = object.velocity * VELOCITY_ARROW_SCALE;
+        let Ok((object, gtrans)) = object_query.get(object_entity.get()) else { return; };
+        let velocity = object.velocity * VELOCITY_ARROW_SCALE / gtrans.to_scale_rotation_translation().0.truncate();
 
         trans.translation.x = velocity.x;
         trans.translation.y = velocity.y;
         trans.rotation = Quat::from_rotation_z(Vec2::Y.angle_between(velocity));
-        trans.scale = Vec3::splat(10.*perspective.scale);
+        trans.scale = Vec3::splat(10.*perspective.scale) / gtrans.to_scale_rotation_translation().0;
 
         let Ok((mut arrow, mut arrow_stroke)) = arrow_query.get_mut(tip.0) else { return; };
         *arrow = GeometryBuilder::build_as(&shapes::Line(Vec2::from((0., 0.)), velocity));
-        *arrow_stroke = Stroke::new(Color::BLACK, 2.*perspective.scale);
+        *arrow_stroke = Stroke::new(Color::BLACK, 5.*perspective.scale / gtrans.to_scale_rotation_translation().0.xy().length());
     });
 }
 
@@ -214,11 +234,39 @@ pub fn update_arrow(
 
 
 pub fn update_object_radius(
-    mut object_query: Query<(&MassiveObject, &mut Path)>,
+    mut object_query: Query<(&MassiveObject, &mut Transform)>,
 ) {
     
-    for (object, mut path) in  object_query.iter_mut() {
-        *path = GeometryBuilder::build_as(&shapes::Circle { radius: object.radius, ..default() });
+    for (object, mut trans) in  object_query.iter_mut() {
+        trans.scale = Vec3::splat(object.radius);
     }
     
+}
+
+pub fn escape_unselect(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut object_detail_ui: ResMut<ObjectDetailContext>,
+    mut commands: Commands
+) {
+    if keyboard_input.pressed(KeyCode::Escape) {
+        let Some(selected_entity) = object_detail_ui.selected else { return }; 
+        commands.entity(selected_entity).despawn_descendants();
+        object_detail_ui.open = false;
+        object_detail_ui.selected = None;
+    }
+}
+
+pub fn follow_object(
+    detail_state: Res<ObjectDetailState>,
+    detail_context: Res<ObjectDetailContext>,
+    object_query: Query<&Transform, (With<MassiveObject>, Without<MainCamera>)>,
+    mut camera_query: Query<&mut Transform, With<MainCamera>>,
+) {
+    if detail_state.follow_selected == false{ return }
+
+    let Some(entity) = detail_context.selected else { return };
+    let Ok(object_transform) = object_query.get(entity) else { return };
+    let mut camera_transform = camera_query.single_mut();
+    camera_transform.translation.x = object_transform.translation.x;
+    camera_transform.translation.y = object_transform.translation.y;
 }
