@@ -1,4 +1,5 @@
 use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}, sprite::Mesh2dHandle};
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::ShapePlugin;
@@ -26,7 +27,9 @@ fn main() {
             DefaultPlugins/*.disable::<LogPlugin>()*/,
             EguiPlugin,
             DefaultPickingPlugins.build().disable::<DebugPickingPlugin>(),
-            ShapePlugin
+            ShapePlugin,
+            FrameTimeDiagnosticsPlugin,
+            LogDiagnosticsPlugin::default(),
         ))
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
         .insert_resource(ui::ObjectDetailContext::default())
