@@ -63,6 +63,7 @@ pub fn object_select(
 ) {
     let perspective = perspective_query.single();
     for event in events.read() {
+        println!("Object selected");
         if object_query.contains(event.0.target) == false { return; }
 
         //remove the children from the previously selected entity
@@ -112,6 +113,7 @@ pub fn object_select(
                 },
                 PickableBundle::default(),
                 On::<Pointer<Drag>>::run(arrow_drag),
+                On::<Pointer<Select>>::run(|mut event: ListenerMut<Pointer<Select>>| event.stop_propagation()),
                 ArrowTip(arrow_entity)
             ));
         });
