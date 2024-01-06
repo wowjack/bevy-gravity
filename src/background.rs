@@ -1,9 +1,7 @@
-use std::cmp::min;
-
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_mod_picking::{prelude::*, events::{Pointer, DragStart}};
 
-use crate::{CameraZoomed, MainCamera};
+use crate::{CameraZoomed, MainCamera, object::MassiveObject};
 
 
 #[derive(Resource, Default)]
@@ -48,6 +46,7 @@ pub struct DragRectangle;
 fn drag_start(event: Listener<Pointer<DragStart>>, mut data: ResMut<DraggingBackground>, mut commands: Commands) {
     let Some(start_pos) = event.event.hit.position else { return };
     data.start = start_pos.truncate();
+    data.change = Vec2::ZERO;
 
     let rect_entity = commands.spawn((
         SpriteBundle {
@@ -86,10 +85,17 @@ fn drag_end(_event: Listener<Pointer<DragEnd>>, mut data: ResMut<DraggingBackgro
 
 #[derive(Event)]
 pub struct SelectInRectEvent {
-    min: Vec2,
-    max: Vec2,
+    pub min: Vec2,
+    pub max: Vec2,
 }
 
+pub fn rect_select(mut events: EventReader<SelectInRectEvent>, mut object_query: Query<(&Transform, &mut MassiveObject)>) {
+    for event in events.read() {
+        for (_, mut object) in object_query.iter_mut().filter(|(t, _)| t.translation.x > event.min.x && t.translation.y > event.min.y && t.translation.x < event.max.x && t.translation.y < event.max.y) {
+            object.velocity = Vec2::ZERO;
+        }
+    }
+}
 
 
 pub fn scale_background(

@@ -58,7 +58,8 @@ fn main() {
             update_object_radius,
             escape_unselect,
             follow_object,
-            scale_background
+            scale_background,
+            rect_select
         ))
         .run()
 }

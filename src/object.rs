@@ -1,4 +1,4 @@
-use bevy::{prelude::*, input::keyboard::KeyboardInput};
+use bevy::{prelude::*, input::keyboard::KeyboardInput, sprite::MaterialMesh2dBundle};
 use bevy_mod_picking::{PickableBundle, prelude::*, selection::{Select, Deselect}};
 use bevy_prototype_lyon::prelude::*;
 
@@ -46,7 +46,7 @@ pub fn spawn_object(mut commands: Commands, mut events: EventReader<SpawnObjectE
                 radius: spawn_options.radius,
             },
             PickableBundle::default(),
-            ColorMesh2dBundle {
+            MaterialMesh2dBundle {
                 mesh: game_resources.circle_mesh.clone().unwrap_or_default(),
                 material: game_resources.circle_material.clone().unwrap(),
                 transform: Transform {
