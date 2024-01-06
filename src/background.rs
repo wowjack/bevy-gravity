@@ -26,8 +26,8 @@ impl BackgroundBundle {
     pub fn new(materials: &mut ResMut<Assets<ColorMaterial>>, meshes: &mut ResMut<Assets<Mesh>>) -> Self {
         Self { 
             material_mesh_bundle: MaterialMesh2dBundle{
-                mesh: meshes.add(shape::Quad::new(Vec2::new(1.5, 1.5)).into()).into(),
-                material: materials.add(Color::GRAY.into()).into(),
+                mesh: meshes.add(shape::Quad::new(Vec2::new(1., 1.)).into()).into(),
+                material: materials.add(Color::rgba(1.,1.,1.,0.).into()).into(),
                 transform: Transform::from_scale(Vec3::new(5000., 5000., 1.)).with_translation(Vec3::new(0.,0.,-1000.)),
                 visibility: Visibility::Visible,
                 ..default()

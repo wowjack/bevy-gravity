@@ -7,6 +7,7 @@ use object::*;
 use path_prediction::*;
 use background::*;
 use gravity::* ;
+use ui::*;
 
 mod ui;
 mod object;
@@ -46,10 +47,12 @@ fn main() {
         .add_event::<SpawnObjectEvent>()
         .add_event::<CameraZoomed>()
         .add_event::<SelectInRectEvent>()
+        .add_event::<WindowSizeEvent>()
         .add_systems(Startup, init)
         .add_systems(Update, (
             ui::object_detail_ui,
             ui::sidebar,
+            ui::track_window,
             mouse_zoom,
             object_select,
             move_object,
@@ -130,6 +133,18 @@ fn init(
     )).with_children(|builder| {
         builder.spawn(BackgroundBundle::new(&mut materials, &mut meshes));
     });
+
+    //A clear rectangle to block clicks from going through the egui window
+    commands.spawn((
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgba(1.,1.,1.,0.),
+                ..default()
+            },
+            ..default()
+        },
+        BlockingRectangle
+    ));
 
     game_resources.circle_mesh = Some(meshes.add(shape::Circle {radius: 0.5, vertices: 100}.into()).into());
     game_resources.circle_material = Some(materials.add(ColorMaterial::from(Color::PURPLE)));

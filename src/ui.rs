@@ -1,5 +1,5 @@
-use bevy_egui::{egui::{self, Frame, epaint::Shadow, Color32, Stroke, Margin, Rounding}, EguiContexts};
-use bevy::prelude::*;
+use bevy_egui::{egui::{self, Frame, epaint::Shadow, Color32, Stroke, Margin, Rounding, Rect, Pos2, Vec2}, EguiContexts};
+use bevy::{prelude::*, render::view::window};
 
 use crate::{object::{MassiveObject, SpawnObjectEvent, ObjectSpawnOptions}, MainCamera, GameState};
 
@@ -14,15 +14,20 @@ pub struct ObjectDetailState {
     pub follow_selected: bool
 }
 
+#[derive(Event)]
+pub struct WindowSizeEvent(bevy_egui::egui::Rect);
+
 pub fn object_detail_ui(
     mut contexts: EguiContexts,
     mut detail_context: ResMut<ObjectDetailContext>,
     mut detail_state: ResMut<ObjectDetailState>,
     mut query: Query<(&GlobalTransform, &mut Transform, &mut MassiveObject)>,
-    camera_query: Query<(&GlobalTransform, &Camera, &OrthographicProjection), With<MainCamera>>,
-    window_query: Query<&Window>,
+    mut window_size_event_writer: EventWriter<WindowSizeEvent>,
+    window_query: Query<&Window>
 ) {
     if detail_context.selected.is_empty() { return }
+
+    let window = window_query.single();
 
     let window_frame = Frame {
         inner_margin: Margin::same(5.),
@@ -37,7 +42,21 @@ pub fn object_detail_ui(
         egui::Window::new(format!("{:?}", detail_context.selected))
             .open(&mut detail_context.open)
             .frame(window_frame)
+            .default_size(Vec2::new(1., 1.))
+            .resizable(false)
             .show(contexts.ctx_mut(), |ui| {
+
+                //used to keep blocking rect aligned with the ui window 
+                if let Some(cursor_pos) = window.cursor_position() {
+                    let p = Pos2::new(cursor_pos.x, cursor_pos.y);
+                    let mut ui_rect = ui.clip_rect().expand(10.);
+                    ui_rect.set_top(ui.clip_rect().top()-35.);
+                    if ui_rect.contains(p) {
+                        window_size_event_writer.send(WindowSizeEvent(ui.clip_rect()));
+                    };
+                    
+                }
+                
                 ui.horizontal(|ui| {
                     ui.columns(2, |ui| {
                         ui[0].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut tr.translation.x).max_decimals(8).prefix("x: ").speed(0.01));});
@@ -57,7 +76,27 @@ pub fn object_detail_ui(
     }        
 }
 
+#[derive(Component)]
+pub struct BlockingRectangle;
 
+pub fn track_window(mut events: EventReader<WindowSizeEvent>, mut rect_query: Query<&mut Transform, With<BlockingRectangle>>, camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>) {
+    if events.is_empty() { return }
+
+    let mut trans = rect_query.single_mut();
+    let (camera, gtrans) = camera_query.single();
+
+    for event in events.read() {
+        let rect_min = bevy::prelude::Vec2::new(event.0.min.x-7., event.0.min.y-32.);
+        let rect_max = bevy::prelude::Vec2::new(event.0.max.x+7., event.0.max.y+7.);
+        let min = camera.viewport_to_world_2d(gtrans, rect_min).unwrap();
+        let max = camera.viewport_to_world_2d(gtrans, rect_max).unwrap();
+        let x_size = (max.x - min.x).abs();
+        let y_size = (min.y - max.y).abs();
+        let mid = (min + max) / 2.;
+        trans.translation = mid.extend(2.);
+        trans.scale = Vec3::new(x_size, y_size, 1.);
+    }
+}
 
 
 
