@@ -1,5 +1,6 @@
 use bevy_egui::{egui::{self, Frame, epaint::Shadow, Color32, Stroke, Margin, Rounding, Rect, Pos2, Vec2}, EguiContexts};
-use bevy::{prelude::*, render::view::window};
+use bevy::prelude::*;
+use egui_extras::Column;
 
 use crate::{object::{MassiveObject, SpawnObjectEvent, ObjectSpawnOptions}, MainCamera, GameState};
 
@@ -7,11 +8,12 @@ use crate::{object::{MassiveObject, SpawnObjectEvent, ObjectSpawnOptions}, MainC
 #[derive(bevy::prelude::Resource, Default, Clone)]
 pub struct ObjectDetailContext {
     pub open: bool,
-    pub selected: Vec<Entity>,
 }
 #[derive(Resource, Default)]
 pub struct ObjectDetailState {
-    pub follow_selected: bool
+    pub follow_selected: bool,
+    pub selected: Vec<Entity>,
+    pub focused: Option<Entity>,
 }
 
 #[derive(Event)]
@@ -21,10 +23,11 @@ pub fn object_detail_ui(
     mut contexts: EguiContexts,
     mut detail_context: ResMut<ObjectDetailContext>,
     mut detail_state: ResMut<ObjectDetailState>,
-    mut query: Query<(&GlobalTransform, &mut Transform, &mut MassiveObject)>,
+    mut query: Query<(Entity, &mut Transform, &mut MassiveObject)>,
     mut window_size_event_writer: EventWriter<WindowSizeEvent>,
 ) {
-    if detail_context.selected.is_empty() { return }
+    if detail_state.selected.is_empty() { return }
+    if detail_state.selected.len() == 1 { detail_state.focused = Some(detail_state.selected[0]); }
 
     let window_frame = Frame {
         inner_margin: Margin::same(5.),
@@ -34,34 +37,67 @@ pub fn object_detail_ui(
         stroke: Stroke::new(1., Color32::BLACK),
         ..Frame::default()
     };
-    for entity in detail_context.selected.clone() {
-        let Ok((_gt, mut tr, mut object)) = query.get_mut(entity) else { return };
-        egui::Window::new(format!("{:?}", detail_context.selected))
-            .open(&mut detail_context.open)
-            .frame(window_frame)
-            .default_size(Vec2::new(1., 1.))
-            .resizable(false)
-            .title_bar(false)
-            .show(contexts.ctx_mut(), |ui| {
-                window_size_event_writer.send(WindowSizeEvent(ui.clip_rect()));
-                
-                ui.horizontal(|ui| {
-                    ui.columns(2, |ui| {
-                        ui[0].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut tr.translation.x).max_decimals(8).prefix("x: ").speed(0.01));});
-                        ui[1].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut tr.translation.y).max_decimals(8).prefix("y: ").speed(0.01));})
+
+    egui::Window::new(format!("{:?}", "Object"))
+        .open(&mut detail_context.open)
+        .frame(window_frame)
+        .default_size((300., 1.))
+        .resizable(true)
+        .title_bar(false)
+        .show(contexts.ctx_mut(), |ui| {
+            window_size_event_writer.send(WindowSizeEvent(ui.clip_rect()));
+
+            match detail_state.focused.clone() {
+                Some(e) => {
+                    let Ok((_e, mut tr, mut object)) = query.get_mut(e) else { return };
+
+                    ui.horizontal(|ui| {
+                        ui.columns(2, |ui| {
+                            ui[0].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut tr.translation.x).max_decimals(8).prefix("x: ").speed(0.01));});
+                            ui[1].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut tr.translation.y).max_decimals(8).prefix("y: ").speed(0.01));})
+                        });
                     });
-                });
-                ui.horizontal(|ui| {
-                    ui.columns(2, |ui| {
-                        ui[0].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut object.velocity.x).max_decimals(8).prefix("x: ").speed(0.01));});
-                        ui[1].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut object.velocity.y).max_decimals(8).prefix("y: ").speed(0.01));});
+                    ui.horizontal(|ui| {
+                        ui.columns(2, |ui| {
+                            ui[0].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut object.velocity.x).max_decimals(8).prefix("x: ").speed(0.01));});
+                            ui[1].centered_and_justified(|ui| {ui.add(egui::DragValue::new(&mut object.velocity.y).max_decimals(8).prefix("y: ").speed(0.01));});
+                        });
                     });
-                });
-                ui.add(egui::DragValue::new(&mut object.mass).prefix("Mass: ").speed(10000000.).prefix("Mass: "));
-                ui.add(egui::Slider::new(&mut object.radius, (1.)..=(1_000.)).logarithmic(true).prefix("Radius: "));
-                ui.checkbox(&mut detail_state.follow_selected, "Follow Object");
-            });
-    }        
+                    ui.add(egui::DragValue::new(&mut object.mass).prefix("Mass: ").speed(10000000.).prefix("Mass: "));
+                    ui.add(egui::Slider::new(&mut object.radius, (1.)..=(1_000.)).logarithmic(true).prefix("Radius: "));
+                    ui.checkbox(&mut detail_state.follow_selected, "Follow Object");
+                },
+                None => {
+                    egui_extras::TableBuilder::new(ui)
+                        .striped(true)
+                        .columns(Column::auto(), 2)
+                        .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                        .header(50., |mut header| {
+                            header.col(|ui| {ui.vertical_centered(|ui| {ui.strong("ID");});});
+                            header.col(|ui| {ui.vertical_centered(|ui| {ui.strong("Position");});});
+                        })
+                        .body(|body| {
+                                body.rows(40., detail_state.selected.len(), |row_num, mut row| {
+                                    let Ok((e, _t, _o)) = query.get(detail_state.selected[row_num]) else { return };
+                                    row.col(|ui| {
+                                        ui.vertical_centered(|ui| {ui.label(format!("{:?}", e));});
+                                    });
+                                    row.col(|ui| {
+                                        ui.vertical_centered(|ui| {
+                                            if ui.button("goto").clicked() {
+                                                detail_state.focused = Some(e);
+                                            }
+                                        });
+                                    });
+                                });
+                            
+                        });
+                    
+                }
+            }
+
+
+        });    
 }
 
 #[derive(Component)]

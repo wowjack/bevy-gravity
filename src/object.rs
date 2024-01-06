@@ -77,6 +77,7 @@ pub struct ArrowTip(Entity);
 pub fn object_select(
     mut events: EventReader<ObjectsSelectedEvent>,
     mut detail_context: ResMut<ObjectDetailContext>,
+    mut detail_state: ResMut<ObjectDetailState>,
     perspective_query: Query<&OrthographicProjection>,
     object_query: Query<(&MassiveObject, &GlobalTransform)>,
     mut commands: Commands
@@ -84,18 +85,18 @@ pub fn object_select(
     let perspective = perspective_query.single();
     for event in events.read() {
         let object_entities: Vec<Entity> = event.0.clone().into_iter().filter(|e| object_query.contains(*e)).collect();
-        
 
         //remove the children from the previously selected entity
-        for entity in detail_context.selected.clone() {
+        for entity in detail_state.selected.clone() {
             commands.entity(entity).despawn_descendants();
         }
 
         //change selected to the new entity
         *detail_context = ObjectDetailContext {
             open: true,
-            selected:  event.0.clone(),
         };
+        detail_state.selected = event.0.clone();
+        detail_state.focused = None;
         
         //draw the velocity arrow
         for entity in object_entities {
@@ -223,31 +224,28 @@ pub fn update_object_radius(
 pub fn escape_unselect(
     keyboard_input: Res<Input<KeyCode>>,
     mut object_detail_context: ResMut<ObjectDetailContext>,
+    mut object_detail_state: ResMut<ObjectDetailState>,
     mut commands: Commands
 ) {
     if keyboard_input.pressed(KeyCode::Escape) {
-        for entity in object_detail_context.selected.clone() {
+        for entity in object_detail_state.selected.clone() {
             commands.entity(entity).despawn_descendants();
             object_detail_context.open = false;
-            object_detail_context.selected.clear();
+            object_detail_state.selected.clear();
         }
     }
 }
 
 pub fn follow_object(
     detail_state: Res<ObjectDetailState>,
-    detail_context: Res<ObjectDetailContext>,
     object_query: Query<&Transform, (With<MassiveObject>, Without<MainCamera>)>,
     mut camera_query: Query<&mut Transform, With<MainCamera>>,
 ) {
-    return;
-    /*
     if detail_state.follow_selected == false{ return }
 
-    let Some(entity) = detail_context.selected else { return };
+    let Some(entity) = detail_state.focused else { return };
     let Ok(object_transform) = object_query.get(entity) else { return };
     let mut camera_transform = camera_query.single_mut();
     camera_transform.translation.x = object_transform.translation.x;
     camera_transform.translation.y = object_transform.translation.y;
-    */
 }
