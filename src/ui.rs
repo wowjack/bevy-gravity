@@ -23,11 +23,8 @@ pub fn object_detail_ui(
     mut detail_state: ResMut<ObjectDetailState>,
     mut query: Query<(&GlobalTransform, &mut Transform, &mut MassiveObject)>,
     mut window_size_event_writer: EventWriter<WindowSizeEvent>,
-    window_query: Query<&Window>
 ) {
     if detail_context.selected.is_empty() { return }
-
-    let window = window_query.single();
 
     let window_frame = Frame {
         inner_margin: Margin::same(5.),
@@ -44,18 +41,9 @@ pub fn object_detail_ui(
             .frame(window_frame)
             .default_size(Vec2::new(1., 1.))
             .resizable(false)
+            .title_bar(false)
             .show(contexts.ctx_mut(), |ui| {
-
-                //used to keep blocking rect aligned with the ui window 
-                if let Some(cursor_pos) = window.cursor_position() {
-                    let p = Pos2::new(cursor_pos.x, cursor_pos.y);
-                    let mut ui_rect = ui.clip_rect().expand(10.);
-                    ui_rect.set_top(ui.clip_rect().top()-35.);
-                    if ui_rect.contains(p) {
-                        window_size_event_writer.send(WindowSizeEvent(ui.clip_rect()));
-                    };
-                    
-                }
+                window_size_event_writer.send(WindowSizeEvent(ui.clip_rect()));
                 
                 ui.horizontal(|ui| {
                     ui.columns(2, |ui| {
@@ -77,17 +65,19 @@ pub fn object_detail_ui(
 }
 
 #[derive(Component)]
-pub struct BlockingRectangle;
+pub struct WindowBlockingRectangle;
+#[derive(Component)]
+pub struct SidebarBlockingRectangle;
 
-pub fn track_window(mut events: EventReader<WindowSizeEvent>, mut rect_query: Query<&mut Transform, With<BlockingRectangle>>, camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>) {
+pub fn track_window(mut events: EventReader<WindowSizeEvent>, mut rect_query: Query<&mut Transform, With<WindowBlockingRectangle>>, camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>) {
     if events.is_empty() { return }
 
     let mut trans = rect_query.single_mut();
     let (camera, gtrans) = camera_query.single();
 
     for event in events.read() {
-        let rect_min = bevy::prelude::Vec2::new(event.0.min.x-7., event.0.min.y-32.);
-        let rect_max = bevy::prelude::Vec2::new(event.0.max.x+7., event.0.max.y+7.);
+        let rect_min = bevy::prelude::Vec2::new(event.0.min.x, event.0.min.y) - 7.;
+        let rect_max = bevy::prelude::Vec2::new(event.0.max.x, event.0.max.y) + 7.;
         let min = camera.viewport_to_world_2d(gtrans, rect_min).unwrap();
         let max = camera.viewport_to_world_2d(gtrans, rect_max).unwrap();
         let x_size = (max.x - min.x).abs();
@@ -104,10 +94,10 @@ pub fn sidebar(
     mut contexts: EguiContexts,
     mut gamestate: ResMut<GameState>,
     mut spawn_options: ResMut<ObjectSpawnOptions>,
-    mut spawn_event_writer: EventWriter<SpawnObjectEvent>
+    mut spawn_event_writer: EventWriter<SpawnObjectEvent>,
 ) {
     egui::SidePanel::new(egui::panel::Side::Right, "sidebar")
-        .default_width(200.)
+        .exact_width(200.)
         .resizable(false)
         .show(contexts.ctx_mut(), |ui| {
             ui.vertical_centered(|ui| {

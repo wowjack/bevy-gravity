@@ -96,6 +96,7 @@ pub fn rect_select(mut events: EventReader<SelectInRectEvent>, mut object_query:
             .filter(|(_, t)| t.translation().x > event.min.x && t.translation().y > event.min.y && t.translation().x < event.max.x && t.translation().y < event.max.y) 
             .map(|(e, _)| e)
             .collect();
+        if entities.len() < 1 { continue }
         event_writer.send(ObjectsSelectedEvent(entities));
     }
 }

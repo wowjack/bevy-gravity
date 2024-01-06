@@ -143,7 +143,17 @@ fn init(
             },
             ..default()
         },
-        BlockingRectangle
+        WindowBlockingRectangle
+    ));
+    commands.spawn((
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgba(1.,1.,1.,1.),
+                ..default()
+            },
+            ..default()
+        },
+        SidebarBlockingRectangle
     ));
 
     game_resources.circle_mesh = Some(meshes.add(shape::Circle {radius: 0.5, vertices: 100}.into()).into());
