@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, geometry::GeometryBuilder, shapes, draw::{Fill, Stroke}};
 
-use crate::object::{ObjectSelectedEvent, MassiveObject};
+use crate::object::{ObjectsSelectedEvent, MassiveObject};
 
 
 
@@ -10,13 +10,14 @@ pub struct PathPrediction;
 
 
 pub fn path_prediction(
-    mut events: EventReader<ObjectSelectedEvent>,
+    mut events: EventReader<ObjectsSelectedEvent>,
     object_query: Query<(&MassiveObject, &Transform), With<MassiveObject>>,
     mut commands: Commands
 ) {
     return;
+    /*
     for event in events.read() {
-        commands.entity(event.0.target).with_children(|builder| {
+        commands.entity(event.0).with_children(|builder| {
             builder.spawn((SpatialBundle::default(), PathPrediction))
                    .with_children(|builder| {
                         builder.spawn((
@@ -30,5 +31,6 @@ pub fn path_prediction(
                    });  
         });
     }
+    */
 }
 

@@ -6,11 +6,13 @@ use bevy_prototype_lyon::prelude::ShapePlugin;
 use object::*;
 use path_prediction::*;
 use background::*;
+use gravity::* ;
 
 mod ui;
 mod object;
 mod path_prediction;
 mod background;
+mod gravity;
 
 #[derive(Resource)]
 pub struct GameState {
@@ -40,7 +42,7 @@ fn main() {
         .insert_resource(GameResources::default())
         .insert_resource(ObjectSpawnOptions::default())
         .insert_resource(DraggingBackground::default())
-        .add_event::<ObjectSelectedEvent>()
+        .add_event::<ObjectsSelectedEvent>()
         .add_event::<SpawnObjectEvent>()
         .add_event::<CameraZoomed>()
         .add_event::<SelectInRectEvent>()

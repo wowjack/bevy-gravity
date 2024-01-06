@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_mod_picking::{prelude::*, events::{Pointer, DragStart}};
 
-use crate::{CameraZoomed, MainCamera, object::MassiveObject};
+use crate::{CameraZoomed, MainCamera, object::{MassiveObject, ObjectsSelectedEvent}, ui::ObjectDetailContext};
 
 
 #[derive(Resource, Default)]
@@ -26,7 +26,7 @@ impl BackgroundBundle {
     pub fn new(materials: &mut ResMut<Assets<ColorMaterial>>, meshes: &mut ResMut<Assets<Mesh>>) -> Self {
         Self { 
             material_mesh_bundle: MaterialMesh2dBundle{
-                mesh: meshes.add(shape::Box::new(1.5, 1.5, 1.5).into()).into(),
+                mesh: meshes.add(shape::Quad::new(Vec2::new(1.5, 1.5)).into()).into(),
                 material: materials.add(Color::GRAY.into()).into(),
                 transform: Transform::from_scale(Vec3::new(5000., 5000., 1.)).with_translation(Vec3::new(0.,0.,-1000.)),
                 visibility: Visibility::Visible,
@@ -89,11 +89,14 @@ pub struct SelectInRectEvent {
     pub max: Vec2,
 }
 
-pub fn rect_select(mut events: EventReader<SelectInRectEvent>, mut object_query: Query<(&Transform, &mut MassiveObject)>) {
+pub fn rect_select(mut events: EventReader<SelectInRectEvent>, mut object_query: Query<(Entity, &GlobalTransform), With<MassiveObject>>, mut event_writer: EventWriter<ObjectsSelectedEvent>) {
     for event in events.read() {
-        for (_, mut object) in object_query.iter_mut().filter(|(t, _)| t.translation.x > event.min.x && t.translation.y > event.min.y && t.translation.x < event.max.x && t.translation.y < event.max.y) {
-            object.velocity = Vec2::ZERO;
-        }
+        let entities: Vec<Entity> = object_query
+            .iter_mut()
+            .filter(|(_, t)| t.translation().x > event.min.x && t.translation().y > event.min.y && t.translation().x < event.max.x && t.translation().y < event.max.y) 
+            .map(|(e, _)| e)
+            .collect();
+        event_writer.send(ObjectsSelectedEvent(entities));
     }
 }
 
