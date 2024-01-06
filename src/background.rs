@@ -9,6 +9,13 @@ pub struct DraggingBackground {
     pub start: Vec2,
     pub change: Vec2,
     pub rect: Option<Entity>,
+    pub drag_type: DragType
+}
+#[derive(Default)]
+pub enum DragType {
+    #[default]
+    Select,
+    Move
 }
 
 #[derive(Component)]
@@ -43,10 +50,13 @@ impl BackgroundBundle {
 #[derive(Component)]
 pub struct DragRectangle;
 
-fn drag_start(event: Listener<Pointer<DragStart>>, mut data: ResMut<DraggingBackground>, mut commands: Commands) {
+fn drag_start(event: Listener<Pointer<DragStart>>, mut data: ResMut<DraggingBackground>, mut commands: Commands, keyboard: Res<Input<KeyCode>>) {
     let Some(start_pos) = event.event.hit.position else { return };
     data.start = start_pos.truncate();
     data.change = Vec2::ZERO;
+
+    data.drag_type = if keyboard.pressed(KeyCode::Space) { DragType::Move } else { default() };
+    if let DragType::Move = data.drag_type { return }
 
     let rect_entity = commands.spawn((
         SpriteBundle {
@@ -60,17 +70,28 @@ fn drag_start(event: Listener<Pointer<DragStart>>, mut data: ResMut<DraggingBack
     data.rect = Some(rect_entity);
 }
 
-fn drag(event: Listener<Pointer<Drag>>, mut data: ResMut<DraggingBackground>, mut rect_query: Query<&mut Transform, With<DragRectangle>>, projection_query: Query<&OrthographicProjection, With<MainCamera>>) {
-    let projection = projection_query.single();
-    data.change +=  event.delta * projection.scale;
-    if data.rect.is_none() {return}
-    let Ok(mut rect) = rect_query.get_mut(data.rect.unwrap()) else { return };
+fn drag(event: Listener<Pointer<Drag>>, mut data: ResMut<DraggingBackground>, mut rect_query: Query<&mut Transform, (With<DragRectangle>, Without<MainCamera>)>, mut projection_query: Query<(&OrthographicProjection, &mut Transform), With<MainCamera>>) {
+    let (projection, mut camera_trans) = projection_query.single_mut();
+    match data.drag_type {
+        DragType::Select => {
+            data.change +=  event.delta * projection.scale;
+            if data.rect.is_none() {return}
+            let Ok(mut rect) = rect_query.get_mut(data.rect.unwrap()) else { return };
+
+            rect.translation = Vec3::new(data.start.x + data.change.x/2., data.start.y - data.change.y/2., -5.);
+            rect.scale = Vec3::from((data.change, 1.));
+        },
+        DragType::Move => {
+            camera_trans.translation.x -= event.delta.x * projection.scale;
+            camera_trans.translation.y += event.delta.y * projection.scale;
+        }
+    }
     
-    rect.translation = Vec3::new(data.start.x + data.change.x/2., data.start.y - data.change.y/2., -5.);
-    rect.scale = Vec3::from((data.change, 1.));
 }
 
 fn drag_end(_event: Listener<Pointer<DragEnd>>, mut data: ResMut<DraggingBackground>, mut commands: Commands, mut select_event_writer: EventWriter<SelectInRectEvent>) {
+    if let DragType::Move = data.drag_type { return }
+
     let Some(entity) = data.rect else { return };
     commands.entity(entity).despawn_recursive();
     data.rect = None;
