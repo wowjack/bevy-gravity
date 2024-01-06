@@ -1,14 +1,16 @@
-use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}, sprite::Mesh2dHandle};
+use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}, sprite::{Mesh2dHandle, MaterialMesh2dBundle}};
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::ShapePlugin;
 use object::*;
 use path_prediction::*;
+use background::*;
 
 mod ui;
 mod object;
 mod path_prediction;
+mod background;
 
 #[derive(Resource)]
 pub struct GameState {
@@ -29,7 +31,7 @@ fn main() {
             DefaultPickingPlugins.build().disable::<DebugPickingPlugin>(),
             ShapePlugin,
             FrameTimeDiagnosticsPlugin,
-            LogDiagnosticsPlugin::default(),
+            //LogDiagnosticsPlugin::default(),
         ))
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
         .insert_resource(ui::ObjectDetailContext::default())
@@ -37,18 +39,39 @@ fn main() {
         .insert_resource(GameState { play: false })
         .insert_resource(GameResources::default())
         .insert_resource(ObjectSpawnOptions::default())
+        .insert_resource(DraggingBackground::default())
         .add_event::<ObjectSelectedEvent>()
         .add_event::<SpawnObjectEvent>()
+        .add_event::<CameraZoomed>()
+        .add_event::<SelectInRectEvent>()
         .add_systems(Startup, init)
-        .add_systems(Update, (ui::object_detail_ui, ui::sidebar, mouse_zoom, object_select, move_object, object_gravity, update_arrow, spawn_object, path_prediction, update_object_radius, escape_unselect, follow_object))
+        .add_systems(Update, (
+            ui::object_detail_ui,
+            ui::sidebar,
+            mouse_zoom,
+            object_select,
+            move_object,
+            object_gravity,
+            update_arrow,
+            spawn_object,
+            path_prediction,
+            update_object_radius,
+            escape_unselect,
+            follow_object,
+            scale_background
+        ))
         .run()
 }
 
+
+#[derive(Event)]
+pub struct CameraZoomed(f32);
 
 fn mouse_zoom(
     mut query: Query<(&mut OrthographicProjection, &mut Transform)>,
     mut scroll_events: EventReader<MouseWheel>,
     primary_window: Query<&Window>,
+    mut zoom_eventwriter: EventWriter<CameraZoomed>,
 ) {
     let pixels_per_line = 100.; // Maybe make configurable?
     let scroll = scroll_events
@@ -83,6 +106,7 @@ fn mouse_zoom(
                 - mouse_normalized_screen_pos * proj_size * proj.scale)
                 .extend(pos.translation.z);
         }
+        zoom_eventwriter.send(CameraZoomed(proj.scale));
     }
 }
 
@@ -100,12 +124,14 @@ fn init(
     commands.spawn((
         Camera2dBundle::default(),
         MainCamera
-    ));
+    )).with_children(|builder| {
+        builder.spawn(BackgroundBundle::new(&mut materials, &mut meshes));
+    });
 
     game_resources.circle_mesh = Some(meshes.add(shape::Circle {radius: 0.5, vertices: 100}.into()).into());
     game_resources.circle_material = Some(materials.add(ColorMaterial::from(Color::PURPLE)));
-    
 }
+
 
 
 
