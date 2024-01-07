@@ -1,14 +1,20 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
+use bevy_mod_picking::prelude::*;
 
-use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics_future::PhysicsStateChange};
+use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics_future::PhysicsStateChange, select::ObjectsSelectedEvent};
 
 
-#[derive(Event, Default)]
+#[derive(Event)]
 pub struct SpawnObjectEvent {
     pub position: Vec2,
     pub velocity: Vec2,
     pub mass: f64,
     pub radius: f32,
+}
+impl Default for SpawnObjectEvent {
+    fn default() -> Self {
+        Self { position: Vec2::ZERO, velocity: Vec2::ZERO, mass: 1., radius: 1. }
+    }
 }
 
 pub fn spawn_objects(
@@ -20,15 +26,21 @@ pub fn spawn_objects(
     if events.is_empty() {return }
 
     for event in events.read() {
-        commands.spawn(MassiveObjectBundle {
-            spatial: SpatialBundle::from_transform(Transform::from_translation(Vec3::from((event.position, 0.)))),
-            object: MassiveObject { velocity: event.velocity, mass: event.mass },  
-        }).with_children(|builder| {
-            builder.spawn(MaterialMesh2dBundle {
-                material: resources.circle_material.clone().unwrap(),
-                mesh: resources.circle_mesh.clone().unwrap().into(),
-                ..default()
-            });
+        commands.spawn((
+            MassiveObjectBundle {
+                spatial: SpatialBundle::from_transform(Transform::from_translation(Vec3::from((event.position, 0.)))),
+                object: MassiveObject { velocity: event.velocity, mass: event.mass },
+            },
+            On::<Pointer<Select>>::send_event::<ObjectsSelectedEvent>()
+        )).with_children(|builder| {
+            builder.spawn((
+                MaterialMesh2dBundle {
+                    material: resources.circle_material.clone().unwrap(),
+                    mesh: resources.circle_mesh.clone().unwrap().into(),
+                    ..default()
+                },
+                PickableBundle::default(),
+            ));
         });
     }
     physics_event_writer.send(PhysicsStateChange);

@@ -69,7 +69,6 @@ fn physics_worker(
 
 
 fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<HashMap<Entity, VecDeque<Vec2>>>>) {
-    let now = std::time::Instant::now();
     for i in 0..objects.len() {
         let (_, c2) = objects.split_at_mut(i);
         let (object, c2) = c2.split_first_mut().unwrap();
@@ -90,7 +89,6 @@ fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<Ha
         object.position += object.velocity;
         future.entry(object.object).or_insert(VecDeque::new()).push_back(object.position);
     }
-    println!("{} elapsed", now.elapsed().as_micros());
 
 }
 

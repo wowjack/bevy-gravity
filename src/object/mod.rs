@@ -1,11 +1,12 @@
 use bevy::prelude::*;
 
-use self::{spawn::{SpawnObjectEvent, spawn_objects}, physics_future::{PhysicsStateChange, refresh_physics, PhysicsFuture, update_object_position}};
+use self::{spawn::{SpawnObjectEvent, spawn_objects}, physics_future::{PhysicsStateChange, refresh_physics, PhysicsFuture, update_object_position}, select::{on_select, ObjectsSelectedEvent}};
 
 pub mod object;
 pub mod object_bundle;
 pub mod spawn;
 pub mod physics_future;
+pub mod select;
 
 pub struct MassiveObjectPlugin;
 impl Plugin for MassiveObjectPlugin {
@@ -14,9 +15,9 @@ impl Plugin for MassiveObjectPlugin {
            .insert_resource(PhysicsFuture::default())
            .add_event::<SpawnObjectEvent>()
            .add_event::<PhysicsStateChange>()
+           .add_event::<ObjectsSelectedEvent>()
            .add_systems(Startup, init)
-           .add_systems(PostStartup, |mut ew: EventWriter<PhysicsStateChange>| ew.send(default()))
-           .add_systems(Update, (spawn_objects, refresh_physics, update_object_position));
+           .add_systems(Update, (spawn_objects, refresh_physics, update_object_position, on_select));
     }
 }
 
