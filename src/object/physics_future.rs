@@ -4,6 +4,9 @@ use bevy::{prelude::*, ecs::system::Resource};
 
 use super::object::MassiveObject;
 
+
+
+
 const TIME_STEP: f32 = 0.001;
 const G: f64 = 0.0000000000667;
 
@@ -30,11 +33,15 @@ pub struct PhysicsObject {
     velocity: Vec2,
     mass: f64
 }
+pub struct PhysicsState {
+    position: Vec2,
+    velocity: Vec2,
+}
 
 #[derive(Resource)]
 pub struct PhysicsFuture {
     pub sender: Sender<Vec<PhysicsObject>>,
-    pub future: Arc<Mutex<HashMap<Entity, VecDeque<Vec2>>>>,
+    pub future: Arc<Mutex<HashMap<Entity, VecDeque<PhysicsState>>>>,
     pub t_handle: JoinHandle<()>
 }
 
@@ -53,14 +60,13 @@ impl Default for PhysicsFuture {
 
 fn physics_worker(
     receiver: Receiver<Vec<PhysicsObject>>,
-    future: Arc<Mutex<HashMap<Entity, VecDeque<Vec2>>>>
+    future: Arc<Mutex<HashMap<Entity, VecDeque<PhysicsState>>>>
 ) {
     let mut state = vec![];
     loop{
         if let Ok(objs) = receiver.try_recv() {
             state = objs;
             future.lock().unwrap().clear();
-            println!("{:?}", state.len());
         }
 
         process_physics_frame(&mut state, &future)
@@ -68,7 +74,7 @@ fn physics_worker(
 }
 
 
-fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<HashMap<Entity, VecDeque<Vec2>>>>) {
+fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<HashMap<Entity, VecDeque<PhysicsState>>>>) {
     for i in 0..objects.len() {
         let (_, c2) = objects.split_at_mut(i);
         let (object, c2) = c2.split_first_mut().unwrap();
@@ -87,7 +93,7 @@ fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<Ha
     let Ok(mut future) = future.lock() else { return };
     for object in objects.iter_mut() {
         object.position += object.velocity;
-        future.entry(object.object).or_insert(VecDeque::new()).push_back(object.position);
+        future.entry(object.object).or_insert(VecDeque::new()).push_back(PhysicsState { position: object.position, velocity: object.velocity});
     }
 
 }
@@ -97,9 +103,9 @@ pub fn update_object_position(mut object_query: Query<(Entity, &mut MassiveObjec
     let Ok(mut future) = physics_future.future.lock() else { return };
     for (e, mut object, mut trans) in object_query.iter_mut() {
         let Some(future) = future.get_mut(&e) else { continue };
-        let Some(new_pos) = future.pop_front() else { continue };
+        let Some(new_state) = future.pop_front() else { continue };
 
-        object.velocity = new_pos - trans.translation.truncate();
-        trans.translation = new_pos.extend(0.);
+        object.velocity = new_state.velocity;
+        trans.translation = new_state.position.extend(0.);
     }
 }

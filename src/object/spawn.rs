@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_mod_picking::prelude::*;
 
-use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics_future::PhysicsStateChange, select::ObjectsSelectedEvent};
+use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics_future::PhysicsStateChange, select::ObjectsSelectedEvent, drag::ObjectDraggedEvent};
 
 
 #[derive(Event)]
@@ -31,12 +31,14 @@ pub fn spawn_objects(
                 spatial: SpatialBundle::from_transform(Transform::from_translation(Vec3::from((event.position, 0.)))),
                 object: MassiveObject { velocity: event.velocity, mass: event.mass },
             },
-            On::<Pointer<Select>>::send_event::<ObjectsSelectedEvent>()
+            On::<Pointer<Select>>::send_event::<ObjectsSelectedEvent>(),
+            On::<Pointer<Drag>>::send_event::<ObjectDraggedEvent>(),
         )).with_children(|builder| {
             builder.spawn((
                 MaterialMesh2dBundle {
                     material: resources.circle_material.clone().unwrap(),
                     mesh: resources.circle_mesh.clone().unwrap().into(),
+                    transform: Transform::from_scale(Vec3::new(event.radius, event.radius, 1.)),
                     ..default()
                 },
                 PickableBundle::default(),

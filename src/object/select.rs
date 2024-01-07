@@ -19,7 +19,7 @@ pub fn on_select(
         for entity in event.0.iter() {
             let Some(mut commands) = commands.get_entity(*entity) else { continue; };
             commands.with_children(|builder| {
-                builder.spawn(SpriteBundle::default());
+                
             });
         }
     }

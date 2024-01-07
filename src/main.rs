@@ -19,7 +19,7 @@ fn main() {
             DefaultPickingPlugins.build().disable::<DebugPickingPlugin>(),
             ShapePlugin,
             FrameTimeDiagnosticsPlugin,
-            LogDiagnosticsPlugin::default(),
+            //LogDiagnosticsPlugin::default(),
             MassiveObjectPlugin
         ))
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
