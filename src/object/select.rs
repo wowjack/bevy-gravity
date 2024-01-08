@@ -18,6 +18,7 @@ impl From<ListenerInput<Pointer<Select>>> for ObjectsSelectedEvent {
 }
 
 
+//make it so objects selected event processing doesnt anticipate targets pointing to children of massive objects
 pub fn on_select(
     mut events: EventReader<ObjectsSelectedEvent>,
     object_query: Query<&Parent, With<VisualObject>>,

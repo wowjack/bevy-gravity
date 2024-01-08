@@ -1,3 +1,4 @@
+use background::{BackgroundBundle, DraggingBackground, SelectInRectEvent, rect_select};
 use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::render::camera::Viewport;
@@ -13,6 +14,7 @@ use zoom::mouse_zoom;
 mod zoom;
 mod object;
 mod ui;
+mod background;
 
 
 fn main() {
@@ -27,12 +29,15 @@ fn main() {
             MassiveObjectPlugin
         ))
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
+        .insert_resource(DraggingBackground::default())
+        .add_event::<SelectInRectEvent>()
         .add_systems(Startup, init)
         .add_systems(Update, (
             window_resize.before(mouse_zoom),
             mouse_zoom,
             ui::bottom_panel,
             ui::side_panel,
+            rect_select,
         ))
         .run()
 }
@@ -43,7 +48,9 @@ pub struct MainCamera;
 
 fn init(
     mut commands: Commands,
-    window_query: Query<&Window>
+    window_query: Query<&Window>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>
 ) {
     let window = window_query.single();
 
@@ -59,8 +66,10 @@ fn init(
             },
             ..default()
         },
-        MainCamera
-    ));
+        MainCamera,
+    )).with_children(|builder| {
+        builder.spawn(BackgroundBundle::new(&mut materials, &mut meshes));
+    });
 }
 
 
