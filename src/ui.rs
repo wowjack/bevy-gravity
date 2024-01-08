@@ -2,9 +2,9 @@ use std::collections::VecDeque;
 
 use bevy::prelude::*;
 use bevy_egui::EguiContexts;
-use egui::{DragValue, Slider};
+use egui::{DragValue, Slider, Layout};
 
-use crate::object::{spawn::SpawnObjectEvent, physics_future::{PhysicsFuture, UpdatePhysics}};
+use crate::object::{spawn::SpawnObjectEvent, physics_future::{PhysicsFuture, UpdatePhysics}, select::SelectedObjects};
 
 pub const SIDE_PANEL_WIDTH: f32 = 250.;
 pub const BOTTOM_PANEL_HEIGHT: f32 = 100.;
@@ -12,15 +12,32 @@ pub const BOTTOM_PANEL_HEIGHT: f32 = 100.;
 
 pub fn bottom_panel(
     mut contexts: EguiContexts,
-    physics_future: Res<PhysicsFuture>
+    physics_future: Res<PhysicsFuture>,
+    selected_objects: Res<SelectedObjects>
 ) {
     egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, "bottom_panel")
         .exact_height(BOTTOM_PANEL_HEIGHT)
         .resizable(false)
         .show(contexts.ctx_mut(), |ui| {
-            ui.strong("Bottom Panel");
-            ui.vertical(|ui| {
-                ui.label(format!("Prediction Buffer Size: {}", physics_future.future.lock().unwrap().values().next().unwrap_or(&VecDeque::new()).len()));
+            ui.horizontal(|ui| {
+                ui.allocate_ui_with_layout([100., 100.].into(), Layout::default(), |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.add_space(5.);
+                        ui.strong("Buffer Size");
+                        ui.add_space(5.);
+                        ui.strong(format!("{:?}", physics_future.future.lock().unwrap().values().next().unwrap_or(&VecDeque::new()).len()));
+                    });
+                });
+                ui.allocate_ui((100., 100.).into(), |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.add_space(5.);
+                        egui::ScrollArea::new([false, true]).max_height(100.).show(ui, |ui| {
+                            for e in &selected_objects.selected {
+                                ui.heading(format!("{:?}", e));
+                            }
+                        });
+                    });
+                });
             });
         });
 }

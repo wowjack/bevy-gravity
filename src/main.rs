@@ -27,7 +27,6 @@ fn main() {
             MassiveObjectPlugin
         ))
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
-        .insert_resource(SelectedObjects::default())
         .add_systems(Startup, init)
         .add_systems(Update, (
             window_resize.before(mouse_zoom),

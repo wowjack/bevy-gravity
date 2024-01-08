@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use self::{spawn::{SpawnObjectEvent, spawn_objects}, physics_future::{PhysicsStateChangeEvent, refresh_physics, PhysicsFuture, update_object_position, UpdatePhysics}, select::{on_select, ObjectsSelectedEvent}, drag::{drag_object, ObjectDraggedEvent}, velocity_arrow::{SpawnVelocityArrowEvent, spawn_velocity_arrow, update_velocity_arrow}};
+use self::{spawn::{SpawnObjectEvent, spawn_objects}, physics_future::{PhysicsStateChangeEvent, refresh_physics, PhysicsFuture, update_object_position, UpdatePhysics}, select::{on_select, ObjectsSelectedEvent, SelectedObjects}, drag::{drag_object, ObjectDraggedEvent}, velocity_arrow::{SpawnVelocityArrowEvent, spawn_velocity_arrow, update_velocity_arrow}};
 
 pub mod object;
 pub mod object_bundle;
@@ -16,6 +16,7 @@ impl Plugin for MassiveObjectPlugin {
         app.insert_resource(ObjectResources::default())
            .insert_resource(PhysicsFuture::default())
            .insert_resource(UpdatePhysics(false))
+           .insert_resource(SelectedObjects::default())
            .add_event::<SpawnObjectEvent>()
            .add_event::<PhysicsStateChangeEvent>()
            .add_event::<ObjectsSelectedEvent>()

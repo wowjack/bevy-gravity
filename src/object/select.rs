@@ -5,8 +5,8 @@ use super::{velocity_arrow::{SpawnVelocityArrowEvent, VelocityArrow}, spawn::Vis
 
 #[derive(Resource, Default)]
 pub struct SelectedObjects {
-    selected: Vec<Entity>,
-    focused: Option<Entity>
+    pub selected: Vec<Entity>,
+    pub focused: Option<Entity>
 }
 
 #[derive(Event)]
