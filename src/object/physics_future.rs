@@ -1,6 +1,7 @@
-use std::{sync::{mpsc::{Sender, self, Receiver}, Arc, Mutex}, thread::{self, JoinHandle}, collections::{HashMap, VecDeque}};
+use std::{sync::{mpsc::{Sender, self, Receiver}, Arc, Mutex}, thread::{self, JoinHandle}, collections::{HashMap, VecDeque}, time::Duration};
 
 use bevy::{prelude::*, ecs::system::Resource};
+use bevy_prototype_lyon::prelude::tess::geom::euclid::default;
 
 use super::object::MassiveObject;
 
@@ -9,6 +10,7 @@ use super::object::MassiveObject;
 
 const TIME_STEP: f32 = 0.001;
 const G: f64 = 0.0000000000667;
+const FUTURE_MAP_SIZE: usize = 1_000_000_000;
 
 /// Any time the user changes an object, a physics state change event should be thrown to make sure the physics functions correctly
 #[derive(Event, Default)]
@@ -62,11 +64,26 @@ fn physics_worker(
     receiver: Receiver<Vec<PhysicsObject>>,
     future: Arc<Mutex<HashMap<Entity, VecDeque<PhysicsState>>>>
 ) {
-    let mut state = vec![];
+    let mut state = receiver.recv().unwrap();
     loop{
         if let Ok(objs) = receiver.try_recv() {
             state = objs;
             future.lock().unwrap().clear();
+            if state.is_empty() { //if the state is empty, wait until the next update
+                state = receiver.recv().unwrap();
+            }
+        }
+
+        //wait for a bit if the future is getting too large
+        let points = match future.try_lock() {
+            Ok(f) => f.values().next().unwrap_or(&VecDeque::new()).len() * f.len(),
+            _ => 0
+        };
+        if points > FUTURE_MAP_SIZE {
+            let Ok(objs) = receiver.recv_timeout(Duration::from_secs(1)) else { continue };
+            state = objs;
+            future.lock().unwrap().clear();
+            continue;
         }
 
         process_physics_frame(&mut state, &future)
@@ -75,6 +92,7 @@ fn physics_worker(
 
 
 fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<HashMap<Entity, VecDeque<PhysicsState>>>>) {
+    //println!("Doing physics frame");
     for i in 0..objects.len() {
         let (_, c2) = objects.split_at_mut(i);
         let (object, c2) = c2.split_first_mut().unwrap();

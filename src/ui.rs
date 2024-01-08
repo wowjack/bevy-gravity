@@ -4,39 +4,77 @@ use bevy::prelude::*;
 use bevy_egui::EguiContexts;
 use egui::{DragValue, Slider, Layout};
 
-use crate::object::{spawn::SpawnObjectEvent, physics_future::{PhysicsFuture, UpdatePhysics}, select::SelectedObjects};
+use crate::object::{spawn::{SpawnObjectEvent, VisualObject}, physics_future::{PhysicsFuture, UpdatePhysics}, select::SelectedObjects, object::{MassiveObject, EditObjectData, EditObjectEvent}};
 
-pub const SIDE_PANEL_WIDTH: f32 = 250.;
-pub const BOTTOM_PANEL_HEIGHT: f32 = 100.;
+pub const SIDE_PANEL_WIDTH: f32 = 300.;
+pub const BOTTOM_PANEL_HEIGHT: f32 = 150.;
 
 
 pub fn bottom_panel(
     mut contexts: EguiContexts,
     physics_future: Res<PhysicsFuture>,
-    selected_objects: Res<SelectedObjects>
+    mut selected_objects: ResMut<SelectedObjects>,
+    object_query: Query<(&Children, &MassiveObject, &Transform), Without<VisualObject>>,
+    visual_query: Query<&Transform, (With<VisualObject>, Without<MassiveObject>)>,
+    mut edit_object: Local<EditObjectData>,
+    mut edit_object_event_writer: EventWriter<EditObjectEvent>
 ) {
     egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, "bottom_panel")
         .exact_height(BOTTOM_PANEL_HEIGHT)
         .resizable(false)
         .show(contexts.ctx_mut(), |ui| {
-            ui.horizontal(|ui| {
-                ui.allocate_ui_with_layout([100., 100.].into(), Layout::default(), |ui| {
-                    ui.vertical_centered(|ui| {
-                        ui.add_space(5.);
-                        ui.strong("Buffer Size");
-                        ui.add_space(5.);
-                        ui.strong(format!("{:?}", physics_future.future.lock().unwrap().values().next().unwrap_or(&VecDeque::new()).len()));
+            ui.allocate_ui_with_layout((500., BOTTOM_PANEL_HEIGHT).into(), Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.vertical(|ui| {
+                    ui.add_space(5.);
+                    ui.strong("Buffer Size");
+                    ui.add_space(5.);
+                    ui.strong(format!("{:?}", physics_future.future.lock().unwrap().values().next().unwrap_or(&VecDeque::new()).len()));
+                });
+                ui.vertical(|ui| {
+                    ui.add_space(5.);
+                    egui::ScrollArea::new([false, true]).show(ui, |ui| {
+                        for e in selected_objects.selected.clone() {
+                            ui.style_mut().spacing.button_padding = (20., 5.).into();
+                            if ui.button(format!("{:?}", e)).clicked() {
+                                selected_objects.focused = Some(e);
+                            }
+                        }
                     });
                 });
-                ui.allocate_ui((100., 100.).into(), |ui| {
-                    ui.vertical_centered(|ui| {
-                        ui.add_space(5.);
-                        egui::ScrollArea::new([false, true]).max_height(100.).show(ui, |ui| {
-                            for e in &selected_objects.selected {
-                                ui.heading(format!("{:?}", e));
-                            }
-                        });
+                ui.vertical(|ui| {
+                    let Some(focused) = selected_objects.focused else { return };
+                    
+                    ui.heading(format!("{:?}", focused));
+                    let Ok((children, object, trans)) = object_query.get(focused) else { return };
+                    let Ok(visual_trans) = visual_query.get(*children.iter().filter(|e| visual_query.contains(**e)).next().unwrap()) else { return };
+                    edit_object.mass = object.mass as f32;
+                    edit_object.position = trans.translation.truncate();
+                    edit_object.velocity = object.velocity;
+                    edit_object.radius = visual_trans.scale.x;
+                    
+                    let mut changed = false;
+                    ui.horizontal(|ui| {
+                        ui.strong("Position");
+                        changed = ui.add(DragValue::new(&mut edit_object.position.x).prefix("X:")).changed() || changed;
+                        changed = ui.add(DragValue::new(&mut edit_object.position.y).prefix("Y:")).changed() || changed;
                     });
+                    ui.horizontal(|ui| {
+                        ui.strong("Velocity");
+                        changed = ui.add(DragValue::new(&mut edit_object.velocity.x).speed(0.001).prefix("X:")).changed() || changed;
+                        changed = ui.add(DragValue::new(&mut edit_object.velocity.y).speed(0.001).prefix("Y:")).changed() || changed;
+                    });
+                    ui.horizontal(|ui| {
+                        ui.strong("Mass");
+                        changed = ui.add(Slider::new(&mut edit_object.mass, (1.)..=(1_000_000_000_000_000_000.)).logarithmic(true)).changed() || changed;
+                    });
+                    ui.horizontal(|ui| {
+                        ui.strong("Radius");
+                        changed = ui.add(Slider::new(&mut edit_object.radius, (1.)..=(10_000.)).logarithmic(true)).changed() || changed;
+                    });
+
+                    if changed {
+                        edit_object_event_writer.send(EditObjectEvent { entity: focused, data: edit_object.clone() })
+                    }
                 });
             });
         });
@@ -75,7 +113,7 @@ pub fn side_panel(
                 });
                 ui.horizontal(|ui| {
                     ui.label("Mass");
-                    ui.add(Slider::new(&mut spawn_options.mass, (0.0001)..=(1_000_000_000_000_000_000.)).logarithmic(true));
+                    ui.add(Slider::new(&mut spawn_options.mass, (1.)..=(1_000_000_000_000_000_000.)).logarithmic(true));
                 });
                 ui.horizontal(|ui| {
                     ui.label("Radius");

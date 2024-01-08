@@ -25,10 +25,10 @@ pub fn on_select(
     mut selected_objects: ResMut<SelectedObjects>
 ) {
     for event in events.read() {
-        let mut event: ObjectsSelectedEvent = event.clone();
+        let mut event = event.clone();
         if event.entities.len() == 1 && selected_objects.selected.contains(&event.entities[0]) {
-            selected_objects.focused = Some(event.entities[0]);
             event.deselect = false;
+            selected_objects.focused = Some(event.entities[0]);
         }
 
         if event.deselect {
@@ -44,6 +44,8 @@ pub fn on_select(
             event_writer.send_batch(new_entities.into_iter().map(|e| SpawnVelocityArrowEvent(e)));
         }
         
-
+        if event.entities.len() == 1 {
+            selected_objects.focused = Some(event.entities[0]);
+        }
     }
 }

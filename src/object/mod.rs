@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use self::{spawn::{SpawnObjectEvent, spawn_objects}, physics_future::{PhysicsStateChangeEvent, refresh_physics, PhysicsFuture, update_object_position, UpdatePhysics}, select::{on_select, ObjectsSelectedEvent, SelectedObjects}, drag::{drag_object, ObjectDraggedEvent}, velocity_arrow::{SpawnVelocityArrowEvent, spawn_velocity_arrow, update_velocity_arrow}};
+use self::{spawn::{SpawnObjectEvent, spawn_objects}, physics_future::{PhysicsStateChangeEvent, refresh_physics, PhysicsFuture, update_object_position, UpdatePhysics}, select::{on_select, ObjectsSelectedEvent, SelectedObjects}, drag::{drag_object, ObjectDraggedEvent}, velocity_arrow::{SpawnVelocityArrowEvent, spawn_velocity_arrow, update_velocity_arrow}, object::{edit_object, EditObjectEvent}};
 
 pub mod object;
 pub mod object_bundle;
@@ -22,8 +22,9 @@ impl Plugin for MassiveObjectPlugin {
            .add_event::<ObjectsSelectedEvent>()
            .add_event::<ObjectDraggedEvent>()
            .add_event::<SpawnVelocityArrowEvent>()
+           .add_event::<EditObjectEvent>()
            .add_systems(Startup, init)
-           .add_systems(Update, (on_select, spawn_velocity_arrow, spawn_objects, drag_object, update_velocity_arrow))
+           .add_systems(Update, (on_select, spawn_velocity_arrow, spawn_objects, drag_object, update_velocity_arrow, edit_object))
            .add_systems(PostUpdate, (refresh_physics.before(update_object_position), update_object_position));
     }
 }
