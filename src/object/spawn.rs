@@ -4,7 +4,7 @@ use bevy_mod_picking::prelude::*;
 use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics_future::PhysicsStateChangeEvent, select::ObjectsSelectedEvent, drag::ObjectDraggedEvent};
 
 
-#[derive(Event)]
+#[derive(Event, Copy, Clone)]
 pub struct SpawnObjectEvent {
     pub position: Vec2,
     pub velocity: Vec2,

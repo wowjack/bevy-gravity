@@ -67,6 +67,7 @@ pub fn spawn_velocity_arrow(
                                     Fill::color(Color::BLACK),
                                     PickableBundle::default(),
                                     On::<Pointer<Drag>>::run(drag_arrowtip),
+                                    On::<Pointer<Select>>::run(|mut e: ListenerMut<Pointer<Select>>| e.stop_propagation()),
                                     ArrowTip(event.0)
                                 ));
                            });
