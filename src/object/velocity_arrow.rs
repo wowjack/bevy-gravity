@@ -6,7 +6,7 @@ use crate::MainCamera;
 
 use super::{object::MassiveObject, physics_future::PhysicsStateChangeEvent};
 
-const VELOCITY_SCALE: f32 = 100000.;
+const VELOCITY_SCALE: f32 = 100.;
 
 #[derive(Event)]
 pub struct SpawnVelocityArrowEvent(pub Entity);
