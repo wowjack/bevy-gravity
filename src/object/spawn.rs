@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_mod_picking::prelude::*;
 
-use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics_future::PhysicsStateChange, select::ObjectsSelectedEvent, drag::ObjectDraggedEvent};
+use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics_future::PhysicsStateChangeEvent, select::ObjectsSelectedEvent, drag::ObjectDraggedEvent};
 
 
 #[derive(Event)]
@@ -21,7 +21,7 @@ pub fn spawn_objects(
     mut events: EventReader<SpawnObjectEvent>,
     mut commands: Commands,
     resources: Res<ObjectResources>,
-    mut physics_event_writer: EventWriter<PhysicsStateChange>,
+    mut physics_event_writer: EventWriter<PhysicsStateChangeEvent>,
 ) {
     if events.is_empty() {return }
 
@@ -30,9 +30,8 @@ pub fn spawn_objects(
             MassiveObjectBundle {
                 spatial: SpatialBundle::from_transform(Transform::from_translation(Vec3::from((event.position, 0.)))),
                 object: MassiveObject { velocity: event.velocity, mass: event.mass },
+                ..default()
             },
-            On::<Pointer<Select>>::send_event::<ObjectsSelectedEvent>(),
-            On::<Pointer<Drag>>::send_event::<ObjectDraggedEvent>(),
         )).with_children(|builder| {
             builder.spawn((
                 MaterialMesh2dBundle {
@@ -42,8 +41,13 @@ pub fn spawn_objects(
                     ..default()
                 },
                 PickableBundle::default(),
+                VisualObject
             ));
         });
     }
-    physics_event_writer.send(PhysicsStateChange);
+    physics_event_writer.send(PhysicsStateChangeEvent);
 }
+
+
+#[derive(Component)]
+pub struct VisualObject;

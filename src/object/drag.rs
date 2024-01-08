@@ -3,7 +3,7 @@ use bevy_mod_picking::{prelude::*, events::{Pointer, Drag}};
 
 use crate::MainCamera;
 
-use super::{object::MassiveObject, physics_future::PhysicsStateChange};
+use super::{object::MassiveObject, physics_future::PhysicsStateChangeEvent};
 
 #[derive(Event)]
 pub struct ObjectDraggedEvent {
@@ -20,7 +20,7 @@ pub fn drag_object(
     mut events: EventReader<ObjectDraggedEvent>,
     dragged_query: Query<&Parent, Without<MassiveObject>>,
     mut object_query: Query<&mut Transform, With<MassiveObject>>,
-    mut event_writer: EventWriter<PhysicsStateChange>,
+    mut event_writer: EventWriter<PhysicsStateChangeEvent>,
     camera_query: Query<&OrthographicProjection, With<MainCamera>>
 ) {
     if events.is_empty() { return }
@@ -32,6 +32,6 @@ pub fn drag_object(
         let Ok(mut object_transform) = object_query.get_mut(object_entity.get()) else { continue };
         object_transform.translation.x += event.delta.x*projection.scale;
         object_transform.translation.y -= event.delta.y*projection.scale;
-        event_writer.send(PhysicsStateChange);
+        event_writer.send(PhysicsStateChangeEvent);
     }
 }

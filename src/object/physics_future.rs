@@ -12,9 +12,9 @@ const G: f64 = 0.0000000000667;
 
 /// Any time the user changes an object, a physics state change event should be thrown to make sure the physics functions correctly
 #[derive(Event, Default)]
-pub struct PhysicsStateChange;
+pub struct PhysicsStateChangeEvent;
 pub fn refresh_physics(
-    mut events: EventReader<PhysicsStateChange>,
+    mut events: EventReader<PhysicsStateChangeEvent>,
     object_query: Query<(Entity, &Transform, &MassiveObject)>,
     future: ResMut<PhysicsFuture>
 ) {
