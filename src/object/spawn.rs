@@ -44,7 +44,7 @@ pub fn spawn_objects(
                 On::<Pointer<Select>>::run(|mut event: ListenerMut<Pointer<Select>>, object_query: Query<&Parent, With<VisualObject>>, mut event_writer: EventWriter<ObjectsSelectedEvent>| {
                     event.stop_propagation();
                     let Ok(parent) = object_query.get(event.target) else { return };
-                    event_writer.send(ObjectsSelectedEvent(vec![parent.get()]));
+                    event_writer.send(ObjectsSelectedEvent{ entities: vec![parent.get()], deselect: true });
                 }),
                 VisualObject
             ));

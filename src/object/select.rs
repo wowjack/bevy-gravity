@@ -9,8 +9,11 @@ pub struct SelectedObjects {
     pub focused: Option<Entity>
 }
 
-#[derive(Event)]
-pub struct ObjectsSelectedEvent(pub Vec<Entity>);
+#[derive(Event, Clone)]
+pub struct ObjectsSelectedEvent {
+    pub entities: Vec<Entity>,
+    pub deselect: bool
+}
 
 
 //make it so objects selected event processing doesnt anticipate targets pointing to children of massive objects
@@ -22,11 +25,25 @@ pub fn on_select(
     mut selected_objects: ResMut<SelectedObjects>
 ) {
     for event in events.read() {
-        for e in arrow_query.into_iter() {
-            commands.entity(e).despawn_recursive();
+        let mut event: ObjectsSelectedEvent = event.clone();
+        if event.entities.len() == 1 && selected_objects.selected.contains(&event.entities[0]) {
+            selected_objects.focused = Some(event.entities[0]);
+            event.deselect = false;
         }
-        selected_objects.selected = event.0.clone();
-        selected_objects.focused = None;
-        event_writer.send_batch(event.0.iter().map(|e| SpawnVelocityArrowEvent(*e)));
+
+        if event.deselect {
+            for e in arrow_query.into_iter() {
+                commands.entity(e).despawn_recursive();
+            }
+            selected_objects.selected = event.entities.clone();
+            selected_objects.focused = None;
+            event_writer.send_batch(event.entities.iter().map(|e| SpawnVelocityArrowEvent(*e)));
+        } else {
+            let new_entities: Vec<Entity> = event.entities.clone().into_iter().filter(|e| !selected_objects.selected.contains(e)).collect();
+            selected_objects.selected.extend(new_entities.iter());
+            event_writer.send_batch(new_entities.into_iter().map(|e| SpawnVelocityArrowEvent(e)));
+        }
+        
+
     }
 }

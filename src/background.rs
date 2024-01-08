@@ -118,7 +118,7 @@ pub fn rect_select(mut events: EventReader<SelectInRectEvent>, mut object_query:
             .map(|(e, _)| e)
             .collect();
         if entities.len() < 1 { continue }
-        event_writer.send(ObjectsSelectedEvent(entities));
+        event_writer.send(ObjectsSelectedEvent{ entities: entities, deselect: true });
     }
 }
 
