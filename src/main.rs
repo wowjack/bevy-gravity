@@ -1,4 +1,4 @@
-use background::{BackgroundBundle, DraggingBackground, SelectInRectEvent, rect_select};
+use background::{BackgroundBundle, DraggingBackground, SelectInRectEvent, rect_select, scale_background};
 use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::render::camera::Viewport;
@@ -9,7 +9,7 @@ use bevy_prototype_lyon::prelude::ShapePlugin;
 use object::MassiveObjectPlugin;
 use object::select::SelectedObjects;
 use ui::{SIDE_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT};
-use zoom::mouse_zoom;
+use zoom::{mouse_zoom, ProjectionScaleChange};
 
 mod zoom;
 mod object;
@@ -31,10 +31,12 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
         .insert_resource(DraggingBackground::default())
         .add_event::<SelectInRectEvent>()
+        .add_event::<ProjectionScaleChange>()
         .add_systems(Startup, init)
         .add_systems(Update, (
             window_resize.before(mouse_zoom),
-            mouse_zoom,
+            mouse_zoom.before(scale_background),
+            scale_background,
             ui::bottom_panel,
             ui::side_panel,
             rect_select,

@@ -11,17 +11,11 @@ pub struct SelectedObjects {
 
 #[derive(Event)]
 pub struct ObjectsSelectedEvent(pub Vec<Entity>);
-impl From<ListenerInput<Pointer<Select>>> for ObjectsSelectedEvent {
-    fn from(value: ListenerInput<Pointer<Select>>) -> Self {
-        return Self(vec![value.target])
-    }
-}
 
 
 //make it so objects selected event processing doesnt anticipate targets pointing to children of massive objects
 pub fn on_select(
     mut events: EventReader<ObjectsSelectedEvent>,
-    object_query: Query<&Parent, With<VisualObject>>,
     arrow_query: Query<Entity, With<VelocityArrow>>,
     mut event_writer: EventWriter<SpawnVelocityArrowEvent>,
     mut commands: Commands,
@@ -33,6 +27,6 @@ pub fn on_select(
         }
         selected_objects.selected = event.0.clone();
         selected_objects.focused = None;
-        event_writer.send_batch(event.0.iter().filter_map(|e| object_query.get(*e).ok()).map(|e| SpawnVelocityArrowEvent(e.get())));
+        event_writer.send_batch(event.0.iter().map(|e| SpawnVelocityArrowEvent(*e)));
     }
 }

@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_mod_picking::{prelude::*, events::{Pointer, DragStart}};
 
-use crate::{MainCamera, object::{object::MassiveObject, select::ObjectsSelectedEvent, spawn::VisualObject}};
+use crate::{MainCamera, object::{object::MassiveObject, select::ObjectsSelectedEvent, spawn::VisualObject}, zoom::ProjectionScaleChange};
 
 
 #[derive(Resource, Default)]
@@ -110,7 +110,7 @@ pub struct SelectInRectEvent {
     pub max: Vec2,
 }
 
-pub fn rect_select(mut events: EventReader<SelectInRectEvent>, mut object_query: Query<(Entity, &GlobalTransform), With<VisualObject>>, mut event_writer: EventWriter<ObjectsSelectedEvent>) {
+pub fn rect_select(mut events: EventReader<SelectInRectEvent>, mut object_query: Query<(Entity, &GlobalTransform), With<MassiveObject>>, mut event_writer: EventWriter<ObjectsSelectedEvent>) {
     for event in events.read() {
         let entities: Vec<Entity> = object_query
             .iter_mut()
@@ -123,9 +123,9 @@ pub fn rect_select(mut events: EventReader<SelectInRectEvent>, mut object_query:
 }
 
 
-/*
+
 pub fn scale_background(
-    mut events: EventReader<CameraZoomed>,
+    mut events: EventReader<ProjectionScaleChange>,
     mut background_query: Query<&mut Transform, With<Background>>,
     projection_query: Query<&OrthographicProjection, With<MainCamera>>
 ) {
@@ -135,7 +135,6 @@ pub fn scale_background(
     let projection = projection_query.single();
 
     for _event in events.read() {
-        background.scale = Vec3::new(projection.area.width(), projection.area.height(), 1.);
+        background.scale = Vec3::new(projection.area.width()*2., projection.area.height()*2., 1.);
     }
 }
-*/

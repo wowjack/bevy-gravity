@@ -3,12 +3,13 @@ use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}};
 use crate::ui::{SIDE_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT};
 
 #[derive(Event)]
-pub struct ProjectionScaleChange(f32);
+pub struct ProjectionScaleChange;
 
 pub fn mouse_zoom(
     mut camera_query: Query<(&mut OrthographicProjection, &mut Transform)>,
     mut scroll_events: EventReader<MouseWheel>,
     primary_window: Query<&Window>,
+    mut event_writer: EventWriter<ProjectionScaleChange>,
 ) {
     let pixels_per_line = 100.; // Maybe make configurable?
     let scroll = scroll_events
@@ -43,4 +44,5 @@ pub fn mouse_zoom(
             - mouse_normalized_screen_pos * proj_size * proj.scale)
             .extend(pos.translation.z);
     }
+    event_writer.send(ProjectionScaleChange)
 }
