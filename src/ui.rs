@@ -83,7 +83,9 @@ pub fn bottom_panel(
 
                     if changed {
                         edit_object_event_writer.send(EditObjectEvent { entity: focused, data: edit_object.clone() })
-                    }
+                    } 
+                });
+                ui.vertical(|ui| {
                     ui.horizontal(|ui| {
                         ui.checkbox(&mut to_draw.future_path, "Future Path");
                         ui.add(Slider::new(&mut to_draw.prediction_buffer_len, 1..=100_000).prefix("Length: ").logarithmic(true));
@@ -91,8 +93,6 @@ pub fn bottom_panel(
                     ui.horizontal(|ui| {
                         ui.add(Slider::new(&mut to_draw.prediction_line_segment_size, (1.)..=(10000.)).prefix("Segment Length: ").logarithmic(true))
                     });
-                    
-                    
                 });
             });
         });
