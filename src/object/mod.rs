@@ -16,7 +16,7 @@ impl Plugin for MassiveObjectPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ObjectResources::default())
            .insert_resource(PhysicsFuture::default())
-           .insert_resource(UpdatePhysics(false))
+           .insert_resource(UpdatePhysics{ update: false, step: 1})
            .insert_resource(SelectedObjects::default())
            .add_event::<SpawnObjectEvent>()
            .add_event::<PhysicsStateChangeEvent>()

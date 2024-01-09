@@ -117,19 +117,22 @@ fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<Ha
 
 
 #[derive(Resource, Default)]
-pub struct UpdatePhysics(pub bool);
+pub struct UpdatePhysics {
+    pub update: bool,
+    pub step: usize,
+}
 
 pub fn update_object_position(
     mut object_query: Query<(Entity, &mut MassiveObject, &mut Transform)>,
     physics_future: Res<PhysicsFuture>,
     update: Res<UpdatePhysics>
 ) {
-    if update.0 == false { return }
+    if update.update == false { return }
     
     let Ok(mut future) = physics_future.future.lock() else { return };
     for (e, mut object, mut trans) in object_query.iter_mut() {
         let Some(future) = future.get_mut(&e) else { continue };
-        let Some(new_state) = future.pop_front() else { continue };
+        let Some(new_state) = future.drain(0..update.step).last() else { continue };
 
         object.velocity = new_state.velocity;
         trans.translation = new_state.position.extend(0.);

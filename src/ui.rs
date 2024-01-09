@@ -69,8 +69,8 @@ pub fn bottom_panel(
                     });
                     ui.horizontal(|ui| {
                         ui.strong("Velocity");
-                        changed = ui.add(DragValue::new(&mut edit_object.velocity.x).speed(0.001).prefix("X:")).changed() || changed;
-                        changed = ui.add(DragValue::new(&mut edit_object.velocity.y).speed(0.001).prefix("Y:")).changed() || changed;
+                        changed = ui.add(DragValue::new(&mut edit_object.velocity.x).speed(0.1).prefix("X:")).changed() || changed;
+                        changed = ui.add(DragValue::new(&mut edit_object.velocity.y).speed(0.1).prefix("Y:")).changed() || changed;
                     });
                     ui.horizontal(|ui| {
                         ui.strong("Mass");
@@ -78,7 +78,7 @@ pub fn bottom_panel(
                     });
                     ui.horizontal(|ui| {
                         ui.strong("Radius");
-                        changed = ui.add(Slider::new(&mut edit_object.radius, (1.)..=(10_000.)).logarithmic(true)).changed() || changed;
+                        changed = ui.add(Slider::new(&mut edit_object.radius, (1.)..=(1_000_000.)).logarithmic(true)).changed() || changed;
                     });
 
                     if changed {
@@ -88,10 +88,10 @@ pub fn bottom_panel(
                 ui.vertical(|ui| {
                     ui.horizontal(|ui| {
                         ui.checkbox(&mut to_draw.future_path, "Future Path");
-                        ui.add(Slider::new(&mut to_draw.prediction_buffer_len, 1..=100_000).prefix("Length: ").logarithmic(true));
+                        ui.add(Slider::new(&mut to_draw.prediction_buffer_len, 1..=1_000_000).prefix("Length: ").logarithmic(true));
                     });
                     ui.horizontal(|ui| {
-                        ui.add(Slider::new(&mut to_draw.prediction_line_segment_size, (1.)..=(10000.)).prefix("Segment Length: ").logarithmic(true))
+                        ui.add(Slider::new(&mut to_draw.prediction_line_segment_size, (1.)..=(100000.)).prefix("Segment Length: ").logarithmic(true))
                     });
                 });
             });
@@ -114,7 +114,8 @@ pub fn side_panel(
                 ui.add_space(10.);
                 ui.style_mut().spacing.icon_width = 40.;
                 ui.style_mut().spacing.icon_width_inner = 20.;
-                ui.add(egui::Checkbox::new(&mut update_physics.0, "")).on_hover_text("Run");
+                ui.add(egui::Checkbox::new(&mut update_physics.update, "")).on_hover_text("Run");
+                ui.add(Slider::new(&mut update_physics.step, 1..=100_000).logarithmic(true).prefix("Speed: "));
             });
             ui.vertical_centered(|ui| {
                 ui.add_space(10.);
@@ -135,7 +136,7 @@ pub fn side_panel(
                 });
                 ui.horizontal(|ui| {
                     ui.label("Radius");
-                    ui.add(Slider::new(&mut spawn_options.radius, (1.)..=(10_000.)).logarithmic(true));
+                    ui.add(Slider::new(&mut spawn_options.radius, (1.)..=(1_000_000.)).logarithmic(true));
                 });
                 if ui.button("Spawn").clicked() {
                     spawn_event_writer.send(*spawn_options);
