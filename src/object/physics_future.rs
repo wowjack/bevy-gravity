@@ -1,6 +1,6 @@
-use std::{sync::{mpsc::{Sender, self, Receiver}, Arc, Mutex}, thread::{self, JoinHandle}, collections::{HashMap, VecDeque}, time::Duration};
+use std::{sync::{mpsc::{Sender, self, Receiver}, Arc, Mutex}, thread::{self, JoinHandle}, collections::VecDeque, time::Duration};
 
-use bevy::{prelude::*, ecs::system::Resource};
+use bevy::{prelude::*, ecs::system::Resource, utils::hashbrown::HashMap};
 
 use super::object::MassiveObject;
 
@@ -91,10 +91,10 @@ fn physics_worker(
 
 
 fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<HashMap<Entity, VecDeque<PhysicsState>>>>) {
-    //println!("Doing physics frame");
+    //let now = std::time::Instant::now();
     for i in 0..objects.len() {
-        let (_, c2) = objects.split_at_mut(i);
-        let (object, c2) = c2.split_first_mut().unwrap();
+        let c2 = &mut objects[i..];
+        let Some((object, c2)) = c2.split_first_mut() else { continue };
 
         for other_obj in c2.iter_mut() {
             let force = G * object.mass * other_obj.mass / object.position.distance_squared(other_obj.position) as f64;
@@ -109,10 +109,10 @@ fn process_physics_frame(objects: &mut Vec<PhysicsObject>, future: &Arc<Mutex<Ha
     }
     let Ok(mut future) = future.lock() else { return };
     for object in objects.iter_mut() {
-        object.position += object.velocity;
+        object.position += object.velocity * TIME_STEP;
         future.entry(object.object).or_insert(VecDeque::new()).push_back(PhysicsState { position: object.position, velocity: object.velocity});
     }
-
+    //println!("{}", now.elapsed().as_micros());
 }
 
 
