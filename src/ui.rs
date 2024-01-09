@@ -9,6 +9,14 @@ use crate::object::{spawn::{SpawnObjectEvent, VisualObject}, physics_future::{Ph
 pub const SIDE_PANEL_WIDTH: f32 = 300.;
 pub const BOTTOM_PANEL_HEIGHT: f32 = 150.;
 
+#[derive(Resource, Default)]
+pub struct ToDraw {
+    pub velocity_arrow: bool,
+    pub future_path: bool,
+    pub prediction_buffer_len: usize,
+    pub prediction_line_segment_size: f32,
+    pub outline: bool
+}
 
 pub fn bottom_panel(
     mut contexts: EguiContexts,
@@ -17,7 +25,8 @@ pub fn bottom_panel(
     object_query: Query<(&Children, &MassiveObject, &Transform), Without<VisualObject>>,
     visual_query: Query<&Transform, (With<VisualObject>, Without<MassiveObject>)>,
     mut edit_object: Local<EditObjectData>,
-    mut edit_object_event_writer: EventWriter<EditObjectEvent>
+    mut edit_object_event_writer: EventWriter<EditObjectEvent>,
+    mut to_draw: ResMut<ToDraw>,
 ) {
     egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, "bottom_panel")
         .exact_height(BOTTOM_PANEL_HEIGHT)
@@ -65,7 +74,7 @@ pub fn bottom_panel(
                     });
                     ui.horizontal(|ui| {
                         ui.strong("Mass");
-                        changed = ui.add(Slider::new(&mut edit_object.mass, (1.)..=(1_000_000_000_000_000_000.)).logarithmic(true)).changed() || changed;
+                        changed = ui.add(Slider::new(&mut edit_object.mass, (1.)..=(1_000_000_000_000_000_000_000_000.)).logarithmic(true)).changed() || changed;
                     });
                     ui.horizontal(|ui| {
                         ui.strong("Radius");
@@ -75,6 +84,15 @@ pub fn bottom_panel(
                     if changed {
                         edit_object_event_writer.send(EditObjectEvent { entity: focused, data: edit_object.clone() })
                     }
+                    ui.horizontal(|ui| {
+                        ui.checkbox(&mut to_draw.future_path, "Future Path");
+                        ui.add(Slider::new(&mut to_draw.prediction_buffer_len, 1..=100_000).prefix("Length: ").logarithmic(true));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.add(Slider::new(&mut to_draw.prediction_line_segment_size, (1.)..=(10000.)).prefix("Segment Length: ").logarithmic(true))
+                    });
+                    
+                    
                 });
             });
         });
@@ -113,7 +131,7 @@ pub fn side_panel(
                 });
                 ui.horizontal(|ui| {
                     ui.label("Mass");
-                    ui.add(Slider::new(&mut spawn_options.mass, (1.)..=(1_000_000_000_000_000_000.)).logarithmic(true));
+                    ui.add(Slider::new(&mut spawn_options.mass, (1.)..=(1_000_000_000_000_000_000_000_000.)).logarithmic(true));
                 });
                 ui.horizontal(|ui| {
                     ui.label("Radius");

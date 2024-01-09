@@ -1,7 +1,6 @@
 use std::{sync::{mpsc::{Sender, self, Receiver}, Arc, Mutex}, thread::{self, JoinHandle}, collections::{HashMap, VecDeque}, time::Duration};
 
 use bevy::{prelude::*, ecs::system::Resource};
-use bevy_prototype_lyon::prelude::tess::geom::euclid::default;
 
 use super::object::MassiveObject;
 
@@ -10,7 +9,7 @@ use super::object::MassiveObject;
 
 const TIME_STEP: f32 = 0.001;
 const G: f64 = 0.0000000000667;
-const FUTURE_MAP_SIZE: usize = 1_000_000_000;
+const FUTURE_MAP_SIZE: usize = 500_000_000;
 
 /// Any time the user changes an object, a physics state change event should be thrown to make sure the physics functions correctly
 #[derive(Event, Default)]
@@ -30,14 +29,14 @@ pub fn refresh_physics(
 }
 
 pub struct PhysicsObject {
-    object: Entity,
-    position: Vec2,
-    velocity: Vec2,
-    mass: f64
+    pub object: Entity,
+    pub position: Vec2,
+    pub velocity: Vec2,
+    pub mass: f64
 }
 pub struct PhysicsState {
-    position: Vec2,
-    velocity: Vec2,
+    pub position: Vec2,
+    pub velocity: Vec2,
 }
 
 #[derive(Resource)]

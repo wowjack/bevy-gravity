@@ -20,7 +20,7 @@ pub struct ObjectsSelectedEvent {
 pub fn on_select(
     mut events: EventReader<ObjectsSelectedEvent>,
     arrow_query: Query<Entity, With<VelocityArrow>>,
-    mut event_writer: EventWriter<SpawnVelocityArrowEvent>,
+    mut arrow_event_writer: EventWriter<SpawnVelocityArrowEvent>,
     mut commands: Commands,
     mut selected_objects: ResMut<SelectedObjects>
 ) {
@@ -37,15 +37,19 @@ pub fn on_select(
             }
             selected_objects.selected = event.entities.clone();
             selected_objects.focused = None;
-            event_writer.send_batch(event.entities.iter().map(|e| SpawnVelocityArrowEvent(*e)));
+            arrow_event_writer.send_batch(event.entities.iter().map(|e| SpawnVelocityArrowEvent(*e)));
         } else {
             let new_entities: Vec<Entity> = event.entities.clone().into_iter().filter(|e| !selected_objects.selected.contains(e)).collect();
             selected_objects.selected.extend(new_entities.iter());
-            event_writer.send_batch(new_entities.into_iter().map(|e| SpawnVelocityArrowEvent(e)));
+            arrow_event_writer.send_batch(new_entities.into_iter().map(|e| SpawnVelocityArrowEvent(e)));
         }
         
         if event.entities.len() == 1 {
             selected_objects.focused = Some(event.entities[0]);
         }
     }
+}
+
+pub fn deselect() {
+
 }

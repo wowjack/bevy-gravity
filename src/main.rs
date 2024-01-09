@@ -7,8 +7,7 @@ use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::ShapePlugin;
 use object::MassiveObjectPlugin;
-use object::select::SelectedObjects;
-use ui::{SIDE_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT};
+use ui::{SIDE_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT, ToDraw};
 use zoom::{mouse_zoom, ProjectionScaleChange};
 
 mod zoom;
@@ -30,6 +29,7 @@ fn main() {
         ))
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
         .insert_resource(DraggingBackground::default())
+        .insert_resource(ToDraw::default())
         .add_event::<SelectInRectEvent>()
         .add_event::<ProjectionScaleChange>()
         .add_systems(Startup, init)
