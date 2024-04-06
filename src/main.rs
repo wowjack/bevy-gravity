@@ -50,24 +50,11 @@ pub struct MainCamera;
 
 fn init(
     mut commands: Commands,
-    window_query: Query<&Window>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>
 ) {
-    let window = window_query.single();
-
     commands.spawn((
-        Camera2dBundle {
-            camera: Camera {
-                viewport: Some(Viewport {
-                    physical_position: UVec2::ZERO,
-                    physical_size: UVec2::new(window.physical_width()-SIDE_PANEL_WIDTH as u32, window.physical_height()-BOTTOM_PANEL_HEIGHT as u32),
-                    depth: (0.0)..(1.0)
-                }),
-                ..default()
-            },
-            ..default()
-        },
+        Camera2dBundle::default(),
         MainCamera,
     )).with_children(|builder| {
         builder.spawn(BackgroundBundle::new(&mut materials, &mut meshes));
@@ -75,16 +62,21 @@ fn init(
 }
 
 
-//need to adjust the viewport whenever the window is resized.
-fn window_resize(mut events: EventReader<WindowResized>, mut camera_query: Query<&mut Camera, With<MainCamera>>) {
+//need to adjust the viewport whenever the window is resized. (these events come ever frame for some reason)
+fn window_resize(mut events: EventReader<WindowResized>, mut camera_query: Query<&mut Camera, With<MainCamera>>, window_query: Query<&Window>) {
     if events.is_empty() { return }
 
     let mut camera = camera_query.single_mut();
-
+    
     for event in events.read() {
-        camera.viewport = Some(Viewport{
-            physical_size: UVec2::new((event.width - SIDE_PANEL_WIDTH) as u32, (event.height - BOTTOM_PANEL_HEIGHT) as u32),
+
+        let Ok(window) = window_query.get(event.window) else { continue };
+        let width = ((window.width() - SIDE_PANEL_WIDTH) * window.scale_factor()) as u32;
+        let height = ((window.height() - BOTTOM_PANEL_HEIGHT) * window.scale_factor()) as u32;
+    
+        camera.viewport = Some(Viewport {
             physical_position: UVec2::ZERO,
+            physical_size: UVec2::new(width, height),
             depth: (0.0)..(1.0)
         });
     }
