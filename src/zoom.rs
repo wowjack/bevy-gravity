@@ -44,5 +44,5 @@ pub fn mouse_zoom(
             - mouse_normalized_screen_pos * proj_size * proj.scale)
             .extend(pos.translation.z);
     }
-    event_writer.send(ProjectionScaleChange)
+    event_writer.send(ProjectionScaleChange);
 }

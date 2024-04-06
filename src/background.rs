@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-use bevy_mod_picking::{prelude::*, events::{Pointer, DragStart}};
+use bevy_mod_picking::prelude::*;
 
-use crate::{MainCamera, object::{object::MassiveObject, select::ObjectsSelectedEvent, spawn::VisualObject}, zoom::ProjectionScaleChange};
+use crate::{MainCamera, object::{object::MassiveObject, select::ObjectsSelectedEvent}, zoom::ProjectionScaleChange};
 
 
 #[derive(Resource, Default)]
@@ -33,8 +33,8 @@ impl BackgroundBundle {
     pub fn new(materials: &mut ResMut<Assets<ColorMaterial>>, meshes: &mut ResMut<Assets<Mesh>>) -> Self {
         Self { 
             material_mesh_bundle: MaterialMesh2dBundle{
-                mesh: meshes.add(shape::Quad::new(Vec2::new(1., 1.)).into()).into(),
-                material: materials.add(Color::rgba(1.,1.,1.,0.).into()).into(),
+                mesh: meshes.add(bevy_math::primitives::Rectangle::new(1., 1.)).into(),
+                material: materials.add(Color::rgba(1.,1.,1.,0.)).into(),
                 transform: Transform::from_scale(Vec3::new(5000., 5000., 1.)).with_translation(Vec3::new(0.,0.,-1000.)),
                 visibility: Visibility::Visible,
                 ..default()
@@ -50,7 +50,7 @@ impl BackgroundBundle {
 #[derive(Component)]
 pub struct DragRectangle;
 
-fn drag_start(event: Listener<Pointer<DragStart>>, mut data: ResMut<DraggingBackground>, mut commands: Commands, keyboard: Res<Input<KeyCode>>) {
+fn drag_start(event: Listener<Pointer<DragStart>>, mut data: ResMut<DraggingBackground>, mut commands: Commands, keyboard: Res<ButtonInput<KeyCode>>) {
     let Some(start_pos) = event.event.hit.position else { return };
     data.start = start_pos.truncate();
     data.change = Vec2::ZERO;

@@ -1,7 +1,6 @@
 use bevy::prelude::*;
-use bevy_mod_picking::prelude::*;
 
-use super::{velocity_arrow::{SpawnVelocityArrowEvent, VelocityArrow}, spawn::VisualObject};
+use super::velocity_arrow::{SpawnVelocityArrowEvent, VelocityArrow};
 
 #[derive(Resource, Default)]
 pub struct SelectedObjects {
@@ -50,6 +49,4 @@ pub fn on_select(
     }
 }
 
-pub fn deselect() {
 
-}

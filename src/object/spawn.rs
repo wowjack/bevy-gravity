@@ -57,8 +57,8 @@ fn visual_object_select(
     mut event: ListenerMut<Pointer<Select>>,
     object_query: Query<&Parent, With<VisualObject>>,
     mut select_event_writer: EventWriter<ObjectsSelectedEvent>,
-    mut commands: Commands,
-    input: Res<Input<KeyCode>>,
+    mut _commands: Commands,
+    input: Res<ButtonInput<KeyCode>>,
 ) {
     event.stop_propagation();
     let Ok(parent) = object_query.get(event.target) else { return };

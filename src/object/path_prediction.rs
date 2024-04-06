@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::{MainCamera, ui::ToDraw};
 
-use super::{physics_future::PhysicsFuture, object::MassiveObject, select::SelectedObjects};
+use super::{physics_future::PhysicsFuture, select::SelectedObjects};
 
 
 
@@ -21,7 +21,7 @@ pub fn spawn_path_prediction(
 
     let Some(focused) = selected_objects.focused else { return };
 
-    let Ok(projection) = projection_query.get_single() else { return };
+    let Ok(_projection) = projection_query.get_single() else { return };
     let mut previously_recorded_point = Vec2::INFINITY;
     let mut point_list: Vec<Vec2> = vec![];
     for state in physics_future.future.lock().unwrap().get(&focused).unwrap_or(&VecDeque::new()).iter() {

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_mod_picking::{prelude::*, events::{Pointer, Drag}};
+use bevy_mod_picking::prelude::*;
 
 use crate::MainCamera;
 

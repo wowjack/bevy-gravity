@@ -41,7 +41,7 @@ fn init(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut game_resources: ResMut<ObjectResources>,
 ) {
-    game_resources.circle_mesh = Some(meshes.add(shape::Circle {radius: 0.5, vertices: 100}.into()).into());
+    game_resources.circle_mesh = Some(meshes.add(bevy_math::primitives::Circle::new(0.5)).into());
     game_resources.circle_material = Some(materials.add(ColorMaterial::from(Color::PURPLE)));
 }
 
