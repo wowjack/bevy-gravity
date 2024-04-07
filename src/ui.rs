@@ -36,7 +36,7 @@ pub fn bottom_panel(
                     ui.add_space(5.);
                     ui.strong("Buffer Size");
                     ui.add_space(5.);
-                    ui.strong(format!("{:?}", physics_future.future.lock().unwrap().values().next().unwrap_or(&VecDeque::new()).len()));
+                    ui.strong(format!("{:?}", physics_future.len()));
                 });
                 ui.vertical(|ui| {
                     ui.add_space(5.);

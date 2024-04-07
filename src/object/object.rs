@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{spawn::VisualObject, physics_future::PhysicsStateChangeEvent};
+use super::{physics_future::{PhysicsStateChangeEvent, UpdatePhysics}, spawn::VisualObject};
 
 /*
 Spatial bundle at the top level
