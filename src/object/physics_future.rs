@@ -1,6 +1,7 @@
 use std::{sync::{mpsc::{Sender, self, Receiver}, Arc, Mutex}, thread::{self, JoinHandle}, collections::VecDeque, time::Duration};
 
 use bevy::{ecs::{schedule::ScheduleNotInitialized, system::Resource}, prelude::*, utils::hashbrown::HashMap};
+use itertools::Itertools;
 
 use super::object::MassiveObject;
 
@@ -197,8 +198,28 @@ impl ObjectFuture {
     }
 
     /// Get the future path of the object as a linestrip
-    /// get the angle between the last two points and the new point to determine if it should be drawn. How many radians?
-    pub fn get_future_linestrip(&self, len: usize) -> Vec<Vec2> {
+    /// Perhaps spawn a background thread that writes the points to a vec resource
+    pub fn get_future_linestrip(&self, buffer_len: usize, segment_len_squared: f32) -> Vec<Vec2> {
+
+        let Some((_, PhysicsState {position: mut last_recorded_point, ..})) = self.future.front() else { return vec![] };
+        let points = self.future
+            .iter()
+            .map(|(_, state)| state.position)
+            .coalesce(|p2, p3| {
+                let angle = (last_recorded_point - p2).angle_between(p3 - p2);
+                if angle.abs() > std::f32::consts::PI - 0.05 || last_recorded_point.distance_squared(p2) < segment_len_squared {
+                    return Ok(p3)
+                } else {
+                    last_recorded_point = p2;
+                    return Err((p2, p3))
+                }
+            }).take(buffer_len)
+            .collect_vec();
+
+        return points;
+
+
+        /*
         let mut points = Vec::new();
         points.extend(self.future.iter().map(|(_, s)| s.position).take(2));
         if points.len() < 2 { return points }
@@ -227,9 +248,21 @@ impl ObjectFuture {
             points.push(last_state.position);
         }
         return points
+        */
     }
 
     pub fn len(&self) -> usize {
         self.future.len()
     }
+    
+}
+
+
+/// Receive a linestrip representing the future path an object will take.
+/// Work in the background to strategically remove points from the line strip
+/// Iteratively add the culled linestrip to a shared buffer resource
+/// When done processing the path, check if more has been added to the path
+/// Periodically check if there has been a physics update.
+struct PathPredictionWorker {
+
 }

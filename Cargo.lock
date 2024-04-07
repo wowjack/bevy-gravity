@@ -331,6 +331,7 @@ dependencies = [
  "bevy_mod_picking",
  "bevy_prototype_lyon",
  "egui_extras",
+ "itertools",
 ]
 
 [[package]]
