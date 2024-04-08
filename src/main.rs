@@ -1,19 +1,16 @@
-use background::{BackgroundBundle, DraggingBackground, SelectInRectEvent, rect_select, scale_background};
 use bevy::prelude::*;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::render::camera::Viewport;
 use bevy::window::WindowResized;
 use bevy_egui::EguiPlugin;
+use bevy_math::DVec2;
 use bevy_mod_picking::prelude::*;
-use bevy_prototype_lyon::prelude::ShapePlugin;
-use object::MassiveObjectPlugin;
-use ui::{SIDE_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT, ToDraw};
-use zoom::{mouse_zoom, ProjectionScaleChange};
+use bevy_prototype_lyon::prelude::*;
+use ui::SIDE_PANEL_WIDTH;
+use zoom::{mouse_zoom, process_scale_change, ScaleChangeEvent};
 
 mod zoom;
-mod object;
 mod ui;
-mod background;
 
 
 fn main() {
@@ -25,54 +22,80 @@ fn main() {
             ShapePlugin,
             FrameTimeDiagnosticsPlugin,
             //LogDiagnosticsPlugin::default(),
-            MassiveObjectPlugin
         ))
+        .add_event::<ScaleChangeEvent>()
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
-        .insert_resource(DraggingBackground::default())
-        .insert_resource(ToDraw::default())
-        .add_event::<SelectInRectEvent>()
-        .add_event::<ProjectionScaleChange>()
         .add_systems(Startup, init)
         .add_systems(Update, (
             window_resize.before(mouse_zoom),
-            mouse_zoom.before(scale_background),
-            scale_background,
-            ui::bottom_panel,
+            mouse_zoom,
             ui::side_panel,
-            rect_select,
+            process_scale_change,
         ))
         .run()
 }
 
 
+/// Component representing the "state" of the camera
+/// This is not the actual state of the camera since I want to allow for correct rendering of far away objects.
+/// In reality the camera / projection does not move or scale, instead everything else does.
+/// This way objects are always close to the origin when you can see them, so there isn't any float precision rendering nonsense
+#[derive(Component, Clone)]
+pub struct CameraState {
+    // viewing far-away objects may still be a problem.
+    // when a faraway object is translated to the origin, the object will render correctly but move in clearly discrete steps.
+    // Same problem, different issue. It all stems from floating point precision
+    position: DVec2, // maybe change to multiple precision in the future (if gravity calculation is optimized enough)
+    scale: f32, // f32 should be fine for scale
+}
+impl Default for CameraState {
+    fn default() -> Self {
+        Self { position: Default::default(), scale: 1. }
+    }
+}
+
 #[derive(Component)]
-pub struct MainCamera;
+pub struct MassiveObject {
+    position: DVec2
+}
 
 fn init(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>
 ) {
     commands.spawn((
         Camera2dBundle::default(),
-        MainCamera,
-    )).with_children(|builder| {
-        builder.spawn(BackgroundBundle::new(&mut materials, &mut meshes));
-    });
+        CameraState::default(),
+    ));
+
+    commands.spawn((
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Circle { radius: 15., center: Vec2::splat(50.) }),
+            ..default()
+        },
+        Fill::color(Color::BISQUE),
+        MassiveObject { position: DVec2::splat(50.) }
+    ));
+
+    commands.spawn((
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Circle { radius: 30., center: Vec2::splat(-50.) }),
+            ..default()
+        },
+        Fill::color(Color::BLUE),
+        MassiveObject { position: DVec2::splat(-50.) }
+    ));
 }
 
 
 //need to adjust the viewport whenever the window is resized. (these events come ever frame for some reason)
-fn window_resize(mut events: EventReader<WindowResized>, mut camera_query: Query<&mut Camera, With<MainCamera>>, window_query: Query<&Window>) {
-    if events.is_empty() { return }
-
+fn window_resize(mut events: EventReader<WindowResized>, mut camera_query: Query<&mut Camera, With<CameraState>>, window_query: Query<&Window>) {
     let mut camera = camera_query.single_mut();
     
     for event in events.read() {
 
         let Ok(window) = window_query.get(event.window) else { continue };
         let width = ((window.width() - SIDE_PANEL_WIDTH) * window.scale_factor()) as u32;
-        let height = ((window.height() - BOTTOM_PANEL_HEIGHT) * window.scale_factor()) as u32;
+        let height = window.physical_height();
     
         camera.viewport = Some(Viewport {
             physical_position: UVec2::ZERO,

@@ -1,15 +1,20 @@
 use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}};
+use bevy_math::DVec2;
 
-use crate::ui::{SIDE_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT};
+use crate::{ui::SIDE_PANEL_WIDTH, CameraState, MassiveObject};
 
+
+/// Event denoting that the view scale has changed.
+/// Is this even required if objects are redrawn every frame?
 #[derive(Event)]
-pub struct ProjectionScaleChange;
+pub struct ScaleChangeEvent(f32);
+
 
 pub fn mouse_zoom(
-    mut camera_query: Query<(&mut OrthographicProjection, &mut Transform)>,
+    mut camera_query: Query<(&mut CameraState, &Camera, &GlobalTransform)>,
     mut scroll_events: EventReader<MouseWheel>,
     primary_window: Query<&Window>,
-    mut event_writer: EventWriter<ProjectionScaleChange>,
+    mut event_writer: EventWriter<ScaleChangeEvent>,
 ) {
     let pixels_per_line = 100.; // Maybe make configurable?
     let scroll = scroll_events
@@ -24,25 +29,36 @@ pub fn mouse_zoom(
         return;
     }
 
-    let (mut proj, mut pos) = camera_query.single_mut();    
+    let (mut state, camera, gtrans) = camera_query.single_mut();    
     let window = primary_window.single();
-    let window_size = Vec2::new(window.width() - SIDE_PANEL_WIDTH, window.height() - BOTTOM_PANEL_HEIGHT);
-    let mouse_normalized_screen_pos = window
-        .cursor_position()
-        .map(|cursor_pos| (cursor_pos / window_size) * 2. - Vec2::ONE)
-        .map(|p| Vec2::new(p.x, -p.y));
-
-    let old_scale = proj.scale;
-    proj.scale = proj.scale * (1. + -scroll * 0.001);
+    
+    let unscaled_cursor_pos = camera.viewport_to_world_2d(gtrans, window.cursor_position().unwrap()).unwrap();
+    
+    let old_scale = state.scale;
+    state.scale = state.scale * (1. + scroll * 0.001);
 
     // Move the camera position to normalize the projection window
-    if let Some(mouse_normalized_screen_pos) = mouse_normalized_screen_pos {
-        let proj_size = proj.area.max / old_scale;
-        let mouse_world_pos = pos.translation.truncate()
-            + mouse_normalized_screen_pos * proj_size * old_scale;
-        pos.translation = (mouse_world_pos
-            - mouse_normalized_screen_pos * proj_size * proj.scale)
-            .extend(pos.translation.z);
+    let position_difference = (unscaled_cursor_pos / state.scale) - (unscaled_cursor_pos / old_scale);
+    state.position -= position_difference.as_dvec2();
+    
+    event_writer.send(ScaleChangeEvent(state.scale));
+}
+
+
+
+
+
+
+/// TEMPORARY, JUST FOR DEV TESTING
+pub fn process_scale_change(mut scale_change_events: EventReader<ScaleChangeEvent>, mut object_query: Query<(&mut Transform, &MassiveObject)>, camera_query: Query<&CameraState>) {
+    if scale_change_events.is_empty() { return }
+
+    let camera = camera_query.single();
+    
+    for e in scale_change_events.read() {
+        for (mut trans, object) in object_query.iter_mut() {
+            trans.translation = (object.position - camera.position).as_vec2().extend(0.) * e.0;
+            trans.scale = Vec3::new(e.0, e.0, 1.);
+        }
     }
-    event_writer.send(ProjectionScaleChange);
 }
