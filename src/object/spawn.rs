@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_mod_picking::prelude::*;
 
-use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics_future::PhysicsStateChangeEvent, select::ObjectsSelectedEvent};
+use super::{object_bundle::MassiveObjectBundle, object::MassiveObject, ObjectResources, physics::physics_future::PhysicsStateChangeEvent, select::ObjectsSelectedEvent};
 
 
 #[derive(Event, Copy, Clone)]

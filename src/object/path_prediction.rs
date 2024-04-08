@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::ui::ToDraw;
-use super::{physics_future::{ObjectFuture, PhysicsFuture}, select::SelectedObjects};
+use super::{physics::physics_future::{ObjectFuture, PhysicsFuture}, select::SelectedObjects};
 
 
 

@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy_egui::{egui::{panel, Checkbox, DragValue, Layout, ScrollArea, SidePanel, Slider, TopBottomPanel, Align}, EguiContexts};
 
-use crate::object::{spawn::{SpawnObjectEvent, VisualObject}, physics_future::{PhysicsFuture, UpdatePhysics}, select::SelectedObjects, object::{MassiveObject, EditObjectData, EditObjectEvent}};
+use crate::object::{spawn::{SpawnObjectEvent, VisualObject}, physics::physics_future::{PhysicsFuture, UpdatePhysics}, select::SelectedObjects, object::{MassiveObject, EditObjectData, EditObjectEvent}};
 
 pub const SIDE_PANEL_WIDTH: f32 = 300.;
 pub const BOTTOM_PANEL_HEIGHT: f32 = 150.;
@@ -90,7 +90,7 @@ pub fn bottom_panel(
                         ui.add(Slider::new(&mut to_draw.prediction_buffer_len, 1..=1_000_000).prefix("Length: ").logarithmic(true));
                     });
                     ui.horizontal(|ui| {
-                        ui.add(Slider::new(&mut to_draw.prediction_line_segment_size, (1.)..=(100000.)).prefix("Segment Length: ").logarithmic(true))
+                        ui.add(Slider::new(&mut to_draw.prediction_line_segment_size, (1.)..=(100000.)).prefix("Segment Length: "));
                     });
                 });
             });

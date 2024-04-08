@@ -4,7 +4,7 @@ use bevy_prototype_lyon::{entity::{ShapeBundle, Path}, geometry::GeometryBuilder
 
 use crate::MainCamera;
 
-use super::{object::MassiveObject, physics_future::PhysicsStateChangeEvent};
+use super::{object::MassiveObject, physics::physics_future::PhysicsStateChangeEvent};
 
 const VELOCITY_SCALE: f32 = 100.;
 
@@ -27,6 +27,7 @@ pub fn spawn_velocity_arrow(
     projection_query: Query<&OrthographicProjection, With<MainCamera>>,
     object_query: Query<&MassiveObject>,
 ) {
+    return;
     if events.is_empty() { return }
 
     let projection = projection_query.single();
@@ -82,6 +83,7 @@ pub fn update_velocity_arrow(
     mut arrowshaft_query: Query<(&mut Path, &mut Stroke, &ArrowShaft)>,
     projection_query: Query<&OrthographicProjection, With<MainCamera>>,
 ) {
+    return;
     if arrowtip_query.is_empty() { return }
 
     let projection = projection_query.single();

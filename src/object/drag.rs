@@ -3,7 +3,7 @@ use bevy_mod_picking::prelude::*;
 
 use crate::MainCamera;
 
-use super::{object::MassiveObject, physics_future::PhysicsStateChangeEvent};
+use super::{object::MassiveObject, physics::physics_future::PhysicsStateChangeEvent};
 
 #[derive(Event)]
 pub struct ObjectDraggedEvent {
