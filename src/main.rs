@@ -7,10 +7,11 @@ use bevy_math::DVec2;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use ui::SIDE_PANEL_WIDTH;
-use zoom::{mouse_zoom, process_scale_change, ScaleChangeEvent};
+use zoom::{mouse_zoom, ScaleChangeEvent};
 
 mod zoom;
 mod ui;
+mod massive_object;
 
 //barnes-hut
 
@@ -31,7 +32,6 @@ fn main() {
             window_resize.before(mouse_zoom),
             mouse_zoom,
             ui::side_panel,
-            process_scale_change,
         ))
         .run()
 }
@@ -55,35 +55,12 @@ impl Default for CameraState {
     }
 }
 
-#[derive(Component)]
-pub struct MassiveObject {
-    position: DVec2
-}
-
 fn init(
     mut commands: Commands,
 ) {
     commands.spawn((
         Camera2dBundle::default(),
         CameraState::default(),
-    ));
-
-    commands.spawn((
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Circle { radius: 15., center: Vec2::splat(50.) }),
-            ..default()
-        },
-        Fill::color(Color::BISQUE),
-        MassiveObject { position: DVec2::splat(50.) }
-    ));
-
-    commands.spawn((
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Circle { radius: 30., center: Vec2::splat(-50.) }),
-            ..default()
-        },
-        Fill::color(Color::BLUE),
-        MassiveObject { position: DVec2::splat(-50.) }
     ));
 }
 

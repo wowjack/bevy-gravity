@@ -1,7 +1,7 @@
 use bevy::{prelude::*, input::mouse::{MouseWheel, MouseScrollUnit}};
 use bevy_math::DVec2;
 
-use crate::{ui::SIDE_PANEL_WIDTH, CameraState, MassiveObject};
+use crate::CameraState;
 
 
 /// Event denoting that the view scale has changed.
@@ -47,7 +47,7 @@ pub fn mouse_zoom(
 
 
 
-
+/*
 /// TEMPORARY, JUST FOR DEV TESTING
 pub fn process_scale_change(mut scale_change_events: EventReader<ScaleChangeEvent>, mut object_query: Query<(&mut Transform, &MassiveObject)>, camera_query: Query<&CameraState>) {
     if scale_change_events.is_empty() { return }
@@ -61,3 +61,4 @@ pub fn process_scale_change(mut scale_change_events: EventReader<ScaleChangeEven
         }
     }
 }
+*/
