@@ -32,7 +32,8 @@ pub fn mouse_zoom(
     let (mut state, camera, gtrans) = camera_query.single_mut();    
     let window = primary_window.single();
     
-    let unscaled_cursor_pos = camera.viewport_to_world_2d(gtrans, window.cursor_position().unwrap()).unwrap();
+    let Some(cursor_pos) = window.cursor_position() else { return };
+    let unscaled_cursor_pos = camera.viewport_to_world_2d(gtrans, cursor_pos).unwrap();
     
     let old_scale = state.scale;
     state.scale = state.scale * (1. + scroll * 0.001);
@@ -43,8 +44,6 @@ pub fn mouse_zoom(
     
     event_writer.send(ScaleChangeEvent(state.scale));
 }
-
-
 
 
 
