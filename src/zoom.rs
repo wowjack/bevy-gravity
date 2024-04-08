@@ -33,7 +33,7 @@ pub fn mouse_zoom(
     let window = primary_window.single();
     
     let Some(cursor_pos) = window.cursor_position() else { return };
-    let unscaled_cursor_pos = camera.viewport_to_world_2d(gtrans, cursor_pos).unwrap();
+    let Some(unscaled_cursor_pos) = camera.viewport_to_world_2d(gtrans, cursor_pos) else { return };
     
     let old_scale = state.scale;
     state.scale = state.scale * (1. + scroll * 0.001);
