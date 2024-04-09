@@ -7,7 +7,10 @@ use crate::CameraState;
 /// Event denoting that the view scale has changed.
 /// Is this even required if objects are redrawn every frame?
 #[derive(Event)]
-pub struct ScaleChangeEvent(f32);
+pub struct ScaleChangeEvent {
+    pub old_scale: f32,
+    pub new_scale: f32,
+}
 
 
 pub fn mouse_zoom(
@@ -42,23 +45,8 @@ pub fn mouse_zoom(
     let position_difference = (unscaled_cursor_pos / state.scale) - (unscaled_cursor_pos / old_scale);
     state.position -= position_difference.as_dvec2();
     
-    event_writer.send(ScaleChangeEvent(state.scale));
+    event_writer.send(ScaleChangeEvent { old_scale, new_scale: state.scale });
 }
 
 
 
-/*
-/// TEMPORARY, JUST FOR DEV TESTING
-pub fn process_scale_change(mut scale_change_events: EventReader<ScaleChangeEvent>, mut object_query: Query<(&mut Transform, &MassiveObject)>, camera_query: Query<&CameraState>) {
-    if scale_change_events.is_empty() { return }
-
-    let camera = camera_query.single();
-    
-    for e in scale_change_events.read() {
-        for (mut trans, object) in object_query.iter_mut() {
-            trans.translation = (object.position - camera.position).as_vec2().extend(0.) * e.0;
-            trans.scale = Vec3::new(e.0, e.0, 1.);
-        }
-    }
-}
-*/

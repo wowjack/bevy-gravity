@@ -330,6 +330,7 @@ dependencies = [
  "bevy_math",
  "bevy_mod_picking",
  "bevy_prototype_lyon",
+ "crossbeam-channel",
  "egui_extras",
  "itertools",
  "quadtree_rs",

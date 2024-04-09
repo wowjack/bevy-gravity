@@ -6,12 +6,14 @@ use bevy_egui::EguiPlugin;
 use bevy_math::DVec2;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::*;
+use pseudo_camera::CameraState;
 use ui::SIDE_PANEL_WIDTH;
 use zoom::{mouse_zoom, ScaleChangeEvent};
 
 mod zoom;
 mod ui;
 mod massive_object;
+mod pseudo_camera;
 
 //barnes-hut
 
@@ -37,23 +39,6 @@ fn main() {
 }
 
 
-/// Component representing the "state" of the camera
-/// This is not the actual state of the camera since I want to allow for correct rendering of far away objects.
-/// In reality the camera / projection does not move or scale, instead everything else does.
-/// This way objects are always close to the origin when you can see them, so there isn't any float precision rendering nonsense
-#[derive(Component, Clone)]
-pub struct CameraState {
-    // viewing far-away objects may still be a problem.
-    // when a faraway object is translated to the origin, the object will render correctly but move in clearly discrete steps.
-    // Same problem, different issue. It all stems from floating point precision
-    position: DVec2, // maybe change to multiple precision in the future (if gravity calculation is optimized enough)
-    scale: f32, // f32 should be fine for scale
-}
-impl Default for CameraState {
-    fn default() -> Self {
-        Self { position: Default::default(), scale: 1. }
-    }
-}
 
 fn init(
     mut commands: Commands,
@@ -63,6 +48,9 @@ fn init(
         CameraState::default(),
     ));
 }
+
+
+
 
 
 //need to adjust the viewport whenever the window is resized. (these events come ever frame for some reason)
