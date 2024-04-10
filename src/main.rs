@@ -60,8 +60,8 @@ fn init(
 }
 
 fn spawns(mut commands: Commands, mut ew: EventWriter<ChangeEvent>) {
-    let obj1 = MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*30., mass: 1. };
-    let obj2 = MassiveObject { position: DVec2::X*-50., velocity: DVec2::ZERO, mass: 1000000000000. };
+    let obj1 = MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*10., mass: 1. };
+    let obj2 = MassiveObject { position: DVec2::X*-50., velocity: DVec2::ZERO, mass: 100000000000. };
     let e1 = commands.spawn(VisualObjectBundle::new(obj1.clone(), 2., Color::BLUE)).id();
     let e2 = commands.spawn(VisualObjectBundle::new(obj2.clone(), 15., Color::ORANGE_RED)).id();
     ew.send_batch(vec![

@@ -29,7 +29,7 @@ pub fn update_object_positions(
         transform.scale = Vec3::splat(camera.scale);
     }
 
-    println!("{}", sim_state.timer.times_finished_this_tick());
+    // About 30 updates per second
     sim_state.current_time += sim_state.run_speed * sim_state.timer.times_finished_this_tick() as u64;
 }
 
