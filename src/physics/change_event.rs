@@ -1,3 +1,5 @@
+use self::visual_object::SimulationState;
+
 use super::*;
 
 /*
@@ -23,8 +25,9 @@ pub enum Change {
 
 
 /// Read change events and notify the physics worker of the change
-pub fn process_change_event(mut events: EventReader<ChangeEvent>, future: Res<PhysicsFuture>) {
+pub fn process_change_event(mut events: EventReader<ChangeEvent>, future: Res<PhysicsFuture>, mut sim_state: ResMut<SimulationState>) {
     if events.is_empty() { return }
 
     future.send_changes(events.read().map(|e| e.clone()).collect_vec());
+    sim_state.current_time = 0;
 }

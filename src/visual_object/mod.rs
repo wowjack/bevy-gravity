@@ -12,18 +12,25 @@ pub use update::*;
 mod drag;
 pub use drag::*;
 
+/// Bundle for easily creating objects.
 mod bundle;
 pub use bundle::*;
 
+/// Controls the world's communication with the physics worker.
 mod sim_state;
 pub use sim_state::*;
+
+/// The appearance of objects in the world
+mod appearance;
+pub use appearance::*;
 
 
 
 pub struct VisualObjectPlugin;
 impl Plugin for VisualObjectPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(SimulationState::default())
-            .add_systems(Update, (update_object_positions));
+        app.add_event::<AppearanceChangeEvent>()
+            .insert_resource(SimulationState::default())
+            .add_systems(Update, (update_object_positions, process_appearance_change_event));
     }
 }

@@ -70,7 +70,6 @@ Maybe have a thread lock a mutex to set a flag indicating which deque is accessi
 #[derive(Default, Clone)]
 pub struct FutureMap {
     map: Arc<RwLock<HashMap<Entity, ObjectFuture>>>,
-    current_time: u64
 }
 impl FutureMap {
     /// Add a new physics frame to the future
@@ -121,6 +120,7 @@ impl FutureMap {
             }
         }
         map.iter().map(|(e, of)| (*e, of.current_state.clone())).collect_vec()
+
     }
 }
 
@@ -139,15 +139,15 @@ impl FutureMap {
 /// If just recording a position list
 /// Velocity at pos[i].vel = pos[i-1] - pos[i+1].vel
 /// But this doesn't consider time difference between points
+#[derive(Debug)]
 pub struct ObjectFuture {
     entity: Entity,
     future: VecDeque<FutureFrame>,
 
     /// Current time according to the object's future.
-    /// This is different from the simulation time since the simulation interpolates between discrete future frames
-    /// Any changes made to an object are done so according to this current time.
-    /// This preserves simulation consistency across changes, so if a change is done then undone, 
-    /// the future remains the same (mostly; I'm not going to worry about floating point arithmetic non-associativity).
+    /// This should always keep up with simulation time
+    /// MIGHT AS WELL HAVE CURRENT STATE BE THE INTERPOLATED RETURN VALUE
+    /// There is no simulation consistency unless you save a snapshot of ALL positions and velocities at a certain time
     current_time: u64,
     pub current_state: MassiveObject,
 }
@@ -179,14 +179,21 @@ impl ObjectFuture {
         }
 
         // The exact time doesn't exist in the future.
-        // Interpolate a position based on current and next position and time.
+        // EXPERIMENTAL STUFF GOING ON. INTERPOLATING VELOCITY
         let next_state = self.future.front().unwrap();
+
         let time_frac = (time - self.current_time) as f64 / (next_state.time - self.current_time) as f64;
-        let pos_diff = next_state.position - self.current_state.position;
-        let new_pos = self.current_state.position + pos_diff * time_frac;
+        //let pos_diff = next_state.position - self.current_state.position;
+        let vel_diff = next_state.velocity - self.current_state.velocity;
+        
+        self.current_time = time;
+        //self.current_state.position += pos_diff * time_frac;
+        self.current_state.velocity += vel_diff * time_frac; // Should velocity be interpolated
+        self.current_state.position += self.current_state.velocity * TIME_STEP;
+        
         return FutureFrame {
-            time: time,
-            position: new_pos,
+            time: self.current_time,
+            position: self.current_state.position,
             velocity: self.current_state.velocity,// Should velocity be interpolated as well?
                                                   // I figured editing objects should only change the actual stored values in the future.
                                                   // If interpolated values are modified, resetting them to the interpolated value will not reflect the same simulation behavior
@@ -206,7 +213,8 @@ impl ObjectFuture {
     }
 
     pub fn clear_future(&mut self) {
-        self.future.clear()
+        self.future.clear();
+        self.current_time = 0;
     }
 
     pub fn len(&self) -> usize {

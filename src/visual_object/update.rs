@@ -12,7 +12,9 @@ pub fn update_object_positions(
     camera_query: Query<&CameraState>,
     future: Res<PhysicsFuture>,
     mut sim_state: ResMut<SimulationState>,
+    delta_time: Res<Time>,
 ) {
+    sim_state.timer.tick(delta_time.delta());
     let camera = camera_query.single();
 
     // Update the massive objects
@@ -27,6 +29,7 @@ pub fn update_object_positions(
         transform.scale = Vec3::splat(camera.scale);
     }
 
-    sim_state.current_time += sim_state.run_speed;
+    println!("{}", sim_state.timer.times_finished_this_tick());
+    sim_state.current_time += sim_state.run_speed * sim_state.timer.times_finished_this_tick() as u64;
 }
 

@@ -5,23 +5,15 @@ use crate::physics::MassiveObject;
 
 use super::*;
 
-#[derive(Bundle)]
+#[derive(Bundle, Default)]
 pub struct VisualObjectBundle {
     object: MassiveObject,
-    shape_bundle: ShapeBundle
-}
-impl Default for VisualObjectBundle {
-    fn default() -> Self {
-        Self {
-            object: Default::default(),
-            shape_bundle: ShapeBundle {
-                path: GeometryBuilder::build_as(&shapes::RegularPolygon { sides: 30, center: Vec2::ZERO, feature: RegularPolygonFeature::Radius(1.)}),
-                ..Default::default()
-            }
-        }
-    }
+    appearance: AppearanceBundle
 }
 impl VisualObjectBundle {
+    pub fn new(object: MassiveObject, radius: f32, color: Color) -> Self {
+        Self { object, appearance: AppearanceBundle::new(radius, color) }
+    }
     pub fn from_object(object: MassiveObject) -> Self {
         Self { object, ..default() }
     }
