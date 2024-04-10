@@ -13,5 +13,5 @@ egui_extras = "0.27.2"
 bevy_mod_picking = { version = "0.18.2", features=["selection"] }
 bevy_prototype_lyon = "0.11.0"
 itertools = "0.12.1"
-quadtree_rs = "0.1.3"
 crossbeam-channel = "0.5.12"
+nbody_barnes_hut = "0.1.0"

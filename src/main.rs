@@ -6,14 +6,20 @@ use bevy_egui::EguiPlugin;
 use bevy_math::DVec2;
 use bevy_mod_picking::prelude::*;
 use bevy_prototype_lyon::prelude::*;
+use itertools::Itertools;
+use physics::{ChangeEvent, MassiveObject};
 use pseudo_camera::CameraState;
-use ui::SIDE_PANEL_WIDTH;
+use ui::{ObjectSpawnOptions, SIDE_PANEL_WIDTH};
+use visual_object::VisualObjectBundle;
 use zoom::{mouse_zoom, ScaleChangeEvent};
+
+
 
 mod zoom;
 mod ui;
-mod massive_object;
+mod visual_object;
 mod pseudo_camera;
+mod physics;
 
 //barnes-hut
 
@@ -26,10 +32,14 @@ fn main() {
             ShapePlugin,
             FrameTimeDiagnosticsPlugin,
             //LogDiagnosticsPlugin::default(),
+            physics::PhysicsPlugin,
+            visual_object::VisualObjectPlugin
         ))
         .add_event::<ScaleChangeEvent>()
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
+        .insert_resource(ObjectSpawnOptions::default())
         .add_systems(Startup, init)
+        .add_systems(PostStartup, spawns)
         .add_systems(Update, (
             window_resize.before(mouse_zoom),
             mouse_zoom,
@@ -47,6 +57,17 @@ fn init(
         Camera2dBundle::default(),
         CameraState::default(),
     ));
+}
+
+fn spawns(mut commands: Commands, mut ew: EventWriter<ChangeEvent>) {
+    let obj1 = MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*30., mass: 1. };
+    let obj2 = MassiveObject { position: DVec2::X*-50., velocity: DVec2::ZERO, mass: 1000000000000. };
+    let e1 = commands.spawn(VisualObjectBundle::from_object(obj1.clone())).id();
+    let e2 = commands.spawn(VisualObjectBundle::from_object(obj2.clone())).id();
+    ew.send_batch(vec![
+        ChangeEvent {entity: e1, change: physics::Change::CreateObject(obj1) },
+        ChangeEvent { entity: e2, change: physics::Change::CreateObject(obj2) }
+    ]);
 }
 
 
