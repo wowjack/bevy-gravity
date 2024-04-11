@@ -24,6 +24,11 @@ pub fn update_object_positions(
         object.velocity = frame.velocity;
     }
 
+
+    //TODO: Only update objects if their position is within the camera frame.
+    //      Objects that are not in the frame should have no visibility.
+    //      I don't think this is particularly important for performance or functionality so I'll just leave this here
+
     for (object, mut transform, appearance) in object_query.iter_mut() {
         transform.translation = camera.physics_to_world_pos(object.position).extend(0.);
         transform.scale = Vec3::splat(camera.scale*appearance.radius);
