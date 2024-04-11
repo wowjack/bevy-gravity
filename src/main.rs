@@ -5,12 +5,11 @@ use bevy::window::WindowResized;
 use bevy_egui::EguiPlugin;
 use bevy_math::DVec2;
 use bevy_mod_picking::prelude::*;
-use bevy_prototype_lyon::prelude::*;
 use itertools::Itertools;
 use physics::{ChangeEvent, MassiveObject};
 use pseudo_camera::CameraState;
 use ui::{ObjectSpawnOptions, SIDE_PANEL_WIDTH};
-use visual_object::VisualObjectBundle;
+use visual_object::{CircleAssets, VisualObjectBundle};
 use zoom::{mouse_zoom, ScaleChangeEvent};
 
 
@@ -29,7 +28,6 @@ fn main() {
             DefaultPlugins/*.disable::<LogPlugin>()*/,
             EguiPlugin,
             DefaultPickingPlugins.build().disable::<DebugPickingPlugin>(),
-            ShapePlugin,
             FrameTimeDiagnosticsPlugin,
             //LogDiagnosticsPlugin::default(),
             physics::PhysicsPlugin,
@@ -38,6 +36,7 @@ fn main() {
         .add_event::<ScaleChangeEvent>()
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
         .insert_resource(ObjectSpawnOptions::default())
+        //.insert_resource(CircleResource(Handle))
         .add_systems(Startup, init)
         .add_systems(PostStartup, spawns)
         .add_systems(Update, (
@@ -49,7 +48,6 @@ fn main() {
 }
 
 
-
 fn init(
     mut commands: Commands,
 ) {
@@ -59,11 +57,11 @@ fn init(
     ));
 }
 
-fn spawns(mut commands: Commands, mut ew: EventWriter<ChangeEvent>) {
+fn spawns(mut commands: Commands, mut ew: EventWriter<ChangeEvent>, circle_assets: Res<CircleAssets>) {
     let obj1 = MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*10., mass: 1. };
     let obj2 = MassiveObject { position: DVec2::X*-50., velocity: DVec2::ZERO, mass: 100000000000. };
-    let e1 = commands.spawn(VisualObjectBundle::new(obj1.clone(), 2., Color::BLUE)).id();
-    let e2 = commands.spawn(VisualObjectBundle::new(obj2.clone(), 15., Color::ORANGE_RED)).id();
+    let e1 = commands.spawn(VisualObjectBundle::new(obj1.clone(), 2., circle_assets.as_ref())).id();
+    let e2 = commands.spawn(VisualObjectBundle::new(obj2.clone(), 20., circle_assets.as_ref())).id();
     ew.send_batch(vec![
         ChangeEvent {entity: e1, change: physics::Change::CreateObject(obj1) },
         ChangeEvent { entity: e2, change: physics::Change::CreateObject(obj2) }

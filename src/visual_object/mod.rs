@@ -31,6 +31,26 @@ impl Plugin for VisualObjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<AppearanceChangeEvent>()
             .insert_resource(SimulationState::default())
+            .add_systems(Startup, init)
             .add_systems(Update, (update_object_positions, process_appearance_change_event));
     }
+}
+
+
+
+#[derive(Resource)]
+pub struct CircleAssets{
+    mesh: Handle<Mesh>,
+    default_color: Handle<ColorMaterial>,
+}
+
+fn init(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut colors: ResMut<Assets<ColorMaterial>>,
+) {
+    let circle_mesh = meshes.add(RegularPolygon::new(1., 50));
+    let default_color = colors.add(ColorMaterial { color: Color::BISQUE, texture: None });
+
+    commands.insert_resource(CircleAssets { mesh: circle_mesh, default_color });
 }
