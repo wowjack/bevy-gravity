@@ -6,7 +6,6 @@ use bevy_mod_picking::prelude::*;
 
 /// Systems for updating the position of massive objects each frame by reading from the future.
 mod update;
-mod Velocity_arrow;
 pub use update::*;
 
 /// Functionality for dragging objects to move them.
@@ -28,6 +27,9 @@ pub use appearance::*;
 mod velocity_arrow;
 pub use velocity_arrow::*;
 
+mod future_path;
+pub use future_path::*;
+
 
 
 pub struct VisualObjectPlugin;
@@ -38,7 +40,8 @@ impl Plugin for VisualObjectPlugin {
             .add_systems(Startup, init)
             .add_systems(Update, (
                 update_object_positions,
-                draw_velocity_arrows.after(update_object_positions)
+                draw_velocity_arrows.after(update_object_positions),
+                draw_future_paths.after(update_object_positions),
             ));
     }
 }

@@ -38,8 +38,8 @@ impl VisualObjectBundle {
                 material: circle_assets.default_color.clone(),
                 ..default()
             },
-            on_select: On::<Pointer<Select>>::target_insert(VelocityArrow),
-            on_deselect: On::<Pointer<Deselect>>::target_remove::<VelocityArrow>(),
+            on_select: On::<Pointer<Select>>::target_insert((VelocityArrow, FuturePath)),
+            on_deselect: On::<Pointer<Deselect>>::target_remove::<(VelocityArrow, FuturePath)>(),
             pickable_bundle: PickableBundle::default()
         }
     }

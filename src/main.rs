@@ -40,6 +40,7 @@ fn main() {
         .add_systems(Startup, init)
         .add_systems(PostStartup, spawns)
         .add_systems(Update, (
+            debugging,
             window_resize.before(mouse_zoom),
             mouse_zoom,
             ui::side_panel,
@@ -58,14 +59,29 @@ fn init(
 }
 
 fn spawns(mut commands: Commands, mut ew: EventWriter<ChangeEvent>, circle_assets: Res<CircleAssets>) {
-    let obj1 = MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*50., mass: 1. };
+    let obj1 = MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*40., mass: 1. };
     let obj2 = MassiveObject { position: DVec2::X*-50., velocity: DVec2::ZERO, mass: 1000000000000. };
+    let obj3 = MassiveObject { position: DVec2::X*50., velocity: DVec2::Y*25., mass: 1. };
+    let obj4 = MassiveObject { position: DVec2::X*150., velocity: DVec2::Y*20., mass: 1. };
+    let obj5 = MassiveObject { position: DVec2::X*250., velocity: DVec2::Y*21., mass: 1. };
     let e1 = commands.spawn(VisualObjectBundle::new(obj1.clone(), 2., circle_assets.as_ref())).id();
     let e2 = commands.spawn(VisualObjectBundle::new(obj2.clone(), 15., circle_assets.as_ref())).id();
+    let e3 = commands.spawn(VisualObjectBundle::new(obj3.clone(), 3., circle_assets.as_ref())).id();
+    let e4 = commands.spawn(VisualObjectBundle::new(obj4.clone(), 7., circle_assets.as_ref())).id();
+    let e5 = commands.spawn(VisualObjectBundle::new(obj5.clone(), 8., circle_assets.as_ref())).id();
     ew.send_batch(vec![
-        ChangeEvent {entity: e1, change: physics::Change::CreateObject(obj1) },
-        ChangeEvent { entity: e2, change: physics::Change::CreateObject(obj2) }
+        ChangeEvent { entity: e1, change: physics::Change::CreateObject(obj1) },
+        ChangeEvent { entity: e2, change: physics::Change::CreateObject(obj2) },
+        ChangeEvent { entity: e3, change: physics::Change::CreateObject(obj3) },
+        ChangeEvent { entity: e4, change: physics::Change::CreateObject(obj4) },
+        ChangeEvent { entity: e5, change: physics::Change::CreateObject(obj5) },
     ]);
+}
+
+fn debugging(camera_query: Query<(&CameraState, &Camera, &GlobalTransform)>, window_query: Query<&Window>) {
+    let (camera_state, camera, gtrans) = camera_query.single();
+    let Some(cursor_pos) = window_query.single().cursor_position() else { return };
+    println!("{:?}", camera_state.viewport_to_physics_pos(cursor_pos, camera, gtrans).unwrap());
 }
 
 

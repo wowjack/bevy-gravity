@@ -44,6 +44,10 @@ impl PhysicsFuture {
         self.map.get_frame(time)
     }
 
+    pub fn get_map(&self) -> FutureMap {
+        self.map.clone()
+    }   
+
     /// Kill the physics worker and clean up
     pub fn stop(self) {
         match self.sender.send(WorkerSignal::Kill) {
@@ -69,7 +73,7 @@ Maybe have a thread lock a mutex to set a flag indicating which deque is accessi
 */
 #[derive(Default, Clone)]
 pub struct FutureMap {
-    map: Arc<RwLock<HashMap<Entity, ObjectFuture>>>,
+    pub map: Arc<RwLock<HashMap<Entity, ObjectFuture>>>,
 }
 impl FutureMap {
     /// Add a new physics frame to the future
@@ -96,9 +100,15 @@ impl FutureMap {
             ).collect_vec()
     }
 
-    /// Get all the saved future positions of an entity
-    pub fn get_object_future(&self, entity: Entity) -> Vec<DVec2> {
-        self.map.read().unwrap().get(&entity).map(|x| x.as_point_vec()).unwrap_or(vec![])
+    /// Get all the saved future positions of an entity.
+    /// Return the vec of positions and the last time stamp 
+    pub fn get_object_future(&self, entity: &Entity) -> Vec<DVec2> {
+        self.map.read().unwrap().get(entity).map(|x| x.as_point_vec()).unwrap_or(vec![])
+    }
+    /// Get the saved future positions of an object after a certain time.
+    /// This is used so the path predictor can get new positions without copying the entire buffer.
+    pub fn get_object_future_since(&self, entity: &Entity, time: u64) -> Vec<DVec2> {
+        self.map.read().unwrap().get(entity).map(|x| x.as_point_vec_since(time)).unwrap_or(vec![])
     }
 
     /// Returns the total number of items in the map
@@ -209,7 +219,10 @@ impl ObjectFuture {
     }
 
     pub fn as_point_vec(&self) -> Vec<DVec2> {
-        self.future.iter().map(|FutureFrame { position, .. }| position.clone()).collect()
+        self.future.iter().map(|FutureFrame { position, .. }| position.clone()).collect_vec()
+    }
+    pub fn as_point_vec_since(&self, time: u64) -> Vec<DVec2> {
+        self.future.iter().skip_while(|ff| ff.time < time).map(|ff| ff.position).collect_vec()
     }
 
     pub fn clear_future(&mut self) {
