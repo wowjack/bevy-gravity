@@ -9,7 +9,8 @@ pub struct VisualObjectBundle {
     pub object: MassiveObject,
     pub appearance: Appearance,
     pub material_mesh_bundle: MaterialMesh2dBundle<ColorMaterial>,
-    pub on_click: On::<Pointer<Click>>,
+    pub on_select: On::<Pointer<Select>>,
+    pub on_deselect: On::<Pointer<Deselect>>,
     pub pickable_bundle: PickableBundle,
 }
 impl VisualObjectBundle {
@@ -23,6 +24,10 @@ impl VisualObjectBundle {
     pub fn from_object(object: MassiveObject, circle_assets: &CircleAssets) -> Self {
         Self { object, ..Self::default(circle_assets) }
     }
+    pub fn with_radius(mut self, radius: f32) -> Self {
+        self.appearance.radius = radius;
+        return self
+    }
 
     pub fn default(circle_assets: &CircleAssets) -> Self {
         Self {
@@ -33,11 +38,11 @@ impl VisualObjectBundle {
                 material: circle_assets.default_color.clone(),
                 ..default()
             },
-            on_click: On::<Pointer<Click>>::run(|| println!("Clicked!")),
+            on_select: On::<Pointer<Select>>::target_insert(VelocityArrow),
+            on_deselect: On::<Pointer<Deselect>>::target_remove::<VelocityArrow>(),
             pickable_bundle: PickableBundle::default()
         }
     }
 }
-
 
 

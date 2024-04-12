@@ -6,7 +6,7 @@ use itertools::Itertools;
 use super::*;
 
 const DISTANCE_STEP: f64 = 1.0;
-pub const MAX_FUTURE_SIZE: usize = 5_000_000;
+pub const MAX_FUTURE_SIZE: usize = 50_000_000;
 
 /*
 The min distance step size in the buffer can be quite large while keeping movement smooth if

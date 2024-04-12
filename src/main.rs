@@ -58,10 +58,10 @@ fn init(
 }
 
 fn spawns(mut commands: Commands, mut ew: EventWriter<ChangeEvent>, circle_assets: Res<CircleAssets>) {
-    let obj1 = MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*10., mass: 1. };
-    let obj2 = MassiveObject { position: DVec2::X*-50., velocity: DVec2::ZERO, mass: 100000000000. };
+    let obj1 = MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*50., mass: 1. };
+    let obj2 = MassiveObject { position: DVec2::X*-50., velocity: DVec2::ZERO, mass: 1000000000000. };
     let e1 = commands.spawn(VisualObjectBundle::new(obj1.clone(), 2., circle_assets.as_ref())).id();
-    let e2 = commands.spawn(VisualObjectBundle::new(obj2.clone(), 20., circle_assets.as_ref())).id();
+    let e2 = commands.spawn(VisualObjectBundle::new(obj2.clone(), 15., circle_assets.as_ref())).id();
     ew.send_batch(vec![
         ChangeEvent {entity: e1, change: physics::Change::CreateObject(obj1) },
         ChangeEvent { entity: e2, change: physics::Change::CreateObject(obj2) }

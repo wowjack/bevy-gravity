@@ -29,10 +29,10 @@ pub fn side_panel(
             });
 
             if ui.button("spawn").clicked() {
-                let entity = commands.spawn(VisualObjectBundle::default(circle_assets.as_ref())).id();
+                let entity = commands.spawn(VisualObjectBundle::default(circle_assets.as_ref()).with_radius(2.)).id();
                 change_event_writer.send(ChangeEvent { entity, change: crate::physics::Change::CreateObject(
-                    MassiveObject { position: DVec2::ZERO, velocity: DVec2::ZERO, mass: 1. }
-                ) });
+                    MassiveObject { position: DVec2::ZERO, velocity: DVec2::Y*100., mass: 0.01 }
+                )});
             }
         });
 }

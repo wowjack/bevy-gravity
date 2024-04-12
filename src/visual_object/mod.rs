@@ -6,6 +6,7 @@ use bevy_mod_picking::prelude::*;
 
 /// Systems for updating the position of massive objects each frame by reading from the future.
 mod update;
+mod Velocity_arrow;
 pub use update::*;
 
 /// Functionality for dragging objects to move them.
@@ -24,6 +25,9 @@ pub use sim_state::*;
 mod appearance;
 pub use appearance::*;
 
+mod velocity_arrow;
+pub use velocity_arrow::*;
+
 
 
 pub struct VisualObjectPlugin;
@@ -32,10 +36,12 @@ impl Plugin for VisualObjectPlugin {
         app.add_event::<AppearanceChangeEvent>()
             .insert_resource(SimulationState::default())
             .add_systems(Startup, init)
-            .add_systems(Update, (update_object_positions, process_appearance_change_event));
+            .add_systems(Update, (
+                update_object_positions,
+                draw_velocity_arrows.after(update_object_positions)
+            ));
     }
 }
-
 
 
 #[derive(Resource)]
@@ -48,7 +54,10 @@ fn init(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut colors: ResMut<Assets<ColorMaterial>>,
+    mut config_store: ResMut<GizmoConfigStore>
 ) {
+    config_store.config_mut::<DefaultGizmoConfigGroup>().0.line_width = 5.;
+
     let circle_mesh = meshes.add(RegularPolygon::new(1., 50));
     let default_color = colors.add(ColorMaterial { color: Color::BISQUE, texture: None });
 

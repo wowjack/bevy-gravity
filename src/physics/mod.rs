@@ -1,9 +1,6 @@
 #![allow(unused)]
 use super::*;
 
-mod path_prediction;
-pub use path_prediction::*;
-
 /// Custom data structure for storing the future path of objects
 mod physics_future;
 pub use physics_future::*;
