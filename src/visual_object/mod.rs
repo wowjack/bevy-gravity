@@ -1,4 +1,3 @@
-#![allow(unused)]
 
 use bevy::prelude::*;
 use bevy_math::{DVec2, dvec2, Vec2, vec2};
@@ -41,6 +40,7 @@ impl Plugin for VisualObjectPlugin {
         app.add_event::<AppearanceChangeEvent>()
             .insert_resource(SimulationState::default())
             .add_systems(Startup, init)
+            .add_systems(PreUpdate, update_object_data)
             .add_systems(Update, (
                 update_object_positions,
                 draw_future_paths.after(update_object_positions),

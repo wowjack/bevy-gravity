@@ -1,6 +1,6 @@
 use bevy::sprite::MaterialMesh2dBundle;
 
-use crate::{physics::MassiveObject, CircleAssets};
+use crate::{physics::{ChangeEvent, MassiveObject}, CircleAssets};
 
 use super::*;
 
@@ -11,6 +11,7 @@ pub struct VisualObjectBundle {
     pub material_mesh_bundle: MaterialMesh2dBundle<ColorMaterial>,
     pub on_select: On::<Pointer<Select>>,
     pub on_deselect: On::<Pointer<Deselect>>,
+    pub on_drag: On::<Pointer<Drag>>,
     pub pickable_bundle: PickableBundle,
 }
 impl VisualObjectBundle {
@@ -39,10 +40,12 @@ impl VisualObjectBundle {
                 ..default()
             },
             on_select: On::<Pointer<Select>>::target_insert((VelocityArrow, FuturePath)),
-            on_deselect: On::<Pointer<Deselect>>::run(|| {}),//target_remove::<(VelocityArrow, FuturePath)>(),
+            on_deselect: On::<Pointer<Deselect>>::target_remove::<(VelocityArrow, FuturePath)>(),
+            on_drag: On::<Pointer<Drag>>::run(drag_object),
             pickable_bundle: PickableBundle::default()
         }
     }
 }
+
 
 

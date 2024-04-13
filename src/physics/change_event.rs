@@ -13,6 +13,11 @@ pub struct ChangeEvent {
     pub entity: Entity,
     pub change: Change
 }
+impl ChangeEvent {
+    pub fn new(entity: Entity, change: Change) -> Self {
+        Self { entity, change }
+    }
+}
 
 #[derive(Clone)]
 pub enum Change {
