@@ -32,6 +32,9 @@ pub use future_path::*;
 mod mini_object_point;
 pub use mini_object_point::*;
 
+mod draw_options;
+pub use draw_options::*;
+
 
 
 pub struct VisualObjectPlugin;
@@ -39,6 +42,7 @@ impl Plugin for VisualObjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<AppearanceChangeEvent>()
             .insert_resource(SimulationState::default())
+            .insert_resource(DrawOptions::default())
             .add_systems(Startup, init)
             .add_systems(PreUpdate, update_object_data)
             .add_systems(Update, (

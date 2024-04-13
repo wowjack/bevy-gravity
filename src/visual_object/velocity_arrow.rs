@@ -11,9 +11,11 @@ pub struct VelocityArrow;
 // As of right now I think it gets a little large
 pub fn draw_velocity_arrows(
     object_query: Query<(&MassiveObject, &Transform), With<VelocityArrow>>, 
-    camera_query: Query<(&CameraState)>,
+    camera_query: Query<&CameraState>,
     mut gizmos: Gizmos,
+    draw_options: Res<DrawOptions>
 ) {
+    if draw_options.draw_velocity_arrow == false { return }
     let scale = camera_query.single().scale;
     for (object, transform) in &object_query {
         let pos = transform.translation.xy();

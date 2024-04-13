@@ -39,7 +39,6 @@ fn main() {
         ))
         .add_event::<ScaleChangeEvent>()
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
-        .insert_resource(ObjectSpawnOptions::default())
         .add_systems(Startup, (
             init,
             spawn_debug_text
