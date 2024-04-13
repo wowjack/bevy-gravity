@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_egui::{egui::{panel, RichText, SidePanel}, EguiContexts};
 use bevy_math::DVec2;
 
-use crate::{physics::{ChangeEvent, MassiveObject}, visual_object::VisualObjectBundle, CircleAssets};
+use crate::{physics::{ChangeEvent, MassiveObject}, pseudo_camera::CameraState, visual_object::{SimulationState, VisualObjectBundle}, CircleAssets};
 
 
 
@@ -17,7 +17,12 @@ pub fn side_panel(
     mut change_event_writer: EventWriter<ChangeEvent>,
     mut commands: Commands,
     circle_assets: Res<CircleAssets>,
+    mut sim_state: ResMut<SimulationState>,
+    window_query: Query<&Window>,
+    camera_query: Query<(&CameraState, &Camera, &GlobalTransform)>,
 ) {
+    let window = window_query.single();
+    let (camera_state, camera, camera_gtrans) = camera_query.single();
     SidePanel::new(panel::Side::Right, "sidepanel")
         .exact_width(SIDE_PANEL_WIDTH)
         .resizable(false)
@@ -26,6 +31,11 @@ pub fn side_panel(
                 ui.add_space(20.);
                 ui.heading(RichText::new("Bevy Gravity").strong().size(30.));
                 ui.add_space(20.);
+            });
+
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut sim_state.running, "Run:");
+                ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 1..=50_000).logarithmic(true))
             });
 
             if ui.button("spawn").clicked() {

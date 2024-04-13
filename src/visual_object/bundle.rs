@@ -39,7 +39,7 @@ impl VisualObjectBundle {
                 ..default()
             },
             on_select: On::<Pointer<Select>>::target_insert((VelocityArrow, FuturePath)),
-            on_deselect: On::<Pointer<Deselect>>::target_remove::<(VelocityArrow, FuturePath)>(),
+            on_deselect: On::<Pointer<Deselect>>::run(|| {}),//target_remove::<(VelocityArrow, FuturePath)>(),
             pickable_bundle: PickableBundle::default()
         }
     }

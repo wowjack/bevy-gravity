@@ -3,6 +3,7 @@ use crossbeam_channel::Receiver;
 use itertools::*;
 
 use bevy::utils::HashMap;
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
 use super::*;
 
@@ -55,7 +56,7 @@ pub fn physics_worker(
 
 use nbody_barnes_hut::{vector_2d::Vector2D, particle_2d::Particle2D, barnes_hut_2d::QuadTree};
 
-pub const TIME_STEP: f64 = 0.001;
+pub const TIME_STEP: f64 = 0.1;
 pub const G: f64 = 0.0000000000667;
 
 fn process_physics_frame(state: &mut Vec<(Entity, MassiveObject)>) {
@@ -64,7 +65,7 @@ fn process_physics_frame(state: &mut Vec<(Entity, MassiveObject)>) {
 
     let particle_vec = state.iter().map(|(_, obj)| Particle2D { position: Vector2D { x: obj.position.x, y: obj.position.y }, mass: obj.mass }).collect_vec();
     let qtree = QuadTree::new(&particle_vec.iter().collect_vec(), 0.5);
-    for (_, obj) in state {
+    state.par_iter_mut().for_each(|(_, obj)| {
         let force = qtree.calc_forces_on_particle(
             Vector2D::new(obj.position.x, obj.position.y),
             (),
@@ -73,5 +74,5 @@ fn process_physics_frame(state: &mut Vec<(Entity, MassiveObject)>) {
         obj.velocity.x += force.x / obj.mass;
         obj.velocity.y += force.y / obj.mass;
         obj.position += obj.velocity * TIME_STEP;
-    }
+    });
 }

@@ -30,6 +30,9 @@ pub use velocity_arrow::*;
 mod future_path;
 pub use future_path::*;
 
+mod mini_object_point;
+pub use mini_object_point::*;
+
 
 
 pub struct VisualObjectPlugin;
@@ -40,8 +43,9 @@ impl Plugin for VisualObjectPlugin {
             .add_systems(Startup, init)
             .add_systems(Update, (
                 update_object_positions,
-                draw_velocity_arrows.after(update_object_positions),
                 draw_future_paths.after(update_object_positions),
+                draw_velocity_arrows.after(update_object_positions),
+                draw_mini_object_point.after(update_object_positions),
             ));
     }
 }
@@ -59,7 +63,7 @@ fn init(
     mut colors: ResMut<Assets<ColorMaterial>>,
     mut config_store: ResMut<GizmoConfigStore>
 ) {
-    config_store.config_mut::<DefaultGizmoConfigGroup>().0.line_width = 5.;
+    config_store.config_mut::<DefaultGizmoConfigGroup>().0.line_width = 2.;
 
     let circle_mesh = meshes.add(RegularPolygon::new(1., 50));
     let default_color = colors.add(ColorMaterial { color: Color::BISQUE, texture: None });

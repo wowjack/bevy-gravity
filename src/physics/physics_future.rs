@@ -189,17 +189,17 @@ impl ObjectFuture {
         }
 
         // The exact time doesn't exist in the future.
-        // EXPERIMENTAL STUFF GOING ON. INTERPOLATING VELOCITY
+        
         let next_state = self.future.front().unwrap();
 
         let time_frac = (time - self.current_time) as f64 / (next_state.time - self.current_time) as f64;
-        //let pos_diff = next_state.position - self.current_state.position;
-        let vel_diff = next_state.velocity - self.current_state.velocity;
+        let pos_diff = next_state.position - self.current_state.position;
+        //let vel_diff = next_state.velocity - self.current_state.velocity;
         
         self.current_time = time;
-        //self.current_state.position += pos_diff * time_frac;
-        self.current_state.velocity += vel_diff * time_frac; // Should velocity be interpolated
-        self.current_state.position += self.current_state.velocity * TIME_STEP;
+        self.current_state.position += pos_diff * time_frac;
+        //self.current_state.velocity += vel_diff * time_frac; // Should velocity be interpolated
+        //self.current_state.position += self.current_state.velocity * TIME_STEP;
         
         return FutureFrame {
             time: self.current_time,

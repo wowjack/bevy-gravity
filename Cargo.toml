@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.13.2"
+bevy = { version = "0.13.2", features=["default_font"] }
 bevy_math = "0.13.2"
 bevy_egui = "0.26.0"
 egui_extras = "0.27.2"
@@ -14,3 +14,5 @@ bevy_mod_picking = { version = "0.18.2", features=["selection"] }
 itertools = "0.12.1"
 crossbeam-channel = "0.5.12"
 nbody_barnes_hut = "0.1.0"
+bevy_vector_shapes = "0.7.0"
+rayon = "1.10.0"

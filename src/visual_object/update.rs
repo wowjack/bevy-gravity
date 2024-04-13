@@ -15,13 +15,21 @@ pub fn update_object_positions(
     delta_time: Res<Time>,
 ) {
     sim_state.timer.tick(delta_time.delta());
+
     let camera = camera_query.single();
 
     // Update the massive objects
-    for (entity, frame) in future.get_frame(sim_state.current_time) {
-        let (mut object, _, _) = object_query.get_mut(entity).unwrap();
-        object.position = frame.position;
-        object.velocity = frame.velocity;
+    if sim_state.running == true {
+        let mut latest_time = 0;
+        for (entity, frame) in future.get_frame(sim_state.current_time) {
+            let (mut object, _, _) = object_query.get_mut(entity).unwrap();
+            object.position = frame.position;
+            object.velocity = frame.velocity;
+            if frame.time > latest_time { latest_time = frame.time }
+        }
+
+        // About 60 updates per second
+        sim_state.current_time = latest_time + sim_state.run_speed * sim_state.timer.times_finished_this_tick() as u64;
     }
 
 
@@ -33,8 +41,5 @@ pub fn update_object_positions(
         transform.translation = camera.physics_to_world_pos(object.position).extend(0.);
         transform.scale = Vec3::splat(camera.scale*appearance.radius);
     }
-
-    // About 30 updates per second
-    sim_state.current_time += sim_state.run_speed * sim_state.timer.times_finished_this_tick() as u64;
 }
 
