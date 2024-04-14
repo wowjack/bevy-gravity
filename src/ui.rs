@@ -9,13 +9,17 @@ use crate::{physics::{ChangeEvent, MassiveObject}, pseudo_camera::CameraState, v
 pub const SIDE_PANEL_WIDTH: f32 = 350.;
 
 
-#[derive(Default)]
 pub struct ObjectSpawnOptions {
     position: DVec2,
     velocity: DVec2,
     mass: f64,
     radius: f32,
     rgb: [f32; 3]
+}
+impl Default for ObjectSpawnOptions {
+    fn default() -> Self {
+        Self { position: Default::default(), velocity: Default::default(), mass: 1., radius: 1., rgb: [13./255., 69./255., 0.] }
+    }
 }
 
 pub fn side_panel(
@@ -29,9 +33,6 @@ pub fn side_panel(
     mut draw_options: ResMut<DrawOptions>,
     mut spawn_options: Local<ObjectSpawnOptions>,
 ) {
-    let window = window_query.single();
-    let (camera_state, camera, camera_gtrans) = camera_query.single();
-
     SidePanel::new(panel::Side::Right, "sidepanel")
         .exact_width(SIDE_PANEL_WIDTH)
         .resizable(false)

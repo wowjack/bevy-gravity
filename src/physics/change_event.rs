@@ -8,7 +8,7 @@ The event processor will hand the changes to the physics worker.
 Will it be fine if changes are only visually reflected once the worker gets them?
 */
 
-#[derive(Event, Clone)]
+#[derive(Event, Clone, Debug)]
 pub struct ChangeEvent {
     pub entity: Entity,
     pub change: Change
@@ -19,7 +19,7 @@ impl ChangeEvent {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Change {
     CreateObject(MassiveObject),
     DeleteObject,

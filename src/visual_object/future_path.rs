@@ -4,7 +4,7 @@ use bevy_math::DVec2;
 
 use crate::{physics::{self, FutureFrame, MassiveObject, PhysicsFuture}, pseudo_camera::CameraState};
 
-use super::{DrawOptions, SimulationState};
+use super::{DrawOptions, SelectedObjects, SimulationState};
 
 
 /// Current just a marker type used for deciding which objects to draw a future path for.
@@ -18,22 +18,23 @@ pub struct FuturePath;
 
 
 pub fn draw_future_paths(
-    object_query: Query<(Entity, &MassiveObject), With<FuturePath>>,
+    object_query: Query<Entity, With<MassiveObject>>,
     camera_query: Query<&CameraState>,
     physics_future: Res<PhysicsFuture>,
     mut gizmos: Gizmos,
-    draw_options: Res<DrawOptions>
+    draw_options: Res<DrawOptions>,
+    selected_objects: Res<SelectedObjects>,
 ) {
     if draw_options.draw_future_path == false { return }
+    let Some(focused) = selected_objects.focused else { return };
+    let Ok(entity) = object_query.get(focused) else { return };
     let camera_state = camera_query.single();
     let future_map = physics_future.get_map();
     let map = future_map.map.read().unwrap();
-    for (entity, _) in &object_query {
-        let Some(object_future) = map.get(&entity) else { continue };
-        let path = object_future.as_point_vec();
-        gizmos.linestrip_2d(
-            path.into_iter().map(|pos| camera_state.physics_to_world_pos(pos)),
-            Color::GRAY
-        );
-    }
+    let Some(object_future) = map.get(&entity) else { return };
+    let path = object_future.as_point_vec();
+    gizmos.linestrip_2d(
+        path.into_iter().map(|pos| camera_state.physics_to_world_pos(pos)),
+        Color::GRAY
+    );
 }

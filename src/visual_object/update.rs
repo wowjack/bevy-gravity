@@ -28,7 +28,6 @@ pub fn update_object_data(
     // About 60 updates per second
     if sim_state.running == false { return }
     sim_state.current_time = latest_time + sim_state.run_speed * sim_state.timer.times_finished_this_tick() as u64;
-
 }
 
 

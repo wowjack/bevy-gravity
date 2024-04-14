@@ -10,7 +10,6 @@ pub struct VisualObjectBundle {
     pub appearance: Appearance,
     pub material_mesh_bundle: MaterialMesh2dBundle<ColorMaterial>,
     pub on_select: On::<Pointer<Select>>,
-    pub on_deselect: On::<Pointer<Deselect>>,
     pub on_drag: On::<Pointer<Drag>>,
     pub pickable_bundle: PickableBundle,
 }
@@ -39,8 +38,7 @@ impl VisualObjectBundle {
                 material: circle_assets.default_color.clone(),
                 ..default()
             },
-            on_select: On::<Pointer<Select>>::target_insert((VelocityArrow, FuturePath)),
-            on_deselect: On::<Pointer<Deselect>>::target_remove::<(VelocityArrow, FuturePath)>(),
+            on_select: On::<Pointer<Select>>::run(object_selected),
             on_drag: On::<Pointer<Drag>>::run(drag_object),
             pickable_bundle: PickableBundle::default()
         }
