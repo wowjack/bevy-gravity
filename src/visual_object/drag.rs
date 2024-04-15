@@ -1,11 +1,11 @@
-use crate::{physics::{Change, ChangeEvent, MassiveObject}, pseudo_camera::CameraState};
+use crate::{physics::{Change, ChangeEvent}, pseudo_camera::CameraState};
 
 use super::*;
 
 pub fn drag_object(
     listener: Listener<Pointer<Drag>>,
     mut ew: EventWriter<ChangeEvent>,
-    object_query: Query<&MassiveObject>,
+    object_query: Query<&VisualObjectData>,
     camera_query: Query<&CameraState>
 ) {
     let camera = camera_query.single();

@@ -34,6 +34,8 @@ pub fn physics_worker(
             Ok(WorkerSignal::Kill) | Err(true) => return, // return on kill signal or recv_error
             Ok(WorkerSignal::Changes(c)) => {
                 state = map.process_changes(c);
+                // Make sure no two objects have the same position otherwise the worker will crash.
+
                 // Start at time 1
                 // Time 0 already exists
                 time = 1; 
@@ -71,8 +73,8 @@ fn process_physics_frame(state: &mut Vec<(Entity, MassiveObject)>) {
             (),
             |distance_squared, mass, distance_vector, _| G * mass * distance_vector / (distance_squared * distance_squared.sqrt())
         );
-        obj.velocity.x += force.x / obj.mass;
-        obj.velocity.y += force.y / obj.mass;
+        obj.velocity.x += force.x;// * obj.mass;
+        obj.velocity.y += force.y;// * obj.mass;
         obj.position += obj.velocity * TIME_STEP;
     });
 }

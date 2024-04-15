@@ -1,10 +1,6 @@
-use std::{collections::VecDeque, sync::{Arc, Mutex}, thread::{self, JoinHandle}};
 use bevy::prelude::*;
-use bevy_math::DVec2;
-
-use crate::{physics::{self, FutureFrame, MassiveObject, PhysicsFuture}, pseudo_camera::CameraState};
-
-use super::{DrawOptions, SelectedObjects, SimulationState};
+use crate::{physics::PhysicsFuture, pseudo_camera::CameraState};
+use super::{DrawOptions, SelectedObjects, VisualObjectData};
 
 
 /// Current just a marker type used for deciding which objects to draw a future path for.
@@ -13,12 +9,10 @@ use super::{DrawOptions, SelectedObjects, SimulationState};
 /// First read The full buffer from the future.
 /// Afterwards only read starting at whatever time the previous read ended at.
 /// And reread the entire buffer is a change happens.
-#[derive(Component, Clone, Copy)]
-pub struct FuturePath;
 
 
 pub fn draw_future_paths(
-    object_query: Query<Entity, With<MassiveObject>>,
+    object_query: Query<Entity, With<VisualObjectData>>,
     camera_query: Query<&CameraState>,
     physics_future: Res<PhysicsFuture>,
     mut gizmos: Gizmos,
@@ -26,8 +20,8 @@ pub fn draw_future_paths(
     selected_objects: Res<SelectedObjects>,
 ) {
     if draw_options.draw_future_path == false { return }
-    let Some(focused) = selected_objects.focused else { return };
-    let Ok(entity) = object_query.get(focused) else { return };
+    let Some((focused_entity, _)) = selected_objects.focused else { return };
+    let Ok(entity) = object_query.get(focused_entity) else { return };
     let camera_state = camera_query.single();
     let future_map = physics_future.get_map();
     let map = future_map.map.read().unwrap();

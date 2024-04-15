@@ -1,4 +1,4 @@
-use self::visual_object::SimulationState;
+use self::visual_object::{SimulationState, VisualObjectData};
 
 use super::*;
 
@@ -30,9 +30,21 @@ pub enum Change {
 
 
 /// Read change events and notify the physics worker of the change
-pub fn process_change_event(mut events: EventReader<ChangeEvent>, future: Res<PhysicsFuture>, mut sim_state: ResMut<SimulationState>) {
+pub fn process_change_event(
+    mut events: EventReader<ChangeEvent>,
+    future: Res<PhysicsFuture>,
+    mut sim_state: ResMut<SimulationState>,
+    mut object_query: Query<&mut VisualObjectData> // The physics worker does not report mass back to the main thread so mass changes must be reflected in the world here
+) {
     if events.is_empty() { return }
 
-    future.send_changes(events.read().map(|e| e.clone()).collect_vec());
+
+
+    future.send_changes(events.read().map(|e| {
+        if let Change::SetMass(new_mass) = e.change {
+            object_query.get_mut(e.entity).unwrap().mass = new_mass;
+        }
+        e.clone()
+    }).collect_vec());
     sim_state.current_time = 0;
 }

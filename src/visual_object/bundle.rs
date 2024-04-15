@@ -1,43 +1,20 @@
-use bevy::sprite::MaterialMesh2dBundle;
-
-use crate::{physics::{ChangeEvent, MassiveObject}, CircleAssets};
-
+use bevy::sprite::{MaterialMesh2dBundle, Mesh2dHandle};
 use super::*;
 
 #[derive(Bundle)]
 pub struct VisualObjectBundle {
-    pub object: MassiveObject,
-    pub appearance: Appearance,
+    pub object_data: VisualObjectData,
     pub material_mesh_bundle: MaterialMesh2dBundle<ColorMaterial>,
     pub on_select: On::<Pointer<Select>>,
     pub on_drag: On::<Pointer<Drag>>,
     pub pickable_bundle: PickableBundle,
 }
 impl VisualObjectBundle {
-    pub fn new(object: MassiveObject, radius: f32, circle_assets: &CircleAssets) -> Self {
-        Self { 
-            object,
-            appearance: Appearance::new(radius),
-            ..Self::default(circle_assets)
-        }
-    }
-    pub fn from_object(object: MassiveObject, circle_assets: &CircleAssets) -> Self {
-        Self { object, ..Self::default(circle_assets) }
-    }
-    pub fn with_radius(mut self, radius: f32) -> Self {
-        self.appearance.radius = radius;
-        return self
-    }
-
-    pub fn default(circle_assets: &CircleAssets) -> Self {
+    pub fn new(object_data: VisualObjectData, mesh: Mesh2dHandle, colors: &mut Assets<ColorMaterial>) -> Self {
+        let material = colors.add(object_data.color);
         Self {
-            object: MassiveObject::default(),
-            appearance: Appearance::new(1.),
-            material_mesh_bundle: MaterialMesh2dBundle {
-                mesh: circle_assets.mesh.clone().into(),
-                material: circle_assets.default_color.clone(),
-                ..default()
-            },
+            object_data,
+            material_mesh_bundle: MaterialMesh2dBundle { material, mesh, ..default() },
             on_select: On::<Pointer<Select>>::run(object_selected),
             on_drag: On::<Pointer<Drag>>::run(drag_object),
             pickable_bundle: PickableBundle::default()

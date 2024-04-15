@@ -1,14 +1,12 @@
 use bevy::sprite::MaterialMesh2dBundle;
 use itertools::Itertools;
-
-use crate::{physics::MassiveObject, pseudo_camera::CameraState};
-
+use crate::pseudo_camera::CameraState;
 use super::*;
 
 #[derive(Resource, Default)]
 pub struct SelectedObjects {
     pub selected: Vec<Entity>,
-    pub focused: Option<Entity>,
+    pub focused: Option<(Entity, VisualObjectData)>,
 }
 
 
@@ -27,7 +25,7 @@ pub struct BackgroundRect {
 
 pub fn rect_select(
     mut er: EventReader<SelectInRectEvent>,
-    object_query: Query<(Entity, &Transform), With<MassiveObject>>,
+    object_query: Query<(Entity, &Transform), With<VisualObjectData>>,
     mut selected_objects_resource: ResMut<SelectedObjects>,
 ) {
     for e in er.read() {
@@ -41,8 +39,9 @@ pub fn rect_select(
             ).collect_vec();
         if selected_objects.is_empty() { continue }
         selected_objects_resource.selected = selected_objects;
+        selected_objects_resource.focused = None;
         if selected_objects_resource.selected.len() == 1 {
-            selected_objects_resource.focused = Some(selected_objects_resource.selected.first().unwrap().clone())
+            selected_objects_resource.focused = Some((selected_objects_resource.selected.first().unwrap().clone(), VisualObjectData::default()))
         }
     }
 }
@@ -98,21 +97,32 @@ pub fn object_selected(
     if selected_objects.selected.contains(&listener.target) == false {
         selected_objects.selected = vec![listener.target];
     }
-    selected_objects.focused = Some(listener.target);
+    selected_objects.focused = Some((listener.target, VisualObjectData::default()));
 }
 
 
 
 pub fn draw_selected_object_halo(
     selected_objects: Res<SelectedObjects>,
-    object_query: Query<(&Transform, &Appearance), With<MassiveObject>>,
+    object_query: Query<(&Transform, &VisualObjectData)>,
     camera_query: Query<&CameraState>,
     mut gizmos: Gizmos
 ) {
     if selected_objects.selected.is_empty() { return }
     let camera = camera_query.single();
     for e in &selected_objects.selected {
-        let Ok((trans, appearance)) = object_query.get(e.clone()) else { continue };
-        gizmos.circle_2d(trans.translation.truncate(), appearance.radius*camera.scale, Color::WHITE);
+        let Ok((trans, object)) = object_query.get(e.clone()) else { continue };
+        gizmos.circle_2d(trans.translation.truncate(), object.radius*camera.scale, Color::WHITE).segments(CIRCLE_VERTICES);
     }
+}
+
+
+/// Update the data for the focused object in the SelectedObjects resource
+pub fn update_focused_object_data(
+    object_query: Query<&VisualObjectData>,
+    mut selected_objects: ResMut<SelectedObjects>,
+) {
+    let Some((focused_entity, _)) = selected_objects.focused.take() else { return };
+    let Ok(data) = object_query.get(focused_entity) else { return };
+    selected_objects.focused = Some((focused_entity, data.clone()));
 }

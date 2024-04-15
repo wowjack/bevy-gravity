@@ -1,4 +1,4 @@
-use crate::{physics::{MassiveObject, PhysicsFuture}, pseudo_camera::CameraState};
+use crate::{physics::PhysicsFuture, pseudo_camera::CameraState};
 
 use super::*;
 
@@ -8,7 +8,7 @@ Read position from the physics future, update object positions if they're within
 */
 
 pub fn update_object_data(
-    mut object_query: Query<(&mut MassiveObject, &mut Transform, &Appearance)>,
+    mut object_query: Query<(&mut VisualObjectData, &mut Transform)>,
     future: Res<PhysicsFuture>,
     mut sim_state: ResMut<SimulationState>,
     delta_time: Res<Time>,
@@ -19,7 +19,7 @@ pub fn update_object_data(
     // Update the massive objects
     let mut latest_time = 0;
     for (entity, frame) in future.get_frame(sim_state.current_time) {
-        let (mut object, _, _) = object_query.get_mut(entity).unwrap();
+        let (mut object, _) = object_query.get_mut(entity).unwrap();
         object.position = frame.position;
         object.velocity = frame.velocity;
         if frame.time > latest_time { latest_time = frame.time }
@@ -32,13 +32,13 @@ pub fn update_object_data(
 
 
 pub fn update_object_positions(
-    mut object_query: Query<(&mut MassiveObject, &mut Transform, &Appearance)>,
+    mut object_query: Query<(&mut VisualObjectData, &mut Transform)>,
     camera_query: Query<&CameraState>,
 ) {
     let camera = camera_query.single();
-    for (object, mut transform, appearance) in object_query.iter_mut() {
+    for (object, mut transform) in object_query.iter_mut() {
         transform.translation = camera.physics_to_world_pos(object.position).extend(0.);
-        transform.scale = Vec3::splat(camera.scale*appearance.radius);
+        transform.scale = Vec3::splat(camera.scale * object.radius);
     }
 }
 
