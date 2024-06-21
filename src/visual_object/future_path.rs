@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::{physics::PhysicsFuture, pseudo_camera::CameraState};
-use super::{DrawOptions, SelectedObjects, VisualObjectData};
+use super::{DrawOptions, ReferenceFrameResource, SelectedObjects, VisualObjectData};
 
 
 /// Current just a marker type used for deciding which objects to draw a future path for.
@@ -18,6 +18,7 @@ pub fn draw_future_paths(
     mut gizmos: Gizmos,
     draw_options: Res<DrawOptions>,
     selected_objects: Res<SelectedObjects>,
+    ref_frame_resource: ResMut<ReferenceFrameResource>,
 ) {
     if draw_options.draw_future_path == false { return }
     let Some((focused_entity, _)) = selected_objects.focused else { return };
@@ -26,7 +27,12 @@ pub fn draw_future_paths(
     let future_map = physics_future.get_map();
     let map = future_map.map.read().unwrap();
     let Some(object_future) = map.get(&entity) else { return };
-    let path = object_future.as_point_vec();
+    let path = ref_frame_resource.ref_entity
+        .map(|e| map.get(&e))
+        .flatten()
+        .map_or(object_future.as_point_vec(), |ref_future| {
+            object_future.as_point_vec_with_reference_frame(ref_future)
+    });
     gizmos.linestrip_2d(
         path.into_iter().map(|pos| camera_state.physics_to_world_pos(pos)),
         Color::GRAY

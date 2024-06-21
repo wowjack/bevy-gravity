@@ -29,6 +29,10 @@ mod visual_change_event;
 pub use visual_change_event::*;
 mod spawn;
 pub use spawn::*;
+mod reference_frame;
+pub use reference_frame::*;
+mod follow_object;
+pub use follow_object::*;
 
 pub const CIRCLE_VERTICES: usize = 100;
 
@@ -60,18 +64,22 @@ impl Plugin for VisualObjectPlugin {
             .insert_resource(SimulationState::default())
             .insert_resource(DrawOptions::default())
             .insert_resource(SelectedObjects::default())
+            .insert_resource(ReferenceFrameResource::default())
+            .insert_resource(FollowObjectResource::default())
             .add_systems(Startup, (init, spawn_background_rect))
             .add_systems(PreUpdate, update_object_data)
             .add_systems(Update, (
                 draw_selection_rect,
                 rect_select,
                 draw_selected_object_halo,
+                draw_ref_object_halo.after(draw_selected_object_halo),
                 update_focused_object_data,
                 process_visual_change_event,
                 update_object_positions,
                 draw_future_paths.after(update_object_positions),
                 draw_velocity_arrows.after(update_object_positions),
                 draw_mini_object_point.after(update_object_positions),
+                move_pseudo_camera,
             ));
     }
 }

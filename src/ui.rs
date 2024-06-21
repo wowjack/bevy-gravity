@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider}, EguiContexts};
+use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider, Button}, EguiContexts};
 use bevy_math::DVec2;
-use crate::{physics::{Change, ChangeEvent, MassiveObject}, visual_object::{CircleMesh, DrawOptions, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
+use crate::{physics::{Change, ChangeEvent, MassiveObject}, visual_object::{CircleMesh, DrawOptions, FollowObjectResource, ReferenceFrameResource, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
 
 
 
@@ -32,6 +32,8 @@ pub fn side_panel(
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     selected_objects: Res<SelectedObjects>,
     mut visual_change_event_writer: EventWriter<VisualChangeEvent>,
+    mut ref_frame_resource: ResMut<ReferenceFrameResource>,
+    mut follow_object_resource: ResMut<FollowObjectResource>,
 ) {
     SidePanel::new(panel::Side::Right, "sidepanel")
         .exact_width(SIDE_PANEL_WIDTH)
@@ -50,7 +52,16 @@ pub fn side_panel(
 
             ui.collapsing("Draw Options", |ui| {
                 ui.checkbox(&mut draw_options.draw_velocity_arrow, "Show Velocity");
-                ui.checkbox(&mut draw_options.draw_future_path, "Show Path")
+                ui.checkbox(&mut draw_options.draw_future_path, "Show Path");
+                if ui.button("Set Reference Frame").clicked() {
+                    ref_frame_resource.is_setting_ref_frame = true;
+                    ref_frame_resource.ref_entity = None;
+                }
+                if ui.button("Unset Reference Frame").clicked() {
+                    ref_frame_resource.is_setting_ref_frame = false;
+                    ref_frame_resource.ref_entity = None;
+                }
+                ui.checkbox(&mut follow_object_resource.follow_object, "Follow Focused Object");
             });
 
             ui.separator();

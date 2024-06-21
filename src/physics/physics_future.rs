@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, sync::{atomic::AtomicU64, Arc, Mutex, RwLock}, thread::{self, JoinHandle}};
+use std::{collections::VecDeque, future::Future, sync::{atomic::AtomicU64, Arc, Mutex, RwLock}, thread::{self, JoinHandle}};
 use crossbeam_channel::{Sender, Receiver};
 use bevy::utils::{hashbrown::HashMap, tracing::instrument::WithSubscriber};
 use itertools::Itertools;
@@ -149,7 +149,7 @@ impl FutureMap {
 /// If just recording a position list
 /// Velocity at pos[i].vel = pos[i-1] - pos[i+1].vel
 /// But this doesn't consider time difference between points
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ObjectFuture {
     entity: Entity,
     future: VecDeque<FutureFrame>,
@@ -223,6 +223,14 @@ impl ObjectFuture {
     }
     pub fn as_point_vec_since(&self, time: u64) -> Vec<DVec2> {
         self.future.iter().skip_while(|ff| ff.time < time).map(|ff| ff.position).collect_vec()
+    }
+
+    pub fn as_point_vec_with_reference_frame(&self, ref_future: &ObjectFuture) -> Vec<DVec2> {
+        let mut ref_future: ObjectFuture = ref_future.clone();
+        let initial_pos = ref_future.current_state.position;
+        self.future.iter().map(|FutureFrame { position, time, .. }| {
+            return position.clone() - ref_future.get_state(time.clone()).position + initial_pos;
+        }).collect_vec()
     }
 
     pub fn clear_future(&mut self) {

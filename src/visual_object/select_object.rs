@@ -92,8 +92,15 @@ pub fn draw_selection_rect(background_query: Query<&BackgroundRect>, mut gizmos:
 
 pub fn object_selected(
     listener: Listener<Pointer<Select>>,
-    mut selected_objects: ResMut<SelectedObjects>
+    mut selected_objects: ResMut<SelectedObjects>,
+    mut ref_frame_resource: ResMut<ReferenceFrameResource>,
 ) {
+    if ref_frame_resource.is_setting_ref_frame {
+        ref_frame_resource.ref_entity = Some(listener.target);
+        ref_frame_resource.is_setting_ref_frame = false;
+        return;
+    }
+
     if selected_objects.selected.contains(&listener.target) == false {
         selected_objects.selected = vec![listener.target];
     }
