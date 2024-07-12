@@ -1,6 +1,5 @@
-use bevy::prelude::*;
+use bevy::{math::DVec2, prelude::*};
 use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider, Button}, EguiContexts};
-use bevy_math::DVec2;
 use crate::{physics::{Change, ChangeEvent, MassiveObject}, visual_object::{CircleMesh, DrawOptions, FollowObjectResource, ReferenceFrameResource, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
 
 
@@ -17,7 +16,7 @@ pub struct ObjectSpawnOptions {
 }
 impl Default for ObjectSpawnOptions {
     fn default() -> Self {
-        Self { position: Default::default(), velocity: Default::default(), mass: 1., radius: 1., rgb: Color::DARK_GREEN.rgb_linear_to_vec3().into() }
+        Self { position: Default::default(), velocity: Default::default(), mass: 1., radius: 1., rgb: [1., 1., 1.] }
     }
 }
 
@@ -104,7 +103,7 @@ pub fn side_panel(
                         spawn_options.velocity,
                         spawn_options.mass,
                         spawn_options.radius,
-                        Color::rgb_linear_from_array(spawn_options.rgb)
+                        Color::linear_rgb(spawn_options.rgb[0], spawn_options.rgb[1], spawn_options.rgb[2]),
                     );
                     let bundle = VisualObjectBundle::new(object_data.clone(), circle_mesh.0.clone().into(), &mut color_materials);
                     let entity = commands.spawn(bundle).id();
@@ -164,12 +163,12 @@ pub fn side_panel(
                     }
                 });
 
-                let mut rgb: [f32; 3] = data.color.rgb_linear_to_vec3().into();
+                let mut rgb: [f32; 3] = data.color.to_linear().to_f32_array_no_alpha();
                 ui.horizontal(|ui| {
                     ui.label("Color");
                     let color_changed = bevy_egui::egui::color_picker::color_edit_button_rgb(ui, &mut rgb).changed();
                     if color_changed {
-                        visual_change_event_writer.send(VisualChangeEvent { target: e, change: VisualChange::SetColor(Color::rgb_linear_from_array(rgb)) });
+                        visual_change_event_writer.send(VisualChangeEvent { target: e, change: VisualChange::SetColor(LinearRgba::from_f32_array_no_alpha(rgb).into()) });
                     }
                 });
             });
@@ -177,4 +176,10 @@ pub fn side_panel(
             //check if pointer is within the ui
             //println!("{}", ui.rect_contains_pointer(Rect::everything_right_of(window.width() - SIDE_PANEL_WIDTH)));
         });
+}
+
+
+
+pub fn spawn_orbital_body() {
+    
 }

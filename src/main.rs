@@ -3,23 +3,19 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::render::camera::Viewport;
 use bevy::window::WindowResized;
 use bevy_egui::EguiPlugin;
-use bevy_math::DVec2;
 use bevy_mod_picking::prelude::*;
 use bevy_vector_shapes::Shape2dPlugin;
-use fps_text::{spawn_debug_text, update_debug_text};
 use itertools::Itertools;
-use pseudo_camera::CameraState;
+use pseudo_camera::camera::CameraState;
+use pseudo_camera::pseudo_camera_plugin;
 use ui::SIDE_PANEL_WIDTH;
-use zoom::{mouse_zoom, ScaleChangeEvent};
 
 
-
-mod zoom;
 mod ui;
 mod visual_object;
 mod pseudo_camera;
 mod physics;
-mod fps_text;
+mod util;
 
 //barnes-hut
 
@@ -34,31 +30,16 @@ fn main() {
             physics::PhysicsPlugin,
             visual_object::VisualObjectPlugin,
             Shape2dPlugin::default(),
+            pseudo_camera_plugin
         ))
-        .add_event::<ScaleChangeEvent>()
         .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
-        .add_systems(Startup, (
-            init,
-            spawn_debug_text
-        ))
         .add_systems(Update, (
-            update_debug_text,
-            window_resize.before(mouse_zoom),
-            mouse_zoom,
+            window_resize,
             ui::side_panel,
         ))
-        .run()
+        .run();
 }
 
-
-fn init(
-    mut commands: Commands,
-) {
-    commands.spawn((
-        Camera2dBundle::default(),
-        CameraState::default(),
-    ));
-}
 
 //need to adjust the viewport whenever the window is resized. (these events come ever frame for some reason)
 fn window_resize(mut events: EventReader<WindowResized>, mut camera_query: Query<&mut Camera, With<CameraState>>, window_query: Query<&Window>) {

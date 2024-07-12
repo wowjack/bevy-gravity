@@ -1,6 +1,5 @@
 
-use bevy::prelude::*;
-use bevy_math::{DVec2, dvec2, Vec2, vec2};
+use bevy::{math::DVec2, prelude::*};
 use bevy_mod_picking::prelude::*;
 
 /// Systems for updating the position of massive objects each frame by reading from the future.
@@ -92,6 +91,6 @@ fn init(
     config_store.config_mut::<DefaultGizmoConfigGroup>().0.line_width = 2.;
 
     commands.insert_resource(
-        CircleMesh(meshes.add(bevy_math::prelude::RegularPolygon::new(1., CIRCLE_VERTICES)))
+        CircleMesh(meshes.add(bevy::math::prelude::RegularPolygon::new(1., CIRCLE_VERTICES)))
     );
 }

@@ -1,4 +1,4 @@
-use crate::{physics::PhysicsFuture, pseudo_camera::CameraState};
+use crate::{physics::PhysicsFuture, pseudo_camera::camera::CameraState};
 
 use super::*;
 
@@ -38,7 +38,7 @@ pub fn update_object_positions(
     let camera = camera_query.single();
     for (object, mut transform) in object_query.iter_mut() {
         transform.translation = camera.physics_to_world_pos(object.position).extend(0.);
-        transform.scale = Vec3::splat(camera.scale * object.radius);
+        transform.scale = Vec3::splat(camera.get_scale() * object.radius);
     }
 }
 

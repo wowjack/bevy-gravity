@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{physics::PhysicsFuture, pseudo_camera::CameraState};
+use crate::{physics::PhysicsFuture, pseudo_camera::{self, camera::CameraState}};
 use super::{DrawOptions, ReferenceFrameResource, SelectedObjects, VisualObjectData};
 
 
@@ -35,6 +35,6 @@ pub fn draw_future_paths(
     });
     gizmos.linestrip_2d(
         path.into_iter().map(|pos| camera_state.physics_to_world_pos(pos)),
-        Color::GRAY
+        Color::linear_rgb(0.75, 0.75, 0.75)
     );
 }

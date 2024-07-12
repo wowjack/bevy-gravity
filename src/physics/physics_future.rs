@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, future::Future, sync::{atomic::AtomicU64, Arc, Mutex, RwLock}, thread::{self, JoinHandle}};
 use crossbeam_channel::{Sender, Receiver};
-use bevy::utils::{hashbrown::HashMap, tracing::instrument::WithSubscriber};
+use bevy::{math::DVec2, utils::{hashbrown::HashMap, tracing::instrument::WithSubscriber}};
 use itertools::Itertools;
 
 use super::*;

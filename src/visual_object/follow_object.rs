@@ -1,4 +1,4 @@
-use crate::pseudo_camera::CameraState;
+use crate::pseudo_camera::{self, camera::CameraState};
 
 pub use super::*;
 

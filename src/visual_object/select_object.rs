@@ -1,6 +1,7 @@
 use bevy::sprite::MaterialMesh2dBundle;
 use itertools::Itertools;
-use crate::pseudo_camera::CameraState;
+use crate::pseudo_camera::camera::CameraState;
+
 use super::*;
 
 #[derive(Resource, Default)]
@@ -55,7 +56,7 @@ pub fn spawn_background_rect(
         BackgroundRect::default(),
         MaterialMesh2dBundle {
             material: colors.add(ColorMaterial { color: Color::rgb_u8(3, 0, 7), texture: None }),
-            mesh: meshes.add(bevy_math::primitives::Rectangle::new(10_000., 10_000.)).into(),
+            mesh: meshes.add(bevy::math::primitives::Rectangle::new(10_000., 10_000.)).into(),
             transform: Transform::from_translation(Vec3::Z*-1000.),
             ..default()
         },
@@ -85,7 +86,7 @@ pub fn draw_selection_rect(background_query: Query<&BackgroundRect>, mut gizmos:
         (start_pos + end_pos) / 2.,
         0.,
         (start_pos - end_pos).abs(),
-        Color::GRAY,
+        Color::linear_rgb(0.75, 0.75, 0.75),
     );
 }
 
@@ -119,7 +120,7 @@ pub fn draw_selected_object_halo(
     let camera = camera_query.single();
     for e in &selected_objects.selected {
         let Ok((trans, object)) = object_query.get(e.clone()) else { continue };
-        gizmos.circle_2d(trans.translation.truncate(), object.radius*camera.scale, Color::WHITE).segments(CIRCLE_VERTICES);
+        gizmos.circle_2d(trans.translation.truncate(), object.radius*camera.get_scale(), Color::WHITE).resolution(CIRCLE_VERTICES);
     }
 }
 

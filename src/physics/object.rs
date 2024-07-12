@@ -1,3 +1,5 @@
+use bevy::math::DVec2;
+
 use self::visual_object::VisualObjectData;
 
 use super::*;

@@ -1,6 +1,6 @@
 use bevy::{diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, prelude::*};
 
-use crate::pseudo_camera::CameraState;
+use crate::pseudo_camera::camera::CameraState;
 
 #[derive(Component)]
 pub struct DebugDisplayText;
@@ -16,6 +16,8 @@ pub fn spawn_debug_text(mut commands: Commands) {
         TextSection::from_style(text_style.clone()),
         TextSection::new("  CURSOR_POS:", text_style.clone()),
         TextSection::from_style(text_style.clone()),
+        TextSection::new("  SCALE:", text_style.clone()),
+        TextSection::from_style(text_style),
     ]), DebugDisplayText));
 
 }
@@ -35,4 +37,6 @@ pub fn update_debug_text(
     let (camera_state, camera, gtrans) = camera_query.single();
     let Some(world_pos) = camera_state.viewport_to_physics_pos(cursor_pos, camera, gtrans) else { return };
     text.sections[3].value = format!("{:.4}, {:.4}", world_pos.x, world_pos.y);
+
+    text.sections[5].value = format!("{}", camera_state.get_scale());
 }
