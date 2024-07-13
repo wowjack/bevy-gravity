@@ -15,6 +15,7 @@ pub fn update_object_data(
 ) {
     sim_state.timer.tick(delta_time.delta());
 
+    
 
     // Update the massive objects
     let mut latest_time = 0;
@@ -33,9 +34,18 @@ pub fn update_object_data(
 
 pub fn update_object_positions(
     mut object_query: Query<(&mut VisualObjectData, &mut Transform)>,
-    camera_query: Query<&CameraState>,
+    mut camera_query: Query<&mut CameraState>,
+    follow_resource: Res<FollowObjectResource>,
+    selected_objects: Res<SelectedObjects>,
 ) {
-    let camera = camera_query.single();
+    let mut camera = camera_query.single_mut();
+
+    if follow_resource.follow_object {
+        if let Some((e, _)) = &selected_objects.focused {
+            camera.position = object_query.get(*e).unwrap().0.position;
+        }
+    }
+    
     for (object, mut transform) in object_query.iter_mut() {
         transform.translation = camera.physics_to_world_pos(object.position).extend(0.);
         transform.scale = Vec3::splat(camera.get_scale() * object.radius);

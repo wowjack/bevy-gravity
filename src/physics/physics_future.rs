@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use super::*;
 
-const DISTANCE_STEP: f64 = 1.0;
+const DISTANCE_STEP: f64 = 50.0;
 pub const MAX_FUTURE_SIZE: usize = 50_000_000;
 
 /*

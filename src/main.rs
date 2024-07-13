@@ -6,9 +6,12 @@ use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_vector_shapes::Shape2dPlugin;
 use itertools::Itertools;
+use physics::{Change, ChangeEvent, MassiveObject};
 use pseudo_camera::camera::CameraState;
 use pseudo_camera::pseudo_camera_plugin;
 use ui::SIDE_PANEL_WIDTH;
+use util::generate_system;
+use visual_object::{CircleMesh, VisualObjectBundle};
 
 
 mod ui;
@@ -32,7 +35,8 @@ fn main() {
             Shape2dPlugin::default(),
             pseudo_camera_plugin
         ))
-        .insert_resource(ClearColor(Color::rgb(0.7, 0.7, 0.7)))
+        .insert_resource(ClearColor(Color::linear_rgb(0.7, 0.7, 0.7)))
+        .add_systems(PostStartup, init)
         .add_systems(Update, (
             window_resize,
             ui::side_panel,
@@ -40,14 +44,33 @@ fn main() {
         .run();
 }
 
+fn init(
+    mut commands: Commands,
+    circle_mesh: Res<CircleMesh>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
+    mut change_event_writer: EventWriter<ChangeEvent>,
+) {
+    let bodies = generate_system(4, 1..2);
+    for bundle in bodies.into_iter().map(|d| VisualObjectBundle::new(d, circle_mesh.0.clone().into(), &mut color_materials)) {
+        let object_data = bundle.object_data.clone();
+        let entity = commands.spawn(bundle).id();
+        let event = ChangeEvent { entity, change: Change::CreateObject(MassiveObject::from(object_data)) };
+        change_event_writer.send(event);
+    }
+}
+
+
+
 
 //need to adjust the viewport whenever the window is resized. (these events come ever frame for some reason)
-fn window_resize(mut events: EventReader<WindowResized>, mut camera_query: Query<&mut Camera, With<CameraState>>, window_query: Query<&Window>) {
-    let mut camera = camera_query.single_mut();
+fn window_resize(mut events: EventReader<WindowResized>, mut camera_query: Query<(&mut Camera, &mut CameraState)>, window_query: Query<&Window>) {
+    let (mut camera, mut camera_state) = camera_query.single_mut();
     
     for event in events.read() {
-
         let Ok(window) = window_query.get(event.window) else { continue };
+
+        camera_state.dimensions = Vec2::new(window.width(), window.height() - SIDE_PANEL_WIDTH);
+
         let width = ((window.width() - SIDE_PANEL_WIDTH) * window.scale_factor()) as u32;
         let height = window.physical_height();
     

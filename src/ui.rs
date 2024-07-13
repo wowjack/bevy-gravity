@@ -1,6 +1,7 @@
 use bevy::{math::DVec2, prelude::*};
 use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider, Button}, EguiContexts};
-use crate::{physics::{Change, ChangeEvent, MassiveObject}, visual_object::{CircleMesh, DrawOptions, FollowObjectResource, ReferenceFrameResource, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
+use rand::Rng;
+use crate::{physics::{Change, ChangeEvent, MassiveObject, G, TIME_STEP}, visual_object::{CircleMesh, DrawOptions, FollowObjectResource, ReferenceFrameResource, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
 
 
 
@@ -173,6 +174,15 @@ pub fn side_panel(
                 });
             });
 
+            if let Some((_, object_data)) = &selected_objects.focused {
+                if ui.button("spawn orbital body").clicked() {
+                    //let new_object = get_orbital_body(object_data.clone());
+                    //let visual_object_bundle = VisualObjectBundle::new(new_object.clone(), circle_mesh.0.clone().into(), &mut color_materials);
+                    //let entity = commands.spawn(visual_object_bundle).id();
+                    //let event = ChangeEvent { entity, change: Change::CreateObject(MassiveObject::from(new_object)) };
+                    //change_event_writer.send(event);
+                }
+            }
             //check if pointer is within the ui
             //println!("{}", ui.rect_contains_pointer(Rect::everything_right_of(window.width() - SIDE_PANEL_WIDTH)));
         });
@@ -180,6 +190,3 @@ pub fn side_panel(
 
 
 
-pub fn spawn_orbital_body() {
-    
-}

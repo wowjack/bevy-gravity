@@ -68,6 +68,7 @@ impl Plugin for VisualObjectPlugin {
             .add_systems(Startup, (init, spawn_background_rect))
             .add_systems(PreUpdate, update_object_data)
             .add_systems(Update, (
+                move_pseudo_camera,
                 draw_selection_rect,
                 rect_select,
                 draw_selected_object_halo,
@@ -78,7 +79,6 @@ impl Plugin for VisualObjectPlugin {
                 draw_future_paths.after(update_object_positions),
                 draw_velocity_arrows.after(update_object_positions),
                 draw_mini_object_point.after(update_object_positions),
-                move_pseudo_camera,
             ));
     }
 }

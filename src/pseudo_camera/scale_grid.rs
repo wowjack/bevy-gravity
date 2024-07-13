@@ -1,6 +1,8 @@
 use bevy::{gizmos::gizmos, math::DVec2, prelude::*};
 use crate::pseudo_camera::camera::CameraState;
 
+use super::fps_text::MeterStickText;
+
 #[derive(Default, Reflect, GizmoConfigGroup)]
 pub struct LargeGridConfig {}
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -19,7 +21,8 @@ pub fn draw_scale_grid(
     mut large_grid: Gizmos<LargeGridConfig>,
     mut small_grid: Gizmos<SmallGridConfig>,
     mut axes: Gizmos<AxesConfig>,
-    camera_query: Query<&CameraState>
+    mut gizmos: Gizmos,
+    camera_query: Query<&CameraState>,
 ) {
     let camera = camera_query.single();
 
@@ -37,4 +40,10 @@ pub fn draw_scale_grid(
 
     //draw axes
     axes.grid_2d(camera.physics_to_world_pos(DVec2::ZERO), 0., UVec2::splat(2), Vec2::splat(5000.), Color::linear_rgb(0.5, 0.5, 0.5));
+
+    //draw meter stick
+    let mut position = camera.dimensions;
+    position.y -= 45.;
+    position.x /= 4.; // no clue why you need to divide this by 4 for the correct coordinate
+    gizmos.line_2d(position, position.with_x(position.x+scalar), Color::linear_rgb(1., 0., 0.));
 }

@@ -18,7 +18,7 @@ pub struct CameraState {
     pub position: DVec2, // maybe change to multiple precision in the future (if gravity calculation is optimized enough)
     scale: f32, // f32 should be fine for scale,
     target_scale: f32, // The desired scale of the projection, for smooth zooming
-    dimensions: Vec2,
+    pub dimensions: Vec2,
 }
 impl Default for CameraState {
     fn default() -> Self {
