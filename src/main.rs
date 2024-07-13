@@ -50,7 +50,7 @@ fn init(
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut change_event_writer: EventWriter<ChangeEvent>,
 ) {
-    let bodies = generate_system(4, 1..2);
+    let bodies = generate_system();
     for bundle in bodies.into_iter().map(|d| VisualObjectBundle::new(d, circle_mesh.0.clone().into(), &mut color_materials)) {
         let object_data = bundle.object_data.clone();
         let entity = commands.spawn(bundle).id();

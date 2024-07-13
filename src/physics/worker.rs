@@ -59,7 +59,7 @@ pub fn physics_worker(
 use nbody_barnes_hut::{vector_2d::Vector2D, particle_2d::Particle2D, barnes_hut_2d::QuadTree};
 
 pub const TIME_STEP: f64 = 0.1;
-pub const G: f64 = 0.0000667;
+pub const G: f64 = 6.6743015e-11;
 
 fn process_physics_frame(state: &mut Vec<(Entity, MassiveObject)>) {
     // Figure out which n does quadtree performance overtake brute force performance.

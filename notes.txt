@@ -1,0 +1,2 @@
+Using polar coordinates will make it easy to compress circular orbits and eliminate repeat data.
+Keeping systems (consisting of a central body or system and any orbiting bodies or systems)
