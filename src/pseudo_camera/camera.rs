@@ -42,6 +42,9 @@ impl CameraState {
         let Some(world_pos) = camera.viewport_to_world_2d(camera_gtrans, point) else { return None };
         Some(self.world_to_physics_pos(world_pos))
     }
+    pub fn viewport_to_world_pos(&self, point: Vec2, camera: &Camera, camera_gtrans: &GlobalTransform) -> Option<Vec2> {
+        camera.viewport_to_world_2d(camera_gtrans, point)
+    }
     pub fn set_scale(&mut self, scale: f32) {
         self.scale = scale;
     }

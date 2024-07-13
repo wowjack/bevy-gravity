@@ -22,28 +22,28 @@ pub fn draw_scale_grid(
     mut small_grid: Gizmos<SmallGridConfig>,
     mut axes: Gizmos<AxesConfig>,
     mut gizmos: Gizmos,
-    camera_query: Query<&CameraState>,
+    camera_query: Query<(&Camera, &CameraState, &GlobalTransform)>,
 ) {
-    let camera = camera_query.single();
+    let (camera, camera_state, camera_gtrans) = camera_query.single();
 
     //calculate grid spacing
-    let scalar = camera.get_scale()*10.0f32.powf(-camera.get_scale().log10().ceil() + 2.);
+    let scalar = camera_state.get_scale()*10.0f32.powf(-camera_state.get_scale().log10().ceil() + 2.);
 
     //chose center position
-    let size = 10.0f32.powf(-camera.get_scale().log10().ceil() + 3.) as f64;
-    let pos = (camera.position/size).round()*size;
-    let world_pos = camera.physics_to_world_pos(pos);
+    let size = 10.0f32.powf(-camera_state.get_scale().log10().ceil() + 3.) as f64;
+    let pos = (camera_state.position/size).round()*size;
+    let world_pos = camera_state.physics_to_world_pos(pos);
 
     //draw grids
     large_grid.grid_2d(world_pos, 0., UVec2::splat(20), Vec2::splat(scalar*10.), Color::linear_rgb(0.5, 0.5, 0.5));
     small_grid.grid_2d(world_pos, 0., UVec2::splat(200), Vec2::splat(scalar), Color::linear_rgb(0.5, 0.5, 0.5));
 
     //draw axes
-    axes.grid_2d(camera.physics_to_world_pos(DVec2::ZERO), 0., UVec2::splat(2), Vec2::splat(5000.), Color::linear_rgb(0.5, 0.5, 0.5));
+    axes.grid_2d(camera_state.physics_to_world_pos(DVec2::ZERO), 0., UVec2::splat(2), Vec2::splat(5000.), Color::linear_rgb(0.5, 0.5, 0.5));
 
     //draw meter stick
-    let mut position = camera.dimensions;
-    position.y -= 45.;
-    position.x /= 4.; // no clue why you need to divide this by 4 for the correct coordinate
-    gizmos.line_2d(position, position.with_x(position.x+scalar), Color::linear_rgb(1., 0., 0.));
+    //really fucked up way of putting things in the upper right hand corner
+    let x = camera_state.dimensions.x/4.;
+    let Some(Vec2 { y, .. }) = camera_state.viewport_to_world_pos(Vec2::ZERO, camera, camera_gtrans) else { return };
+    gizmos.line_2d(Vec2::new(x, y), Vec2::new(x+scalar, y), Color::linear_rgb(1., 0., 0.));
 }
