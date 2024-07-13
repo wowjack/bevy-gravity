@@ -43,7 +43,7 @@ pub fn update_debug_text(
     
     let Some(cursor_pos) = window_query.single().cursor_position() else { return };
     let (camera_state, camera, gtrans) = camera_query.single();
-    let Some(world_pos) = camera_state.viewport_to_physics_pos(cursor_pos, camera, gtrans).map(|p| camera_state.physics_to_world_pos(p)) else { return };
+    let Some(world_pos) = camera_state.viewport_to_physics_pos(cursor_pos, camera, gtrans) else { return };
     text.sections[3].value = format!("{:.4}, {:.4}", world_pos.x, world_pos.y);
 
     text.sections[5].value = format!("{}", camera_state.get_scale());
