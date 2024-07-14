@@ -58,7 +58,7 @@ pub fn get_orbital_body(rng: &mut ThreadRng, object_data: VisualObjectData, peri
     let distance = (object_data.mass*G).powf(1./3.) * period.powf(2./3.) as f64;
     let angle = rng.gen_range(0.0..(std::f64::consts::PI*2.0));
     let position = object_data.position + DVec2::from_angle(angle)*distance;
-    let speed = (G * object_data.mass / (distance * TIME_STEP)).sqrt();
+    let speed = (G * object_data.mass / distance).sqrt();
     let vector = DVec2::from_angle(angle + (std::f64::consts::FRAC_PI_2 * if orbit_direction {1.} else {-1.}));
     let velocity = vector.normalize() * speed + object_data.velocity;
     VisualObjectData {

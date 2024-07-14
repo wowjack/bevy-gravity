@@ -2,7 +2,8 @@ use std::{collections::VecDeque, sync::Arc, time::Duration};
 use crossbeam_channel::Receiver;
 use itertools::*;
 
-use bevy::utils::HashMap;
+use bevy::{math::DVec2, utils::HashMap};
+use particular::particle::Accelerations;
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
 use super::*;
@@ -64,8 +65,17 @@ pub const G: f64 = 6.6743015e-11;
 fn process_physics_frame(state: &mut Vec<(Entity, MassiveObject)>) {
     // Figure out which n does quadtree performance overtake brute force performance.
 
-
-    let particle_vec = state.iter().map(|(_, obj)| Particle2D { position: Vector2D { x: obj.position.x, y: obj.position.y }, mass: obj.mass }).collect_vec();
+    let accelerations = state
+        .iter()
+        .map(|(_, mo)| (mo.position.to_array(), mo.mass * G))
+        .accelerations(&mut particular::compute_methods::sequential::BruteForceScalar)
+        .map(|x| DVec2::from_array(x))
+        .zip(state.iter_mut())
+        .for_each(|(acceleration, (_, mo))| {
+            mo.velocity += acceleration * TIME_STEP;
+            mo.position += mo.velocity * TIME_STEP;
+        });
+    /*  state.iter().map(|(_, obj)| Particle2D { position: Vector2D { x: obj.position.x, y: obj.position.y }, mass: obj.mass }).collect_vec();
     let qtree = QuadTree::new(&particle_vec.iter().collect_vec(), 0.5);
     state.par_iter_mut().for_each(|(_, obj)| {
         let force = qtree.calc_forces_on_particle(
@@ -77,4 +87,5 @@ fn process_physics_frame(state: &mut Vec<(Entity, MassiveObject)>) {
         obj.velocity.y += force.y;// * obj.mass;
         obj.position += obj.velocity * TIME_STEP;
     });
+    */
 }
