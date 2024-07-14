@@ -54,11 +54,6 @@ pub fn physics_worker(
 }
 
 
-
-// Going to use a crate to do the barnes hut simulation because I dont really want to do it myself for now
-
-use nbody_barnes_hut::{vector_2d::Vector2D, particle_2d::Particle2D, barnes_hut_2d::QuadTree};
-
 pub const TIME_STEP: f64 = 0.1;
 pub const G: f64 = 6.6743015e-11;
 
