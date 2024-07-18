@@ -9,6 +9,7 @@ use itertools::Itertools;
 use physics::{Change, ChangeEvent, MassiveObject};
 use pseudo_camera::camera::CameraState;
 use pseudo_camera::pseudo_camera_plugin;
+use system_tree::SystemTree;
 use ui::SIDE_PANEL_WIDTH;
 use util::generate_system;
 use visual_object::{CircleMesh, VisualObjectBundle};
@@ -19,10 +20,17 @@ mod visual_object;
 mod pseudo_camera;
 mod physics;
 mod util;
+mod system_tree;
+mod math;
 
-//barnes-hut
 
 fn main() {
+    system_tree::run();
+    
+}
+
+
+fn maina() {
     App::new()
         .add_plugins((
             DefaultPlugins/*.disable::<LogPlugin>()*/,
@@ -50,6 +58,7 @@ fn init(
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut change_event_writer: EventWriter<ChangeEvent>,
 ) {
+    return;
     let bodies = generate_system();
     for bundle in bodies.into_iter().map(|d| VisualObjectBundle::new(d, circle_mesh.0.clone().into(), &mut color_materials)) {
         let object_data = bundle.object_data.clone();

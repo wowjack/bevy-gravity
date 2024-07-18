@@ -15,8 +15,6 @@ pub fn update_object_data(
 ) {
     sim_state.timer.tick(delta_time.delta());
 
-    
-
     // Update the massive objects
     let mut latest_time = 0;
     for (entity, frame) in future.get_frame(sim_state.current_time) {
@@ -41,8 +39,10 @@ pub fn update_object_positions(
     let mut camera = camera_query.single_mut();
 
     if follow_resource.follow_object {
-        if let Some((e, _)) = &selected_objects.focused {
-            camera.position = object_query.get(*e).unwrap().0.position;
+        if let Some((e, data)) = &selected_objects.focused {
+            if data.position.distance_squared(camera.position) < data.velocity.length_squared() {
+                camera.position = object_query.get(*e).unwrap().0.position;
+            }
         }
     }
     

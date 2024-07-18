@@ -6,7 +6,6 @@ pub struct VisualObjectBundle {
     pub object_data: VisualObjectData,
     pub material_mesh_bundle: MaterialMesh2dBundle<ColorMaterial>,
     pub on_select: On::<Pointer<Select>>,
-    pub on_drag: On::<Pointer<Drag>>,
     pub pickable_bundle: PickableBundle,
 }
 impl VisualObjectBundle {
@@ -16,7 +15,6 @@ impl VisualObjectBundle {
             object_data,
             material_mesh_bundle: MaterialMesh2dBundle { material, mesh, ..default() },
             on_select: On::<Pointer<Select>>::run(object_selected),
-            on_drag: On::<Pointer<Drag>>::run(drag_object),
             pickable_bundle: PickableBundle::default()
         }
     }

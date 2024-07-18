@@ -5,9 +5,6 @@ use bevy_mod_picking::prelude::*;
 /// Systems for updating the position of massive objects each frame by reading from the future.
 mod update;
 pub use update::*;
-/// Functionality for dragging objects to move them.
-mod drag;
-pub use drag::*;
 /// Bundle for easily creating objects.
 mod bundle;
 pub use bundle::*;

@@ -38,7 +38,7 @@ pub fn physics_worker(
                 // Make sure no two objects have the same position otherwise the worker will crash.
 
                 // Start at time 1
-                // Time 0 already exists
+                // Time 0 already exists from process_changes
                 time = 1; 
             },
             _ => ()
@@ -46,7 +46,6 @@ pub fn physics_worker(
 
         if map.len() > MAX_FUTURE_SIZE { continue }
 
-        //println!("Process frame {time}");
         process_physics_frame(&mut state);
         map.add_frame(&state, time);
         time += 1;
