@@ -1,7 +1,7 @@
 use bevy::{math::DVec2, prelude::*};
 use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider, Button}, EguiContexts};
 use rand::Rng;
-use crate::{physics::{Change, ChangeEvent, MassiveObject, G, TIME_STEP}, visual_object::{CircleMesh, DrawOptions, FollowObjectResource, ReferenceFrameResource, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
+use crate::{visual_object::{CircleMesh, DrawOptions, FollowObjectResource, ReferenceFrameResource, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
 
 
 
@@ -23,7 +23,7 @@ impl Default for ObjectSpawnOptions {
 
 pub fn side_panel(
     mut contexts: EguiContexts,
-    mut change_event_writer: EventWriter<ChangeEvent>,
+    //mut change_event_writer: EventWriter<ChangeEvent>,
     mut commands: Commands,
     mut sim_state: ResMut<SimulationState>,
     mut draw_options: ResMut<DrawOptions>,
@@ -107,9 +107,9 @@ pub fn side_panel(
                         Color::linear_rgb(spawn_options.rgb[0], spawn_options.rgb[1], spawn_options.rgb[2]),
                     );
                     let bundle = VisualObjectBundle::new(object_data.clone(), circle_mesh.0.clone().into(), &mut color_materials);
-                    let entity = commands.spawn(bundle).id();
-                    let event = ChangeEvent { entity, change: crate::physics::Change::CreateObject(MassiveObject::from(object_data))};
-                    change_event_writer.send(event);
+                    //let entity = commands.spawn(bundle).id();
+                    //let event = ChangeEvent { entity, change: crate::physics::Change::CreateObject(MassiveObject::from(object_data))};
+                    //change_event_writer.send(event);
                 }
             });
 
@@ -126,8 +126,8 @@ pub fn side_panel(
                     let x_pos_changed = ui.add(DragValue::new(&mut data.position.x).prefix("X: ")).changed();
                     let y_pos_changed = ui.add(DragValue::new(&mut data.position.y).prefix("Y: ")).changed();
                     if x_pos_changed || y_pos_changed {
-                        let event = ChangeEvent::new(e, Change::SetPosition(data.position));
-                        change_event_writer.send(event);
+                        //let event = ChangeEvent::new(e, Change::SetPosition(data.position));
+                        //change_event_writer.send(event);
                     }
                 });
                 ui.horizontal(|ui| {
@@ -135,8 +135,8 @@ pub fn side_panel(
                     let x_vel_changed = ui.add(DragValue::new(&mut data.velocity.x).prefix("X: ")).changed();
                     let y_vel_changed = ui.add(DragValue::new(&mut data.velocity.y).prefix("Y: ")).changed();
                     if x_vel_changed || y_vel_changed {
-                        let event = ChangeEvent::new(e, Change::SetVelocity(data.velocity));
-                        change_event_writer.send(event);
+                        //let event = ChangeEvent::new(e, Change::SetVelocity(data.velocity));
+                        //change_event_writer.send(event);
                     }
                 });
                 ui.horizontal(|ui| {
@@ -148,8 +148,8 @@ pub fn side_panel(
                             .custom_formatter(|num, _| format!("{:1.1e}", num))
                     );
                     if mass_slider.changed() {
-                        let event = ChangeEvent::new(e, Change::SetMass(data.mass));
-                        change_event_writer.send(event);
+                        //let event = ChangeEvent::new(e, Change::SetMass(data.mass));
+                        //change_event_writer.send(event);
                     }
                 });
                 ui.horizontal(|ui| {

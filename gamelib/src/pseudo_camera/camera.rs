@@ -60,6 +60,6 @@ impl CameraState {
 
     pub fn zoom_to_target_scale(&mut self, delta_ms: u128) {
         self.scale *= (self.target_scale/self.scale).ln().mul(ZOOM_SPEED * delta_ms as f32).exp();
-        println!("new scale: {}", self.scale)
+        //println!("new scale: {}", self.scale)
     }
 }

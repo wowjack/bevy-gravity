@@ -1,4 +1,6 @@
-use crate::{physics::PhysicsFuture, pseudo_camera::camera::CameraState};
+use std::any::Any;
+
+use crate::{gravity_system_tree::system_manager::GravitySystemManager, pseudo_camera::camera::CameraState};
 
 use super::*;
 
@@ -8,11 +10,29 @@ Read position from the physics future, update object positions if they're within
 */
 
 pub fn update_object_data(
+    
     mut object_query: Query<(&mut VisualObjectData, &mut Transform)>,
-    future: Res<PhysicsFuture>,
+    //future: Res<PhysicsFuture>,
     mut sim_state: ResMut<SimulationState>,
     delta_time: Res<Time>,
+    mut gravity_system_manager: ResMut<GravitySystemManager>,
 ) {
+    sim_state.timer.tick(delta_time.delta());
+
+    for (entity, change) in gravity_system_manager.get_state_at_time(sim_state.current_time as usize) {
+        let Ok((mut object, _)) = object_query.get_mut(entity) else { return };
+        object.position = change.position;
+        object.velocity = change.velocity;
+    }
+
+
+    // About 60 updates per second
+    if sim_state.running == false { return }
+    sim_state.current_time = sim_state.current_time + sim_state.timer.times_finished_this_tick() as u64;
+
+
+
+    /*
     sim_state.timer.tick(delta_time.delta());
 
     // Update the massive objects
@@ -27,6 +47,7 @@ pub fn update_object_data(
     // About 60 updates per second
     if sim_state.running == false { return }
     sim_state.current_time = latest_time + sim_state.run_speed * sim_state.timer.times_finished_this_tick() as u64;
+    */
 }
 
 

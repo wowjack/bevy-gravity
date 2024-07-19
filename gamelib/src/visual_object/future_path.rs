@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{physics::PhysicsFuture, pseudo_camera::{self, camera::CameraState}};
+use crate::{pseudo_camera::{self, camera::CameraState}};
 use super::{DrawOptions, ReferenceFrameResource, SelectedObjects, VisualObjectData};
 
 
@@ -12,6 +12,7 @@ use super::{DrawOptions, ReferenceFrameResource, SelectedObjects, VisualObjectDa
 
 
 pub fn draw_future_paths(
+    /*
     object_query: Query<Entity, With<VisualObjectData>>,
     camera_query: Query<&CameraState>,
     physics_future: Res<PhysicsFuture>,
@@ -19,7 +20,9 @@ pub fn draw_future_paths(
     draw_options: Res<DrawOptions>,
     selected_objects: Res<SelectedObjects>,
     ref_frame_resource: ResMut<ReferenceFrameResource>,
+    */
 ) {
+    /*
     if draw_options.draw_future_path == false { return }
     let Some((focused_entity, _)) = selected_objects.focused else { return };
     let Ok(entity) = object_query.get(focused_entity) else { return };
@@ -37,4 +40,5 @@ pub fn draw_future_paths(
         path.into_iter().map(|pos| camera_state.physics_to_world_pos(pos)),
         Color::linear_rgb(0.75, 0.75, 0.75)
     );
+    */
 }

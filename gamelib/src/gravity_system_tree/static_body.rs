@@ -1,11 +1,12 @@
 // A Body that effects gravity but is not affected.
 // Can follow a set path or be still
 
+use bevy::prelude::Entity;
 use particular::math::{DVec2, Zero};
 
 use crate::math;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StaticPosition {
     /// A Body that remains motionless relative to the system, staying perfectly in the center
     Still,
@@ -26,6 +27,12 @@ impl StaticPosition {
             Self::Circular { radius, speed, start_angle } => [*radius, (start_angle+speed*time as f64) % std::f64::consts::TAU]
         }
     }
+    pub fn get_radius(&self) -> f64 {
+        match self {
+            Self::Still => 0.,
+            Self::Circular { radius, .. } => *radius
+        }
+    }
 
 
     /// Get cartesian coordinates at time t assuming the center of the orbit is (0, 0)
@@ -34,8 +41,16 @@ impl StaticPosition {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StaticBody {
     pub position: StaticPosition,
-    pub mass: f64 //or gravitational parameter G*mass?
+    pub mass: f64, //or gravitational parameter G*mass?
+    pub radius: f64,
+    pub entity: Option<Entity>
+}
+
+impl StaticBody {
+    pub fn new(position: StaticPosition, mass: f64, radius: f64, entity: Option<Entity>) -> Self {
+        Self { position, mass, radius, entity}
+    }
 }

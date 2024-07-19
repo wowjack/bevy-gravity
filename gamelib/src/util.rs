@@ -3,7 +3,7 @@ use bevy::{color::Color, math::DVec2};
 use bincode::deserialize;
 use rand::{rngs::ThreadRng, Rng};
 
-use crate::{physics::{G, TIME_STEP}, visual_object::VisualObjectData};
+use crate::{visual_object::VisualObjectData};
 
 pub fn load_from_file() -> Result<(), ()> {
     let Ok(data) = fs::read("./save.dat") else { return Err(()) };
@@ -17,9 +17,10 @@ pub fn save_to_file(data: Vec<u8>) -> Result<(), ()> {
     todo!();
 }
 
-/// Maximum depth 6?
-/// Mass decreases by a factor of 100 to 10_000?
-/// period decreases by a factor of 10? 100?
+// Maximum depth 6?
+// Mass decreases by a factor of 100 to 10_000?
+// period decreases by a factor of 10? 100?
+/*
 pub fn generate_system() -> Vec<VisualObjectData> {
     let mut bodies: Vec<VisualObjectData> = vec![];
     let masses = [1e36, 1e30, 1e24, 1e20]; 
@@ -31,6 +32,7 @@ pub fn generate_system() -> Vec<VisualObjectData> {
     generate_system_recursive(1, &mut bodies, center_body, &periods, &num_bodies, &masses);
     return bodies;
 }
+
 
 fn generate_system_recursive(index: usize, objects: &mut Vec<VisualObjectData>, center: VisualObjectData, periods: &[f32; 4], num_bodies: &[usize; 3], masses: &[f64; 4]) {
     if index == 4 { return }
@@ -69,3 +71,4 @@ pub fn get_orbital_body(rng: &mut ThreadRng, object_data: VisualObjectData, peri
         color: Color::linear_rgb(1., 1., 1.),
     }
 }
+*/
