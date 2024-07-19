@@ -10,7 +10,6 @@ Read position from the physics future, update object positions if they're within
 */
 
 pub fn update_object_data(
-    
     mut object_query: Query<(&mut VisualObjectData, &mut Transform)>,
     //future: Res<PhysicsFuture>,
     mut sim_state: ResMut<SimulationState>,

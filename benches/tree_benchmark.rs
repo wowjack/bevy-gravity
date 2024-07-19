@@ -6,32 +6,33 @@ use gamelib::bevy::prelude::Entity;
 
 
 
-fn tree_single_layer_benchmark(c: &mut Criterion) {
+fn single_body_benchmark(c: &mut Criterion) {
     let test_system = GravitySystemBuilder::new()
         .with_radius(1_000_000.)
         .with_position(StaticPosition::Still)
         .with_time_step(1)
         .with_static_bodies(&vec![
             StaticBody::new(StaticPosition::Still, 100., 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 400., speed: 0.001, start_angle: 0. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.0005, start_angle: 1. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 600., speed: 0.005, start_angle: 2. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 700., speed: 0.005, start_angle: 3. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 800., speed: 0.005, start_angle: 4. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 900., speed: 0.005, start_angle: 5. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 1000., speed: 0.005, start_angle: 6. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 1100., speed: 0.005, start_angle: 0.5 }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 1200., speed: 0.005, start_angle: 1.5 }, 0.00000000001, 1., None),
         ])
         .with_dynamic_bodies(&vec![
-            DynamicBody::new(DVec2::new(10., 0.), DVec2::new(0., 10.), 1., None),
-            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 5.), 1., None),
-            DynamicBody::new(DVec2::new(35., 0.), DVec2::new(0., 2.), 1., None),
-            DynamicBody::new(DVec2::new(100., 0.), DVec2::new(0., 1.), 1., None),
-            DynamicBody::new(DVec2::new(120., 0.), DVec2::new(0., 1.5), 1., None),
-            DynamicBody::new(DVec2::new(-10., 0.), DVec2::new(0., 10.), 1., None),
-            DynamicBody::new(DVec2::new(-20., 0.), DVec2::new(0., 5.), 1., None),
-            DynamicBody::new(DVec2::new(-35., 0.), DVec2::new(0., 2.), 1., None),
-            DynamicBody::new(DVec2::new(-100., 0.), DVec2::new(0., 1.), 1., None),
-            DynamicBody::new(DVec2::new(-120., 0.), DVec2::new(0., 1.5), 1., None),
+            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., None),
         ])
         .build().expect("why did this fail?");
 
 
-    c.bench_function("single layer tree", |b| b.iter(|| {
+    c.bench_function("single body", |b| b.iter(|| {
         let mut system = test_system.clone();
-        for _ in 0..100 {
+        // 100_000 ticks is about 28 mins at 20 text per second
+        for _ in 0..100_000 {
             system.calculate_gravity();
         }
         let mut x = black_box(system);
@@ -133,5 +134,5 @@ fn tree_two_layer_benchmark(c: &mut Criterion) {
 }
 
 
-criterion_group!(benches, tree_single_layer_benchmark, tree_two_layer_benchmark);
+criterion_group!(benches, single_body_benchmark, tree_two_layer_benchmark);
 criterion_main!(benches);
