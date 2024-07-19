@@ -16,6 +16,8 @@ use gravity_system_tree::SystemTree;
 use ui::SIDE_PANEL_WIDTH;
 //use util::generate_system;
 use visual_object::{CircleMesh, VisualObjectBundle, VisualObjectData};
+pub use bevy;
+pub use itertools;
 
 
 
@@ -58,56 +60,84 @@ fn init(
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     //mut change_event_writer: EventWriter<ChangeEvent>,
 ) {
-    /*
-    let child_system = GravitySystemBuilder::new()
-        .with_radius(100.)
-        .with_position(StaticPosition::Circular { radius: 20., speed: 0.001, start_angle: 0. })
-        .with_time_step(1)
-        .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, 10., 1., None),
-            StaticBody::new(StaticPosition::Circular { radius: 5., speed: 0.1, start_angle: 0. }, 10., 1., None),
-        ])
-        .with_dynamic_bodies(&[
-            DynamicBody::new(
-                particular::math::DVec2::new(0.,-10.),
-                particular::math::DVec2::new(0.,0.),
-                0.00000001,
-                None
-            )
-        ]);
-    let test_system = GravitySystemBuilder::new()
-        .with_radius(1_000_000.)
-        .with_position(StaticPosition::Still)
-        .with_time_step(1)
-        .with_children(&[child_system]);
-    */
     let test_system = GravitySystemBuilder::new()
         .with_radius(1_000.)
-        .with_position(StaticPosition::Circular { radius: 100_000., speed: 0.001, start_angle: 0. })
+        .with_position(StaticPosition::Circular { radius: 100_000., speed: 0.0005, start_angle: 0. })
         .with_time_step(1)
-        .with_static_bodies(&vec![
+        .with_static_bodies(&[
             StaticBody::new(StaticPosition::Still, 100., 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 600., speed: 0.001, start_angle: 0. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 800., speed: 0.0005, start_angle: 0. }, 0.00000000001, 1., None),
+            StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.005, start_angle: 0. }, 0.00000000001, 1., None),
         ])
-        .with_dynamic_bodies(&vec![
-            //DynamicBody::new(particular::math::DVec2::new(10., 0.), particular::math::DVec2::new(0., 10.), 1., None),
-            //DynamicBody::new(particular::math::DVec2::new(20., 0.), particular::math::DVec2::new(0., 5.), 1., None),
+        .with_dynamic_bodies(&[
+            DynamicBody::new(particular::math::DVec2::new(10., 0.), particular::math::DVec2::new(0., 3.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(20., 0.), particular::math::DVec2::new(0., 2.5), 1., None),
             DynamicBody::new(particular::math::DVec2::new(35., 0.), particular::math::DVec2::new(0., 2.), 1., None),
             DynamicBody::new(particular::math::DVec2::new(100., 0.), particular::math::DVec2::new(0., 1.), 1., None),
-            //DynamicBody::new(particular::math::DVec2::new(120., 0.), particular::math::DVec2::new(0., 1.5), 1., None),
-            //DynamicBody::new(particular::math::DVec2::new(-10., 0.), particular::math::DVec2::new(0., 10.), 1., None),
-            //DynamicBody::new(particular::math::DVec2::new(-20., 0.), particular::math::DVec2::new(0., 5.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(120., 0.), particular::math::DVec2::new(0., 0.5), 1., None),
+
+            DynamicBody::new(particular::math::DVec2::new(-10., 0.), particular::math::DVec2::new(0., 3.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-20., 0.), particular::math::DVec2::new(0., 2.5), 1., None),
             DynamicBody::new(particular::math::DVec2::new(-35., 0.), particular::math::DVec2::new(0., 2.), 1., None),
             DynamicBody::new(particular::math::DVec2::new(-100., 0.), particular::math::DVec2::new(0., 1.), 1., None),
-            //DynamicBody::new(particular::math::DVec2::new(-120., 0.), particular::math::DVec2::new(0., 1.5), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-120., 0.), particular::math::DVec2::new(0., 0.5), 1., None),
+
+
+            DynamicBody::new(particular::math::DVec2::new(0., 10.), particular::math::DVec2::new(3., 0.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(0., 20.), particular::math::DVec2::new(2.5, 0.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(0., 35.), particular::math::DVec2::new(2., 0.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(0., 100.), particular::math::DVec2::new(1., 0.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(0., 120.), particular::math::DVec2::new(0.5, 0.), 1., None),
+
+            DynamicBody::new(particular::math::DVec2::new(0., -10.), particular::math::DVec2::new(3., 0.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(0., -20.), particular::math::DVec2::new(2.5, 0.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(0., -35.), particular::math::DVec2::new(2., 0.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(0., -100.), particular::math::DVec2::new(1., 0.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(0., -120.), particular::math::DVec2::new(0.5, 0.), 1., None),
         ]);
     let parent_system = GravitySystemBuilder::new()
-        .with_radius(1_000_000.)
+        .with_radius(1_000_000_000.)
         .with_position(StaticPosition::Still)
         .with_time_step(10)
         .with_static_bodies(&[
             StaticBody::new(StaticPosition::Still, 1_000_000_000., 100., None)
         ])
-        .with_children(&[test_system]);
+        .with_dynamic_bodies(&[
+            DynamicBody::new(particular::math::DVec2::new(51_000., 0.), particular::math::DVec2::new(0., 140.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(40_000., 0.), particular::math::DVec2::new(0., 160.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(42_000., 0.), particular::math::DVec2::new(0., 140.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(43_000., 0.), particular::math::DVec2::new(0., 140.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(45_000., 0.), particular::math::DVec2::new(0., 150.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(50_000., 0.), particular::math::DVec2::new(0., 150.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(52_000., 0.), particular::math::DVec2::new(0., 140.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(56_000., 0.), particular::math::DVec2::new(0., 120.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(58_000., 0.), particular::math::DVec2::new(0., 120.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(60_000., 0.), particular::math::DVec2::new(0., 100.), 1., None),
+
+            DynamicBody::new(particular::math::DVec2::new(-51_000., 0.), particular::math::DVec2::new(0., -140.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-40_000., 0.), particular::math::DVec2::new(0., -160.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-42_000., 0.), particular::math::DVec2::new(0., -140.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-43_000., 0.), particular::math::DVec2::new(0., -140.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-45_000., 0.), particular::math::DVec2::new(0., -150.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-50_000., 0.), particular::math::DVec2::new(0., -150.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-52_000., 0.), particular::math::DVec2::new(0., -140.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-56_000., 0.), particular::math::DVec2::new(0., -120.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-58_000., 0.), particular::math::DVec2::new(0., -120.), 1., None),
+            DynamicBody::new(particular::math::DVec2::new(-60_000., 0.), particular::math::DVec2::new(0., -100.), 1., None),
+        ])
+        .with_children(&[
+            test_system.clone().with_position(StaticPosition::Circular { radius: 105_000., speed: 0.00045, start_angle: 0.5 }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 160_000., speed: 0.0003, start_angle: 3.5 }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 117_000., speed: 0.00044, start_angle: 5. }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 122_000., speed: 0.00053, start_angle: 1.5 }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 136_000., speed: 0.00044, start_angle: 0.5 }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 140_000., speed: 0.00035, start_angle: 2. }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 100_000., speed: 0.0005, start_angle: 3. }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 100_000., speed: 0.0005, start_angle: 5.5 }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 110_000., speed: 0.0005, start_angle: 4. }),
+            test_system,
+        ]);
     let entities = (0..parent_system.total_bodies()).map(|_|
         commands.spawn(VisualObjectBundle::new(VisualObjectData::default(), circle_mesh.0.clone().into(), &mut color_materials)).id()
     ).collect_vec();

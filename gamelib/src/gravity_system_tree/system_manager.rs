@@ -106,8 +106,8 @@ impl ObjectFuture {
                 return Some(MassiveObject { position: bevy::math::DVec2::new(position.x, position.y), ..object.clone() })
             },
             Self::Dynamic { prev, prev_time, next, next_time } => {
-                if time > *next_time { panic!("no position available1") }
-                if time < *prev_time { panic!("no position available") }
+                if time > *next_time { panic!("no position available. requested: {time} available: {next_time}") }
+                if time < *prev_time { panic!("no position available. requested: {time} initial: {prev_time}") }
                 if time == *next_time {
                     return Some(next.clone());
                 }
