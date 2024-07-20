@@ -161,14 +161,24 @@ impl SystemTree {
 
     /// Performs one time step of gravity calculation
     pub fn calculate_gravity(&mut self) -> Vec<(u64, DynamicBody)> {
+        let latest_time = self.calculate_latest_time();
         let mut elevator = Vec::new();
         let mut changes = Vec::new();
-        self.calculate_gravity_recursive(&mut elevator, &mut changes);
+        self.calculate_gravity_recursive(&mut elevator, &mut changes, latest_time);
         return changes
     }
 
+    
+
     /// The elevator is a waiting spot for dynamic bodies that are exiting the system they are currently in
-    fn calculate_gravity_recursive(&mut self, elevator: &mut Vec<(DynamicBody, u64)>, changes: &mut Vec<(u64, DynamicBody)>) {
+    fn calculate_gravity_recursive(&mut self, elevator: &mut Vec<(DynamicBody, u64)>, changes: &mut Vec<(u64, DynamicBody)>, latest_time: u64) {
+        //  Handle bodies moving down from parent system 
+        //  Accelerate dynamic bodies
+        //  check for bodies moving down the tree
+        //  recursive call on child systems with vec of bodies moving down
+        //  Handle bodies moving up from children
+        //  return bodies moving up in the tree
+
 
         if self.calculate_latest_time() >= self.current_time {
             self.check_wait_list();
@@ -178,7 +188,7 @@ impl SystemTree {
 
         let mut new_elevator = Vec::new();
         for child_system in &mut self.child_systems {
-            if child_system.total_child_dynamic_bodies < 1 || child_system.calculate_latest_time() >= self.current_time { continue }
+            if child_system.total_child_dynamic_bodies < 1 { continue }
             child_system.calculate_gravity_recursive(&mut new_elevator, changes);
         }
 
