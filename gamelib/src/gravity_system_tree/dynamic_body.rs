@@ -59,9 +59,9 @@ impl DynamicBody {
         self
     }
 
-    pub fn make_absolute(mut self, gen: PositionGenerator, time: u64, time_step: u64) -> Self {
-        let position = gen.get(time);
-        let velocity = gen.get(time+time_step);
+    pub fn make_absolute(mut self, generator: &PositionGenerator, time: u64, time_step: u64) -> Self {
+        let position = generator.get(time);
+        let velocity = generator.get(time+time_step);
         self.position += position;
         self.velocity += velocity;
         self

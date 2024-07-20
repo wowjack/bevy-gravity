@@ -196,9 +196,9 @@ impl SystemTree {
         //  Report any changes made here
         // If this system was updated, report all dynamic bodies, otherwise only report the ones that got fast forwarded
         if should_calculate {
-            changes.extend(self.dynamic_bodies.iter().map(|b| (self.current_time, b.clone())));
+            changes.extend(self.dynamic_bodies.iter().map(|b| (self.current_time, b.clone().make_absolute(&self.position_generator, self.current_time, self.time_step))));
         } else {
-            changes.extend(self.dynamic_bodies.iter().rev().take(num_bodies).map(|b| (self.current_time, b.clone())));
+            changes.extend(self.dynamic_bodies.iter().rev().take(num_bodies).map(|b| (self.current_time, b.clone().make_absolute(&self.position_generator, self.current_time, self.time_step))));
         }
 
     }
@@ -206,11 +206,11 @@ impl SystemTree {
     /// Search for any dynamic bodies near child systems, and move them to the child system if required
     /// Do the required calculation of translating relative coordinates 
     fn descend_dynamic_bodies(&mut self, changes: &mut Vec<(u64, DynamicBody)>) {
-        todo!()
+        //todo!()
     }
     //same thing as descend but for bodies moving up
     fn ascend_dynamic_bodies(&mut self, elevator: &mut Vec<(u64, DynamicBody)>, changes: &mut Vec<(u64, DynamicBody)>) {
-        todo!()
+        //todo!()
     }
 
 

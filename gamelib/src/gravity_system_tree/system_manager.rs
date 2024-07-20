@@ -8,7 +8,7 @@ use super::{massive_object::MassiveObject, builder::GravitySystemBuilder, dynami
 
 #[derive(Resource)]
 pub struct GravitySystemManager {
-    system: SystemTree,
+    pub system: SystemTree,
     /// Smallest time returned in the updates of the last gravity calculation
     smallest_time: u64,
     /// Latest calculated position of bodies indexed by the entities that represent them
