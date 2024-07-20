@@ -126,7 +126,7 @@ pub struct SystemTree {
 
 impl SystemTree {
     /// Recursively get the smallest current time value of all child systems 
-    fn calculate_latest_time(&self) -> u64 {
+    pub fn calculate_latest_time(&self) -> u64 {
         if self.total_child_dynamic_bodies == 0 {
             return u64::MAX
         }
@@ -369,7 +369,23 @@ impl SystemTree {
         self.static_bodies.len() + self.child_systems.iter().map(|x| x.total_static_bodies()).sum::<usize>()
     }
 
-    
+    pub fn empty_copy(&self, retain: Option<Entity>) -> SystemTree {
+        let child_systems = self.child_systems.iter().map(|s| s.empty_copy(retain)).collect_vec();
+        let retained_bodies = self.dynamic_bodies
+            .iter()
+            .find(|b| b.get_entity() == retain)
+            .map_or(
+                self.wait_list.iter().find(|(_,b)| b.get_entity() == retain).map_or(vec![], |(_, b)| vec![b.clone()]),
+                |b| vec![b.clone()]
+            );
+        return Self {
+            total_child_dynamic_bodies: retained_bodies.len() + self.child_systems.iter().map(|s| s.total_child_dynamic_bodies).sum::<usize>(),
+            wait_list: VecDeque::new(),
+            dynamic_bodies: retained_bodies,
+            child_systems: child_systems,
+            ..self.clone()
+        }
+    }
 }
 
 impl Default for SystemTree {

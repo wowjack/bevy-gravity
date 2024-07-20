@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{gravity_system_tree::system_manager::GravitySystemManager, pseudo_camera::{self, camera::CameraState}};
+use crate::{gravity_system_tree::system_manager::{GravitySystemManager, ObjectFuture}, pseudo_camera::{self, camera::CameraState}};
 use super::{DrawOptions, ReferenceFrameResource, SelectedObjects, VisualObjectData};
 
 
@@ -13,7 +13,7 @@ use super::{DrawOptions, ReferenceFrameResource, SelectedObjects, VisualObjectDa
 
 pub fn draw_future_paths(
     
-    object_query: Query<Entity, With<VisualObjectData>>,
+    //object_query: Query<Entity, With<VisualObjectData>>,
     camera_query: Query<&CameraState>,
     mut gizmos: Gizmos,
     draw_options: Res<DrawOptions>,
@@ -29,15 +29,32 @@ pub fn draw_future_paths(
 ) {
     
     if draw_options.draw_future_path == false { return }
-    let Some((focused_entity, _)) = selected_objects.focused else { return };
-    let Ok(entity) = object_query.get(focused_entity) else { return };
+    let Some((entity, _)) = selected_objects.focused else { return };
     let camera_state = camera_query.single();
-    let mut new_system = gravity_system.system.empty_copy(Some(entity));
-    let iter = (0..1000).map(|_| {
-        let changes = new_system.calculate_gravity();
-        assert_eq!(changes.len(), 1);
-        camera_state.physics_to_world_pos(changes[0].1.position())
-    });
+    match gravity_system.future_map.get(&entity) {
+        Some(ObjectFuture::Static { generator, .. }) => {
+            let smallest_time = gravity_system.system.calculate_latest_time();
+            let iter = (0..100_000).map(|i| camera_state.physics_to_world_pos(generator.get(smallest_time + i.max((i as f32/(10.*camera_state.get_scale())) as u64))));
+            gizmos.linestrip_2d(
+                iter,
+                Color::linear_rgb(0.75, 0.75, 0.75)
+            );
+        },
+        _ => {
+            let mut new_system = gravity_system.system.empty_copy(Some(entity));
+            let iter = (0..100_000).map(|_| {
+                let changes = new_system.calculate_gravity();
+                assert_eq!(changes.len(), 1);
+                camera_state.physics_to_world_pos(changes[0].1.position())
+            });
+            gizmos.linestrip_2d(
+                iter,
+                Color::linear_rgb(0.75, 0.75, 0.75)
+            );
+        }
+    }
+    //let mut new_system = gravity_system.system.empty_copy(Some(entity));
+    //let iter = 
     /*
     let future_map = physics_future.get_map();
     let map = future_map.map.read().unwrap();
@@ -49,8 +66,5 @@ pub fn draw_future_paths(
             object_future.as_point_vec_with_reference_frame(ref_future)
     });
     */
-    gizmos.linestrip_2d(
-        iter,
-        Color::linear_rgb(0.75, 0.75, 0.75)
-    );
+    
 }

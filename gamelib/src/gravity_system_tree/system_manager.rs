@@ -12,7 +12,7 @@ pub struct GravitySystemManager {
     /// Smallest time returned in the updates of the last gravity calculation
     smallest_time: u64,
     /// Latest calculated position of bodies indexed by the entities that represent them
-    future_map: HashMap<Entity, ObjectFuture>
+    pub future_map: HashMap<Entity, ObjectFuture>
 }
 impl GravitySystemManager {
     // Takes in a system builder to ensure the time hasn't advanced at all

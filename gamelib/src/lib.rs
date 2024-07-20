@@ -128,7 +128,7 @@ fn init(
             DynamicBody::new(DVec2::new(-60_000., 0.), DVec2::new(0., -100.), 1., None),
         ])
         .with_children(&[
-            test_system.clone().with_position(StaticPosition::Circular { radius: 105_000., speed: 0.00045, start_angle: 0.5 }),
+            test_system.clone().with_position(StaticPosition::Circular { radius: 105_000., speed: 0.000005, start_angle: 0.5 }),
             test_system.clone().with_position(StaticPosition::Circular { radius: 160_000., speed: 0.0003, start_angle: 3.5 }),
             test_system.clone().with_position(StaticPosition::Circular { radius: 117_000., speed: 0.00044, start_angle: 5. }),
             test_system.clone().with_position(StaticPosition::Circular { radius: 122_000., speed: 0.00053, start_angle: 1.5 }),
