@@ -18,7 +18,7 @@ pub fn update_object_data(
 ) {
     sim_state.timer.tick(delta_time.delta());
 
-    for (entity, change) in gravity_system_manager.get_state_at_time(sim_state.current_time as usize) {
+    for (entity, change) in gravity_system_manager.get_state_at_time(sim_state.current_time) {
         let Ok((mut object, _)) = object_query.get_mut(entity) else { return };
         object.position = change.position;
         object.velocity = change.velocity;

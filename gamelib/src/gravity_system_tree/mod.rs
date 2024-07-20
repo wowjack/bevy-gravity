@@ -90,10 +90,10 @@ dynamic bodies could be a good idea if it doesnt impact performance too much.
 pub struct SystemTree {
     /// How large of a time step this level of the tree takes each iteration \
     /// This depends on the 
-    time_step: usize,
+    time_step: u64,
     /// Time associated with the position of dynamic bodies \
     /// Last calculated time for this system
-    current_time: usize,
+    current_time: u64,
 
     /// The size of the entire system. \
     /// If a dynamic body is within a distance of radius from the system center, it is part of the system or one of its children. 
@@ -109,7 +109,7 @@ pub struct SystemTree {
     total_child_dynamic_bodies: usize,
 
     /// Dynamic bodies that are entering the system from a higher one. 
-    wait_list: VecDeque<(usize, DynamicBody)>,
+    wait_list: VecDeque<(u64, DynamicBody)>,
 
     /// Dynamic bodies currently in the system.
     /// Position is relative to the current system to ensure dynamic bodies can properly orbit
@@ -127,23 +127,18 @@ pub struct SystemTree {
 }
 
 impl SystemTree {
-    /// Generate a random system based on the seed
-    fn generate(seed: u128) -> Self {
-        todo!()
-    }
-    
     /// Recursively get the smallest current time value of all child systems 
-    fn smallest_child_time(&self) -> usize {
+    fn smallest_child_time(&self) -> u64 {
         if self.total_child_dynamic_bodies == 0 {
-            return usize::MAX
+            return u64::MAX
         }
         let children_smallest = self.child_systems.iter().map(|x| x.smallest_child_time()).min().unwrap_or(self.current_time).min(self.current_time);
-        let waitlist_smallest = self.wait_list.iter().next().map_or(usize::MAX, |(time, _)| *time);
+        let waitlist_smallest = self.wait_list.iter().next().map_or(u64::MAX, |(time, _)| *time);
         return children_smallest.min(waitlist_smallest)
     }
 
     /// Insert a body coming from a higher system into the wait list
-    fn insert_body(&mut self, time: usize, body: DynamicBody) {
+    fn insert_body(&mut self, time: u64, body: DynamicBody) {
         // Increase the total child count even though the body is sitting in the wait list
         self.total_child_dynamic_bodies += 1;
         if self.dynamic_bodies.is_empty() || time == self.current_time {
@@ -156,7 +151,7 @@ impl SystemTree {
         
     }
 
-    fn process_elevator(&mut self, elevator: Vec<(DynamicBody, usize)>, changes: &mut Vec<(usize, DynamicBody)>) {
+    fn process_elevator(&mut self, elevator: Vec<(DynamicBody, u64)>, changes: &mut Vec<(u64, DynamicBody)>) {
         // Fast forward the bodies to the system's current time
         self.dynamic_bodies.extend(elevator.into_iter().map(|(mut db, t)| {
             let time_diff = self.current_time - t;
@@ -170,7 +165,7 @@ impl SystemTree {
 
 
     /// Performs one time step of gravity calculation
-    pub fn calculate_gravity(&mut self) -> Vec<(usize, DynamicBody)> {
+    pub fn calculate_gravity(&mut self) -> Vec<(u64, DynamicBody)> {
         let mut elevator = Vec::new();
         let mut changes = Vec::new();
         self.calculate_gravity_recursive(&mut elevator, &mut changes);
@@ -178,7 +173,7 @@ impl SystemTree {
     }
 
     /// The elevator is a waiting spot for dynamic bodies that are exiting the system they are currently in
-    fn calculate_gravity_recursive(&mut self, elevator: &mut Vec<(DynamicBody, usize)>, changes: &mut Vec<(usize, DynamicBody)>) {
+    fn calculate_gravity_recursive(&mut self, elevator: &mut Vec<(DynamicBody, u64)>, changes: &mut Vec<(u64, DynamicBody)>) {
         // Changes need to propogate to the acceleration method and elevator handler
         if self.total_child_dynamic_bodies < 1 {
             return
@@ -200,7 +195,7 @@ impl SystemTree {
     }
 
     /// Whether this level of the tree should get a recursive call when calculating gravity
-    fn requires_calculation(&self, time: usize) -> bool {
+    fn requires_calculation(&self, time: u64) -> bool {
         self.total_child_dynamic_bodies > 0 && self.smallest_child_time() < time
     }
 
@@ -209,7 +204,7 @@ impl SystemTree {
     /// 
     /// Dynamic bodies need to first move with their parent system to ensure orbits around them remain stable.
     /// Only after moving with the parent system do they accelerate
-    fn accelerate_dynamic_bodies(&mut self, elevator: &mut Vec<(DynamicBody, usize)>, changes: &mut Vec<(usize, DynamicBody)>) {
+    fn accelerate_dynamic_bodies(&mut self, elevator: &mut Vec<(DynamicBody, u64)>, changes: &mut Vec<(u64, DynamicBody)>) {
         // The elevator fast forwards particles to a newer time, so dont report changes in the elevator
         // As of right now, the wait list doesnt do anything so changes entering the wait list should be reported
         if self.dynamic_bodies.is_empty() { return }
@@ -261,7 +256,7 @@ impl SystemTree {
     /// Calculate the position of all static masses at time.
     /// Place these positions in the static_masses vector
     /// Return the center position of the system at time
-    fn set_static_masses_to(&mut self, time: usize) {
+    fn set_static_masses_to(&mut self, time: u64) {
         self.static_masses.clear();
         for s in &self.child_systems {
             let pos = DVec2::from(s.position.get_cartesian_position(time));

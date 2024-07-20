@@ -22,7 +22,7 @@ impl PositionGenerator {
         }
     }
 
-    pub fn get(&self, time: usize) -> DVec2 {
+    pub fn get(&self, time: u64) -> DVec2 {
         self.position_chain
             .iter()
             .fold(DVec2::ZERO, |acc, e| acc + e.get_cartesian_position(time))

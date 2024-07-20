@@ -6,7 +6,7 @@ use gamelib::bevy::prelude::Entity;
 
 
 
-fn single_body_benchmark(c: &mut Criterion) {
+fn single_layer_single_body_tree_benchmark(c: &mut Criterion) {
     let test_system = GravitySystemBuilder::new()
         .with_radius(1_000_000.)
         .with_position(StaticPosition::Still)
@@ -29,7 +29,7 @@ fn single_body_benchmark(c: &mut Criterion) {
         .build().expect("why did this fail?");
 
 
-    c.bench_function("single body", |b| b.iter(|| {
+    c.bench_function("single body single layer", |b| b.iter(|| {
         let mut system = test_system.clone();
         // 100_000 ticks is about 28 mins at 20 text per second
         for _ in 0..100_000 {
@@ -43,7 +43,7 @@ fn single_body_benchmark(c: &mut Criterion) {
 }
 
 
-fn tree_two_layer_benchmark(c: &mut Criterion) {
+fn two_layer_populated_tree_benchmark(c: &mut Criterion) {
     let test_system = GravitySystemBuilder::new()
         .with_radius(1_000.)
         .with_position(StaticPosition::Circular { radius: 100_000., speed: 0.0005, start_angle: 0. })
@@ -126,7 +126,7 @@ fn tree_two_layer_benchmark(c: &mut Criterion) {
     let mut manager = GravitySystemManager::new(parent_system, &entities);
     let mut time = 1;
 
-    c.bench_function("two layer tree tree bench", |b| b.iter(|| {
+    c.bench_function("two layer populated tree", |b| b.iter(|| {
         manager.get_state_at_time(time);
         time += 1;
     }));
@@ -134,5 +134,8 @@ fn tree_two_layer_benchmark(c: &mut Criterion) {
 }
 
 
-criterion_group!(benches, single_body_benchmark, tree_two_layer_benchmark);
+criterion_group!(benches,
+    single_layer_single_body_tree_benchmark,
+    two_layer_populated_tree_benchmark
+);
 criterion_main!(benches);

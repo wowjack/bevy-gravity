@@ -40,7 +40,7 @@ impl GravitySystemBuilder {
         self.system.radius = radius;
         self
     }
-    pub fn with_time_step(mut self, time_step: usize) -> Self {
+    pub fn with_time_step(mut self, time_step: u64) -> Self {
         self.system.time_step = time_step;
         self
     }

@@ -21,7 +21,7 @@ pub enum StaticPosition {
     // Arbitrary orbits determined by a vec of positions?
 }
 impl StaticPosition {
-    pub fn get_polar_position(&self, time: usize) -> [f64;2] {
+    pub fn get_polar_position(&self, time: u64) -> [f64;2] {
         match self {
             Self::Still => [0., 0.],
             Self::Circular { radius, speed, start_angle } => [*radius, (start_angle+speed*time as f64) % std::f64::consts::TAU]
@@ -36,7 +36,7 @@ impl StaticPosition {
 
 
     /// Get cartesian coordinates at time t assuming the center of the orbit is (0, 0)
-    pub fn get_cartesian_position(&self, time: usize) -> DVec2 {
+    pub fn get_cartesian_position(&self, time: u64) -> DVec2 {
         math::polar_to_cartesian(self.get_polar_position(time))
     }
 }

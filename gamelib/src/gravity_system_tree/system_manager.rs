@@ -10,7 +10,7 @@ use super::{massive_object::MassiveObject, builder::GravitySystemBuilder, dynami
 pub struct GravitySystemManager {
     system: SystemTree,
     /// Smallest time returned in the updates of the last gravity calculation
-    smallest_time: usize,
+    smallest_time: u64,
     /// Latest calculated position of bodies indexed by the entities that represent them
     future_map: HashMap<Entity, ObjectFuture>
 }
@@ -48,7 +48,7 @@ impl GravitySystemManager {
         }
     }
 
-    pub fn get_state_at_time(&mut self, time: usize) -> Vec<(Entity, MassiveObject)> {
+    pub fn get_state_at_time(&mut self, time: u64) -> Vec<(Entity, MassiveObject)> {
         while time > self.smallest_time {
             let changes = self.system.calculate_gravity();
             self.process_changes_vec(changes);
@@ -61,8 +61,8 @@ impl GravitySystemManager {
     }
 
     /// Update positions in map and self.smallest_time
-    fn process_changes_vec(&mut self, changes: Vec<(usize, DynamicBody)>) {
-        self.smallest_time = usize::MAX;
+    fn process_changes_vec(&mut self, changes: Vec<(u64, DynamicBody)>) {
+        self.smallest_time = u64::MAX;
         for (new_time, new_body) in changes {
             if new_time < self.smallest_time {
                 self.smallest_time = new_time
@@ -92,14 +92,14 @@ pub enum ObjectFuture {
     },
     Dynamic {
         prev: MassiveObject,
-        prev_time: usize,
+        prev_time: u64,
         next: MassiveObject,
-        next_time: usize,
+        next_time: u64,
     }
 }
 
 impl ObjectFuture {
-    pub fn get_state(&self, time: usize) -> Option<MassiveObject> {
+    pub fn get_state(&self, time: u64) -> Option<MassiveObject> {
         match self {
             Self::Static { object, generator } => {
                 let position = generator.get(time);
