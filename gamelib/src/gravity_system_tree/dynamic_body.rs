@@ -1,6 +1,7 @@
 // Bodies that do not affect gravity but are affected by it
 
 use super::massive_object::MassiveObject;
+use super::position_generator::PositionGenerator;
 use bevy::prelude::Entity;
 use bevy::math::DVec2;
 
@@ -51,6 +52,19 @@ impl DynamicBody {
         } else {
             dir * (mass / (norm * norm.sqrt()))
         }
+    }
+
+    pub fn fast_forward(mut self, current_time: u64, next_time: u64) -> Self {
+        self.position += self.velocity * (next_time - current_time) as f64;
+        self
+    }
+
+    pub fn make_absolute(mut self, gen: PositionGenerator, time: u64, time_step: u64) -> Self {
+        let position = gen.get(time);
+        let velocity = gen.get(time+time_step);
+        self.position += position;
+        self.velocity += velocity;
+        self
     }
 }
 

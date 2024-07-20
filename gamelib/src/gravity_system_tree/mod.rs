@@ -161,58 +161,76 @@ impl SystemTree {
 
     /// Performs one time step of gravity calculation
     pub fn calculate_gravity(&mut self) -> Vec<(u64, DynamicBody)> {
-        let latest_time = self.calculate_latest_time();
-        let mut elevator = Vec::new();
         let mut changes = Vec::new();
-        self.calculate_gravity_recursive(&mut elevator, &mut changes, latest_time);
+        self.calculate_gravity_recursive(&mut changes, &mut vec![]);
         return changes
     }
 
     
 
-    /// The elevator is a waiting spot for dynamic bodies that are exiting the system they are currently in
-    fn calculate_gravity_recursive(&mut self, elevator: &mut Vec<(DynamicBody, u64)>, changes: &mut Vec<(u64, DynamicBody)>, latest_time: u64) {
-        //  Handle bodies moving down from parent system 
+    /// Returns a vector of dynamic bodies that are exiting the system
+    fn calculate_gravity_recursive(&mut self, changes: &mut Vec<(u64, DynamicBody)>, elevator: &mut Vec<(u64, DynamicBody)>) {
+        let should_calculate = self.calculate_latest_time() >= self.current_time;
+        if should_calculate {
         //  Accelerate dynamic bodies
-        //  check for bodies moving down the tree
-        //  recursive call on child systems with vec of bodies moving down
-        //  Handle bodies moving up from children
-        //  return bodies moving up in the tree
-
-
-        if self.calculate_latest_time() >= self.current_time {
-            self.check_wait_list();
+            self.accelerate_dynamic_bodies();
             self.current_time += self.time_step;
-            self.accelerate_dynamic_bodies(elevator, changes);
+        //  check if anything in the wait list needs to enter
+            self.check_wait_list();
+        //  check for bodies moving down the tree
+            self.descend_dynamic_bodies(changes);
         }
-
-        let mut new_elevator = Vec::new();
-        for child_system in &mut self.child_systems {
-            if child_system.total_child_dynamic_bodies < 1 { continue }
-            child_system.calculate_gravity_recursive(&mut new_elevator, changes);
+        //  recursive call on child systems
+        let mut new_elevator = vec![];
+        for system in &mut self.child_systems {
+            if system.total_child_dynamic_bodies < 1 || system.calculate_latest_time() >= self.current_time { continue } 
+            system.calculate_gravity_recursive(changes, &mut new_elevator);
         }
+        //  Handle bodies moving up from children
+        let num_bodies = elevator.len();
+        self.dynamic_bodies.extend(new_elevator.into_iter().map(|(time, body)| body.fast_forward(time, self.current_time)));
 
-        self.process_elevator(new_elevator, changes);
+        //  Find bodies exiting system and place in elevator
+        self.ascend_dynamic_bodies(elevator, changes);
+
+        //  Report any changes made here
+        // If this system was updated, report all dynamic bodies, otherwise only report the ones that got fast forwarded
+        if should_calculate {
+            changes.extend(self.dynamic_bodies.iter().map(|b| (self.current_time, b.clone())));
+        } else {
+            changes.extend(self.dynamic_bodies.iter().rev().take(num_bodies).map(|b| (self.current_time, b.clone())));
+        }
 
     }
+
+    /// Search for any dynamic bodies near child systems, and move them to the child system if required
+    /// Do the required calculation of translating relative coordinates 
+    fn descend_dynamic_bodies(&mut self, changes: &mut Vec<(u64, DynamicBody)>) {
+        todo!()
+    }
+    //same thing as descend but for bodies moving up
+    fn ascend_dynamic_bodies(&mut self, elevator: &mut Vec<(u64, DynamicBody)>, changes: &mut Vec<(u64, DynamicBody)>) {
+        todo!()
+    }
+
 
     /// Calculate gravitational acceleration for all bodies, then update velocity and position
     /// Maybe report the changes made for storage in a future map
     /// 
     /// Dynamic bodies need to first move with their parent system to ensure orbits around them remain stable.
     /// Only after moving with the parent system do they accelerate
-    fn accelerate_dynamic_bodies(&mut self, elevator: &mut Vec<(DynamicBody, u64)>, changes: &mut Vec<(u64, DynamicBody)>) {
-        // The elevator fast forwards particles to a newer time, so dont report changes in the elevator
-        // As of right now, the wait list doesnt do anything so changes entering the wait list should be reported
+    fn accelerate_dynamic_bodies(&mut self) {
         if self.dynamic_bodies.is_empty() { return }
         self.set_static_masses_to(self.current_time);
 
-        let mut remove_list: Vec<usize> = Vec::new();
-        for (index, body) in self.dynamic_bodies.iter_mut().enumerate() {
+        for body in self.dynamic_bodies.iter_mut() {
             let acceleration = self.static_masses.iter().fold(DVec2::ZERO, |acceleration, static_mass| { acceleration + body.force_scalar(static_mass.0, static_mass.1) });
 
             body.set_velocity(body.velocity() + acceleration*self.time_step as f64);
             body.set_position(body.position() + body.velocity()*self.time_step as f64);
+        }
+
+        /*
             //detect if the body is exiting the system
             if body.position().length_squared() > self.radius.powi(2) {
                 //B'S POSITION MUST BE CONVERTED TO BE RELATIVE TO THE PARENT SYSTEM BEFORE ENTERING THE ELEVATOR
@@ -223,14 +241,7 @@ impl SystemTree {
                 remove_list.push(index);
                 self.total_child_dynamic_bodies -= 1;
                 continue;
-            }
-            //Place body with absolute position and velocity in the changes vec
-            let absolute_center = self.position_generator.get(self.current_time);
-            let absolute_velocity = self.position_generator.get(self.current_time+self.time_step) / self.time_step as f64;
-            let mut absolute_b = body.clone();
-            absolute_b.set_position(body.position() + absolute_center);
-            absolute_b.set_velocity(body.velocity() + absolute_velocity);
-            changes.push((self.current_time, absolute_b));
+            }            
             // Detect if the body is entering a child system
             if let Some((system, (system_position, _))) = multizip((&mut self.child_systems, &self.static_masses)).find(|(s, m)| (body.position()-m.0).length_squared() < s.radius.powi(2)) {
                 //B'S POSITION MUST BE CONVERTED TO BE RELATIVE TO THE CHILD SYSTEM BEFORE ENTERING THE WAIT SET
@@ -240,10 +251,7 @@ impl SystemTree {
                 system.insert_body(self.current_time, body.clone());
                 remove_list.push(index);
             }
-        }
-        for i in remove_list.into_iter().rev() {
-            self.dynamic_bodies.swap_remove(i);
-        }    
+        */
     }
 
 
@@ -360,6 +368,8 @@ impl SystemTree {
     pub fn total_static_bodies(&self) -> usize {
         self.static_bodies.len() + self.child_systems.iter().map(|x| x.total_static_bodies()).sum::<usize>()
     }
+
+    
 }
 
 impl Default for SystemTree {
@@ -433,6 +443,7 @@ mod tests {
             .unwrap();
         
         let res = parent.calculate_gravity();
+        println!("{res:?}");
         assert!(res.contains(&(1, DynamicBody::new(DVec2::Y, DVec2::Y, 0., None))));
         assert!(res.contains(&(5, DynamicBody::new(DVec2::new(5000., 5.), DVec2::Y, 1., None))));
         assert!(res.contains(&(10, DynamicBody::new(DVec2::new(50_000., 10.), DVec2::Y, 2., None))));
