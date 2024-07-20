@@ -1,6 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use gamelib::{gravity_system_tree::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::{StaticBody, StaticPosition}, system_manager::GravitySystemManager, DVec2, Zero}, itertools::Itertools};
-use rand::{thread_rng, Rng};
+use gamelib::{bevy::math::DVec2, gravity_system_tree::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, static_body::{StaticBody, StaticPosition}, system_manager::GravitySystemManager}, itertools::Itertools};
 use gamelib::bevy::prelude::Entity;
 
 

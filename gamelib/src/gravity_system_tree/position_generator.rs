@@ -1,8 +1,5 @@
 use std::collections::VecDeque;
-
-use itertools::Itertools;
-use particular::math::{DVec2, Zero};
-use rand::{thread_rng, Rng};
+use bevy::math::DVec2;
 
 use super::static_body::StaticPosition;
 

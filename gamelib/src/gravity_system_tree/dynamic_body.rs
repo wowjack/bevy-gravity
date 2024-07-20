@@ -2,7 +2,7 @@
 
 use super::massive_object::MassiveObject;
 use bevy::prelude::Entity;
-use particular::{math::DVec2, PointMass};
+use bevy::math::DVec2;
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -13,9 +13,6 @@ pub struct DynamicBody {
     entity: Option<Entity> // Index into flat vec of bodies?
 }
 impl DynamicBody {
-    pub fn as_point_mass(&self) -> PointMass<DVec2, f64> {
-        PointMass { position: self.position, mass: self.mass }
-    }
     pub fn new(position: DVec2, velocity: DVec2, mass: f64, entity: Option<Entity>) -> Self {
         Self { position, velocity, mass, entity }
     }
@@ -43,6 +40,17 @@ impl DynamicBody {
     }
     pub fn set_entity(&mut self, entity: Option<Entity>) {
         self.entity = entity;
+    }
+    pub fn force_scalar(&self, position: DVec2, mass: f64) -> DVec2 {
+        let dir = position - self.position;
+        let norm = dir.length_squared();
+
+        // Branch removed by the compiler when `CHECK_ZERO` is false.
+        if norm == 0. {
+            dir
+        } else {
+            dir * (mass / (norm * norm.sqrt()))
+        }
     }
 }
 

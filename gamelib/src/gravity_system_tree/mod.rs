@@ -1,10 +1,9 @@
 use std::collections::VecDeque;
-use bevy::prelude::Entity;
-use builder::GravitySystemBuilder;
+use bevy::{math::DVec2, prelude::Entity};
 use dynamic_body::DynamicBody;
 use itertools::{multizip, Itertools};
-pub use particular::{math::{DVec2, FloatVector, Zero}, ComputeMethod, ParticleSliceSystem, ParticleSystem, PointMass};
 use position_generator::PositionGenerator;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator};
 use static_body::{StaticBody, StaticPosition};
 
 
@@ -114,7 +113,6 @@ pub struct SystemTree {
     /// Dynamic bodies currently in the system.
     /// Position is relative to the current system to ensure dynamic bodies can properly orbit
     dynamic_bodies: Vec<DynamicBody>,
-    dynamic_masses: Vec<PointMass<DVec2, f64>>,
 
     /// Lone bodies in the system. \
     /// This should really only be used for the leaf nodes of the tree and the center body of systems. (or some extremely massive single object like a black hole) \
@@ -123,18 +121,18 @@ pub struct SystemTree {
     child_systems: Vec<SystemTree>,
     /// Used for the gravity calculation
     /// Child system masses come first then static bodies
-    static_masses: Vec<PointMass<DVec2, f64>>, 
+    static_masses: Vec<(DVec2, f64)>, 
 }
 
 impl SystemTree {
     /// Recursively get the smallest current time value of all child systems 
-    fn smallest_child_time(&self) -> u64 {
+    fn calculate_latest_time(&self) -> u64 {
         if self.total_child_dynamic_bodies == 0 {
             return u64::MAX
         }
-        let children_smallest = self.child_systems.iter().map(|x| x.smallest_child_time()).min().unwrap_or(self.current_time).min(self.current_time);
+        let children_smallest = self.child_systems.iter().map(|x| x.calculate_latest_time()).min().unwrap_or(self.current_time).min(self.current_time);
         let waitlist_smallest = self.wait_list.iter().next().map_or(u64::MAX, |(time, _)| *time);
-        return children_smallest.min(waitlist_smallest)
+        return children_smallest.min(waitlist_smallest);
     }
 
     /// Insert a body coming from a higher system into the wait list
@@ -142,7 +140,6 @@ impl SystemTree {
         // Increase the total child count even though the body is sitting in the wait list
         self.total_child_dynamic_bodies += 1;
         if self.dynamic_bodies.is_empty() || time == self.current_time {
-            self.dynamic_masses.push(body.as_point_mass());
             self.dynamic_bodies.push(body);
             self.current_time = time;
         } else {
@@ -156,16 +153,15 @@ impl SystemTree {
         self.dynamic_bodies.extend(elevator.into_iter().map(|(mut db, t)| {
             let time_diff = self.current_time - t;
             db.set_position(db.position() + db.velocity() * time_diff as f64);
+            changes.push((self.current_time, db.clone()));
             db
         }));
-        let iter = self.dynamic_bodies.iter().skip(self.dynamic_masses.len());
-        changes.extend(iter.clone().map(|db| (self.current_time, db.clone())));
-        self.dynamic_masses.extend(iter.map(|db| db.as_point_mass()));
     }
 
 
     /// Performs one time step of gravity calculation
     pub fn calculate_gravity(&mut self) -> Vec<(u64, DynamicBody)> {
+        self.calculate_latest_time();
         let mut elevator = Vec::new();
         let mut changes = Vec::new();
         self.calculate_gravity_recursive(&mut elevator, &mut changes);
@@ -179,24 +175,20 @@ impl SystemTree {
             return
         }
 
-        if self.smallest_child_time() >= self.current_time {
+        if self.calculate_latest_time() >= self.current_time {
             self.check_wait_list();
             self.current_time += self.time_step;
             self.accelerate_dynamic_bodies(elevator, changes);
-            self.check_wait_list();
         }
 
         let mut new_elevator = Vec::new();
-        for child_system in self.child_systems.iter_mut().filter(|x| x.requires_calculation(self.current_time)) {
+        for child_system in &mut self.child_systems {
+            if child_system.total_child_dynamic_bodies < 1 || child_system.calculate_latest_time() >= self.current_time { continue }
             child_system.calculate_gravity_recursive(&mut new_elevator, changes);
         }
+
         self.process_elevator(new_elevator, changes);
 
-    }
-
-    /// Whether this level of the tree should get a recursive call when calculating gravity
-    fn requires_calculation(&self, time: u64) -> bool {
-        self.total_child_dynamic_bodies > 0 && self.smallest_child_time() < time
     }
 
     /// Calculate gravitational acceleration for all bodies, then update velocity and position
@@ -210,46 +202,43 @@ impl SystemTree {
         if self.dynamic_bodies.is_empty() { return }
         self.set_static_masses_to(self.current_time);
 
-        let particle_storage = ParticleSliceSystem::with(&self.dynamic_masses, &self.static_masses);
         let mut remove_list: Vec<usize> = Vec::new();
-        for (i, (a, b, m)) in multizip((particular::sequential::BruteForceScalar.compute(particle_storage), &mut self.dynamic_bodies, &mut self.dynamic_masses)).enumerate() {
-            b.set_velocity(b.velocity() + a*self.time_step as f64);
-            b.set_position(b.position() + b.velocity()*self.time_step as f64);
+        for (index, body) in self.dynamic_bodies.iter_mut().enumerate() {
+            let acceleration = self.static_masses.iter().fold(DVec2::ZERO, |acceleration, static_mass| { acceleration + body.force_scalar(static_mass.0, static_mass.1) });
+
+            body.set_velocity(body.velocity() + acceleration*self.time_step as f64);
+            body.set_position(body.position() + body.velocity()*self.time_step as f64);
             //detect if the body is exiting the system
-            if b.position().norm_squared() > self.radius.powi(2) {
+            if body.position().length_squared() > self.radius.powi(2) {
                 //B'S POSITION MUST BE CONVERTED TO BE RELATIVE TO THE PARENT SYSTEM BEFORE ENTERING THE ELEVATOR
                 let system_center = self.position.get_cartesian_position(self.current_time);
-                b.set_position(b.position() + system_center);
-                b.set_velocity(b.velocity() + ((self.position.get_cartesian_position(self.current_time+self.time_step) - system_center)/self.time_step as f64));
-                elevator.push((b.clone(), self.current_time));
-                remove_list.push(i);
+                body.set_position(body.position() + system_center);
+                body.set_velocity(body.velocity() + ((self.position.get_cartesian_position(self.current_time+self.time_step) - system_center)/self.time_step as f64));
+                elevator.push((body.clone(), self.current_time));
+                remove_list.push(index);
                 self.total_child_dynamic_bodies -= 1;
                 continue;
             }
             //Place body with absolute position and velocity in the changes vec
             let absolute_center = self.position_generator.get(self.current_time);
             let absolute_velocity = self.position_generator.get(self.current_time+self.time_step) / self.time_step as f64;
-            let mut absolute_b = b.clone();
-            absolute_b.set_position(b.position() + absolute_center);
-            absolute_b.set_velocity(b.velocity() + absolute_velocity);
+            let mut absolute_b = body.clone();
+            absolute_b.set_position(body.position() + absolute_center);
+            absolute_b.set_velocity(body.velocity() + absolute_velocity);
             changes.push((self.current_time, absolute_b));
             // Detect if the body is entering a child system
-            if let Some((s, _)) = multizip((&mut self.child_systems, &self.static_masses)).find(|(s, m)| (b.position()-m.position).norm_squared() < s.radius.powi(2)) {
+            if let Some((system, (system_position, _))) = multizip((&mut self.child_systems, &self.static_masses)).find(|(s, m)| (body.position()-m.0).length_squared() < s.radius.powi(2)) {
                 //B'S POSITION MUST BE CONVERTED TO BE RELATIVE TO THE CHILD SYSTEM BEFORE ENTERING THE WAIT SET
-                b.set_position(b.position() - m.position);
+                body.set_position(body.position() - *system_position);
                 //Keeping velocity consistent is a little more tricky, It should be done according to the child system's discrete velocity
-                b.set_velocity(b.velocity() - ((s.position.get_cartesian_position(self.current_time+s.time_step) - m.position) / s.time_step as f64));
-                s.insert_body(self.current_time, b.clone());
-                remove_list.push(i);
-            } else {
-                m.position = b.position();
+                body.set_velocity(body.velocity() - ((system.position.get_cartesian_position(self.current_time+system.time_step) - body.position()) / system.time_step as f64));
+                system.insert_body(self.current_time, body.clone());
+                remove_list.push(index);
             }
         }
-        //remove any dynamic bodies that left the system or entered a lower one.
         for i in remove_list.into_iter().rev() {
             self.dynamic_bodies.swap_remove(i);
-            self.dynamic_masses.swap_remove(i);
-        }
+        }    
     }
 
 
@@ -259,12 +248,10 @@ impl SystemTree {
     fn set_static_masses_to(&mut self, time: u64) {
         self.static_masses.clear();
         for s in &self.child_systems {
-            let pos = DVec2::from(s.position.get_cartesian_position(time));
-            self.static_masses.push(PointMass { position: pos, mass: s.mass });
+            self.static_masses.push((s.position.get_cartesian_position(time), s.mass));
         }
         for sb in &self.static_bodies {
-            let pos = DVec2::from(sb.position.get_cartesian_position(time));
-            self.static_masses.push(PointMass { position: pos, mass: sb.mass });
+            self.static_masses.push((sb.position.get_cartesian_position(time), sb.mass));
         }
     }
 
@@ -279,8 +266,6 @@ impl SystemTree {
             let index = self.wait_list.iter().find_position(|x| x.0 > time).map_or(self.wait_list.len(), |x| x.0);
             self.dynamic_bodies.push(first);
             self.dynamic_bodies.extend(self.wait_list.drain(0..index).map(|(_, b)| b));
-            self.dynamic_masses.clear();
-            self.dynamic_masses.extend(self.dynamic_bodies.iter().map(|x| x.as_point_mass()));
             return
         }
 
@@ -291,7 +276,6 @@ impl SystemTree {
             .unwrap_or(self.wait_list.len());
         if num_items_to_drain == 0 { return }
         for (_, body) in self.wait_list.drain(0..num_items_to_drain) {
-            self.dynamic_masses.push(body.as_point_mass());
             self.dynamic_bodies.push(body);
         }
     }
@@ -348,6 +332,7 @@ impl SystemTree {
         }
     }
 
+
     pub fn get_dynamic_body_positions(&self) -> Vec<DynamicBody> {
         let mut bodies = vec![];
         self.get_dynamic_bodies_recursive(&mut bodies);
@@ -384,7 +369,6 @@ impl Default for SystemTree {
             total_child_dynamic_bodies: 0,
             wait_list: VecDeque::new(),
             dynamic_bodies: Default::default(),
-            dynamic_masses: Default::default(),
             static_bodies: Default::default(),
             child_systems: Default::default(),
             static_masses: Default::default()
@@ -401,6 +385,9 @@ impl Default for SystemTree {
 
 #[cfg(test)]
 mod tests {
+    use bevy::prelude::SystemBuilder;
+    use builder::GravitySystemBuilder;
+
     use super::*;
 
     #[test]
@@ -409,11 +396,79 @@ mod tests {
             radius: 100.,
             total_child_dynamic_bodies: 1,
             dynamic_bodies: vec![DynamicBody::new(DVec2::ZERO, DVec2::new(0., 1.), 1., None)],
-            dynamic_masses: vec![PointMass { position: DVec2::ZERO, mass: 1.}],
             ..SystemTree::default()
         };
         test_system.calculate_gravity();
         let body = test_system.dynamic_bodies.first().unwrap();
         assert_eq!(*body, DynamicBody::new(DVec2::new(0., 1.), DVec2::new(0., 1.), 1., None));
+    }
+
+
+    /// Make sure that child systems update correctly and more frequently than parent systems
+    #[test]
+    fn proper_system_iteration() {
+        let grandchild = GravitySystemBuilder::new()
+            .with_position(StaticPosition::Still)
+            .with_time_step(1)
+            .with_radius(500.)
+            .with_dynamic_bodies(&[DynamicBody::new(DVec2::ZERO, DVec2::Y, 0., None)]);
+        let child = GravitySystemBuilder::new()
+            .with_position(StaticPosition::Still)
+            .with_time_step(5)
+            .with_radius(10_000.)
+            .with_dynamic_bodies(&[DynamicBody::new(DVec2::X*5000., DVec2::Y, 1., None)])
+            .with_children(&[grandchild]);
+        let mut parent = GravitySystemBuilder::new()
+            .with_position(StaticPosition::Still)
+            .with_time_step(10)
+            .with_radius(1_000_000.)
+            .with_dynamic_bodies(&[DynamicBody::new(DVec2::X*50_000., DVec2::Y, 2., None)])
+            .with_children(&[child])
+            .build()
+            .unwrap();
+        
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(1, DynamicBody::new(DVec2::Y, DVec2::Y, 0., None))));
+        assert!(res.contains(&(5, DynamicBody::new(DVec2::new(5000., 5.), DVec2::Y, 1., None))));
+        assert!(res.contains(&(10, DynamicBody::new(DVec2::new(50_000., 10.), DVec2::Y, 2., None))));
+
+
+
+        let res = parent.calculate_gravity();
+        println!("{:?}", res);
+        assert!(res.contains(&(2, DynamicBody::new(DVec2::Y*2., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(3, DynamicBody::new(DVec2::Y*3., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(4, DynamicBody::new(DVec2::Y*4., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(5, DynamicBody::new(DVec2::Y*5., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(6, DynamicBody::new(DVec2::Y*6., DVec2::Y, 0., None))));
+        assert!(res.contains(&(10, DynamicBody::new(DVec2::new(5000., 10.), DVec2::Y, 1., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(7, DynamicBody::new(DVec2::Y*7., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(8, DynamicBody::new(DVec2::Y*8., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(9, DynamicBody::new(DVec2::Y*9., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(10, DynamicBody::new(DVec2::Y*10., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(11, DynamicBody::new(DVec2::Y*11., DVec2::Y, 0., None))));
+        assert!(res.contains(&(15, DynamicBody::new(DVec2::new(5000., 15.), DVec2::Y, 1., None))));
+        assert!(res.contains(&(20, DynamicBody::new(DVec2::new(50_000., 20.), DVec2::Y, 2., None))));
+
+        let res = parent.calculate_gravity();
+        assert!(res.contains(&(12, DynamicBody::new(DVec2::Y*12., DVec2::Y, 0., None))));
     }
 }

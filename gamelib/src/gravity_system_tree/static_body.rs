@@ -1,9 +1,7 @@
 // A Body that effects gravity but is not affected.
 // Can follow a set path or be still
 
-use bevy::prelude::Entity;
-use particular::math::{DVec2, Zero};
-
+use bevy::{math::DVec2, prelude::Entity};
 use crate::math;
 
 #[derive(Debug, Clone)]

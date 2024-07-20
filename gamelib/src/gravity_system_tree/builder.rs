@@ -77,17 +77,6 @@ impl GravitySystemBuilder {
             .iter()
             .map(|s| s.total_child_dynamic_bodies)
             .sum::<usize>() + self.system.dynamic_bodies.len();
-
-        //Update the position of dynamic bodies to be relative to the system center
-        //let center = self.system.position_generator.get(0);
-        //let scale_velocity = (self.system.position_generator.get(self.system.time_step) - center) / self.system.time_step as f64;
-        //for body in &mut self.system.dynamic_bodies {
-        //    body.set_position(body.position() + center);
-        //    body.set_velocity(body.velocity() + scale_velocity);
-        //}
-
-        self.system.dynamic_masses = self.system.dynamic_bodies.iter().map(|x| x.as_point_mass()).collect_vec();
-
         return Ok(self.system)
     }
 
