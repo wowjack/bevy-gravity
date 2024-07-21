@@ -3,7 +3,7 @@ use crate::{gravity_system_tree::system_manager::{GravitySystemManager, ObjectFu
 use super::{DrawOptions, ReferenceFrameResource, SelectedObjects, VisualObjectData};
 
 
-/// Current just a marker type used for deciding which objects to draw a future path for.
+/// Use a marker type used for deciding which objects to draw a future path for?
 /// 
 /// Ideally this future path should only be created when it needs to.
 /// First read The full buffer from the future.
@@ -28,6 +28,9 @@ pub fn draw_future_paths(
     */
 ) {
     
+    // My new system tree can calculate 100_000 steps into the future every single frame while only bringing the fps down to 15-20
+    // Very long calculations can be made if this calculation does not take place every frame
+
     if draw_options.draw_future_path == false { return }
     let Some((entity, _)) = selected_objects.focused else { return };
     let camera_state = camera_query.single();

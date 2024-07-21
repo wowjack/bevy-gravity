@@ -206,6 +206,12 @@ impl SystemTree {
     /// Search for any dynamic bodies near child systems, and move them to the child system if required
     /// Do the required calculation of translating relative coordinates 
     fn descend_dynamic_bodies(&mut self, changes: &mut Vec<(u64, DynamicBody)>) {
+        // To find out if a body entered a child system:
+        //
+        //  for body in dynamic_bodies:
+        //      for system in child_systems:
+        //          if body.position.distance_squared(system.position.get(self.current_time)) < system.radius^2:
+        //              
         //todo!()
     }
     //same thing as descend but for bodies moving up
