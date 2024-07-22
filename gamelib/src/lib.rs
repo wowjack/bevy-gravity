@@ -77,20 +77,16 @@ fn init(
             DynamicBody::new(DVec2::new(35., 0.), DVec2::new(0., 2.), 1., None),
             DynamicBody::new(DVec2::new(100., 0.), DVec2::new(0., 1.), 1., None),
             DynamicBody::new(DVec2::new(120., 0.), DVec2::new(0., 0.5), 1., None),
-
             DynamicBody::new(DVec2::new(-10., 0.), DVec2::new(0., 3.), 1., None),
             DynamicBody::new(DVec2::new(-20., 0.), DVec2::new(0., 2.5), 1., None),
             DynamicBody::new(DVec2::new(-35., 0.), DVec2::new(0., 2.), 1., None),
             DynamicBody::new(DVec2::new(-100., 0.), DVec2::new(0., 1.), 1., None),
             DynamicBody::new(DVec2::new(-120., 0.), DVec2::new(0., 0.5), 1., None),
-
-
             DynamicBody::new(DVec2::new(0., 10.), DVec2::new(3., 0.), 1., None),
             DynamicBody::new(DVec2::new(0., 20.), DVec2::new(2.5, 0.), 1., None),
             DynamicBody::new(DVec2::new(0., 35.), DVec2::new(2., 0.), 1., None),
             DynamicBody::new(DVec2::new(0., 100.), DVec2::new(1., 0.), 1., None),
             DynamicBody::new(DVec2::new(0., 120.), DVec2::new(0.5, 0.), 1., None),
-
             DynamicBody::new(DVec2::new(0., -10.), DVec2::new(3., 0.), 1., None),
             DynamicBody::new(DVec2::new(0., -20.), DVec2::new(2.5, 0.), 1., None),
             DynamicBody::new(DVec2::new(0., -35.), DVec2::new(2., 0.), 1., None),
@@ -144,16 +140,6 @@ fn init(
     ).collect_vec();
     let manager = GravitySystemManager::new(parent_system, &entities);
     commands.insert_resource(manager);
-    
-    /*
-    let bodies = generate_system();
-    for bundle in bodies.into_iter().map(|d| VisualObjectBundle::new(d, circle_mesh.0.clone().into(), &mut color_materials)) {
-        let object_data = bundle.object_data.clone();
-        let entity = commands.spawn(bundle).id();
-        let event = ChangeEvent { entity, change: Change::CreateObject(MassiveObject::from(object_data)) };
-        change_event_writer.send(event);
-    }
-    */
 }
 
 

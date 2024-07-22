@@ -45,10 +45,12 @@ pub fn draw_future_paths(
         },
         _ => {
             let mut new_system = gravity_system.system.empty_copy(Some(entity));
-            let iter = (0..100_000).map(|_| {
+            let iter = (0..100_000).filter_map(|_| {
                 let changes = new_system.calculate_gravity();
-                assert_eq!(changes.len(), 1);
-                camera_state.physics_to_world_pos(changes[0].1.position())
+                //println!("Got changes: {changes:?}");
+                //assert_eq!(changes.len(), 1);
+                if changes.len() < 1 { return None }
+                Some(camera_state.physics_to_world_pos(changes[0].1.position()))
             });
             gizmos.linestrip_2d(
                 iter,

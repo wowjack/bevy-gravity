@@ -148,16 +148,6 @@ impl SystemTree {
         
     }
 
-    fn process_elevator(&mut self, elevator: Vec<(DynamicBody, u64)>, changes: &mut Vec<(u64, DynamicBody)>) {
-        // Fast forward the bodies to the system's current time
-        self.dynamic_bodies.extend(elevator.into_iter().map(|(mut db, t)| {
-            let time_diff = self.current_time - t;
-            db.set_position(db.position() + db.velocity() * time_diff as f64);
-            changes.push((self.current_time, db.clone()));
-            db
-        }));
-    }
-
 
     /// Performs one time step of gravity calculation
     pub fn calculate_gravity(&mut self) -> Vec<(u64, DynamicBody)> {
@@ -165,8 +155,6 @@ impl SystemTree {
         self.calculate_gravity_recursive(&mut changes, &mut vec![]);
         return changes
     }
-
-    
 
     /// Returns a vector of dynamic bodies that are exiting the system
     fn calculate_gravity_recursive(&mut self, changes: &mut Vec<(u64, DynamicBody)>, elevator: &mut Vec<(u64, DynamicBody)>) {
@@ -186,12 +174,13 @@ impl SystemTree {
             if system.total_child_dynamic_bodies < 1 || system.calculate_latest_time() >= self.current_time { continue } 
             system.calculate_gravity_recursive(changes, &mut new_elevator);
         }
-        //  Handle bodies moving up from children
-        let num_bodies = elevator.len();
-        self.dynamic_bodies.extend(new_elevator.into_iter().map(|(time, body)| body.fast_forward(time, self.current_time)));
 
         //  Find bodies exiting system and place in elevator
-        self.ascend_dynamic_bodies(elevator, changes);
+        self.ascend_dynamic_bodies(elevator);
+
+        //  Handle bodies moving up from children
+        let num_bodies = new_elevator.len();
+        self.dynamic_bodies.extend(new_elevator.into_iter().map(|(time, body)| body.fast_forward(time, self.current_time)));
 
         //  Report any changes made here
         // If this system was updated, report all dynamic bodies, otherwise only report the ones that got fast forwarded
@@ -206,17 +195,50 @@ impl SystemTree {
     /// Search for any dynamic bodies near child systems, and move them to the child system if required
     /// Do the required calculation of translating relative coordinates 
     fn descend_dynamic_bodies(&mut self, changes: &mut Vec<(u64, DynamicBody)>) {
-        // To find out if a body entered a child system:
-        //
-        //  for body in dynamic_bodies:
-        //      for system in child_systems:
-        //          if body.position.distance_squared(system.position.get(self.current_time)) < system.radius^2:
-        //              
-        //todo!()
+        let remove_list = self.dynamic_bodies
+            .iter()
+            .enumerate()
+            .filter_map(|(index, body)| {
+                for system in &mut self.child_systems {
+                    let system_position = system.position.get_cartesian_position(self.current_time);
+                    let position_difference = body.position() - system_position;
+                    if position_difference.length_squared() < system.radius.powi(2) {
+                        
+                        // Reverse body and system until they no longer intersect
+                        //for now I will just move it directly into the child system
+                        //translate position and velocity to be relative to the child 
+                        let system_velocity = (system.position.get_cartesian_position(self.current_time+system.time_step) - system_position) / system.time_step as f64;
+                        let new_velocity = body.velocity() - system_velocity;
+                        let new_body = DynamicBody::new(position_difference, new_velocity, body.mass(), body.get_entity());
+                        system.insert_body(self.current_time, new_body.clone());
+                        changes.push((self.current_time, new_body.make_absolute(&system.position_generator, self.current_time, system.time_step)));
+                        return Some(index);
+                    }
+                }
+                return None;
+            }).collect_vec();
+        for index in remove_list.iter().rev() {
+            self.dynamic_bodies.swap_remove(*index);
+        }
     }
     //same thing as descend but for bodies moving up
-    fn ascend_dynamic_bodies(&mut self, elevator: &mut Vec<(u64, DynamicBody)>, changes: &mut Vec<(u64, DynamicBody)>) {
-        //todo!()
+    fn ascend_dynamic_bodies(&mut self, elevator: &mut Vec<(u64, DynamicBody)>) {
+        let system_position = self.position.get_cartesian_position(self.current_time);
+        let system_velocity = (self.position.get_cartesian_position(self.current_time+self.time_step) - system_position) / self.time_step as f64;
+        let remove_list = self.dynamic_bodies
+            .iter()
+            .enumerate()
+            .filter_map(|(index, body)| {
+                if body.position().length_squared() <= self.radius.powi(2) { return None }
+                // bodies are fast forwarded after entering the elevator
+                let new_body = DynamicBody::new(system_position+body.position(), body.velocity()+system_velocity, body.mass(), body.get_entity());
+                elevator.push((self.current_time, new_body));
+                return Some(index);
+            }).collect_vec();
+        self.total_child_dynamic_bodies -= remove_list.len();
+        for index in remove_list.iter().rev() {
+            self.dynamic_bodies.swap_remove(*index);
+        }
     }
 
 
@@ -508,5 +530,42 @@ mod tests {
 
         let res = parent.calculate_gravity();
         assert!(res.contains(&(12, DynamicBody::new(DVec2::Y*12., DVec2::Y, 0., None))));
+    }
+
+
+    #[test]
+    fn ascend_single_body() {
+        let child = GravitySystemBuilder::new()
+            .with_position(StaticPosition::Still)
+            .with_time_step(1)
+            .with_radius(3.)
+            .with_dynamic_bodies(&[DynamicBody::new(DVec2::ZERO, DVec2::Y, 0., None)]);
+        let mut parent = GravitySystemBuilder::new()
+            .with_position(StaticPosition::Still)
+            .with_time_step(10)
+            .with_radius(500.)
+            .with_children(&[child])
+            .build()
+            .unwrap();
+
+        let res = parent.calculate_gravity();
+        println!("{res:?}");
+        assert!(res.contains(&(1, DynamicBody::new(DVec2::Y, DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        println!("{res:?}");
+        assert!(res.contains(&(2, DynamicBody::new(DVec2::Y*2., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        println!("{res:?}");
+        assert!(res.contains(&(3, DynamicBody::new(DVec2::Y*3., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        println!("{res:?}");
+        assert!(res.contains(&(10, DynamicBody::new(DVec2::Y*10., DVec2::Y, 0., None))));
+
+        let res = parent.calculate_gravity();
+        println!("{res:?}");
+        assert!(res.contains(&(20, DynamicBody::new(DVec2::Y*20., DVec2::Y, 0., None))));
     }
 }
