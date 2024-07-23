@@ -37,7 +37,7 @@ pub fn draw_future_paths(
     match gravity_system.future_map.get(&entity) {
         Some(ObjectFuture::Static { generator, .. }) => {
             let smallest_time = gravity_system.system.calculate_latest_time();
-            let iter = (0..100_000).map(|i| camera_state.physics_to_world_pos(generator.get(smallest_time + i.max((i as f32/(10.*camera_state.get_scale())) as u64))));
+            let iter = (0..100_000).map(|i| camera_state.physics_to_world_pos(generator.get(smallest_time + i.max((i as f32/(1000.*camera_state.get_scale())) as u64))));
             gizmos.linestrip_2d(
                 iter,
                 Color::linear_rgb(0.75, 0.75, 0.75)
@@ -45,7 +45,7 @@ pub fn draw_future_paths(
         },
         _ => {
             let mut new_system = gravity_system.system.empty_copy(Some(entity));
-            let iter = (0..100_000).filter_map(|_| {
+            let iter = (0..50_000).filter_map(|_| {
                 let changes = new_system.calculate_gravity();
                 //println!("Got changes: {changes:?}");
                 //assert_eq!(changes.len(), 1);

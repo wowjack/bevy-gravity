@@ -1,3 +1,4 @@
+use bevy::color::palettes::css::CORNFLOWER_BLUE;
 use bevy::math::DVec2;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::WindowResized;
@@ -7,8 +8,10 @@ use bevy_mod_picking::prelude::*;
 use bevy_vector_shapes::Shape2dPlugin;
 use gravity_system_tree::builder::GravitySystemBuilder;
 use gravity_system_tree::dynamic_body::DynamicBody;
+use gravity_system_tree::position_generator::PositionGenerator;
 use gravity_system_tree::static_body::StaticBody;
 use itertools::Itertools;
+use math::get_orbital_speed;
 //use physics::{Change, ChangeEvent, MassiveObject};
 use pseudo_camera::camera::CameraState;
 use pseudo_camera::pseudo_camera_plugin;
@@ -16,7 +19,7 @@ use gravity_system_tree::{static_body::StaticPosition, system_manager::GravitySy
 use gravity_system_tree::SystemTree;
 use ui::SIDE_PANEL_WIDTH;
 //use util::generate_system;
-use visual_object::{CircleMesh, VisualObjectBundle, VisualObjectData};
+use visual_object::{CircleMesh, SimulationState, VisualObjectBundle, VisualObjectData};
 pub use bevy;
 pub use itertools;
 
@@ -49,100 +52,64 @@ pub fn library_main() {
         .add_systems(Update, (
             window_resize,
             ui::side_panel,
+            draw_system_circles,
         ))
         .run();
 }
 
 pub const G: f64 = 6.6743015e-11;
 
+
+
 fn init(
     mut commands: Commands,
     circle_mesh: Res<CircleMesh>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
-    //mut change_event_writer: EventWriter<ChangeEvent>,
 ) {
-    let test_system = GravitySystemBuilder::new()
-        .with_radius(1_000.)
-        .with_position(StaticPosition::Circular { radius: 100_000., speed: 0.0005, start_angle: 0. })
+    let child_speed = get_orbital_speed(1e15, 1e11);
+    let child = GravitySystemBuilder::new()
+        .with_radius(100.)
+        .with_position(StaticPosition::Circular { radius: 1e4, speed: std::f64::consts::TAU/(60.0f64.powi(3)), start_angle: 0. })
         .with_time_step(1)
-        .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, 100., 1., None),
-            StaticBody::new(StaticPosition::Circular { radius: 600., speed: 0.001, start_angle: 0. }, 0.00000000001, 1., None),
-            StaticBody::new(StaticPosition::Circular { radius: 800., speed: 0.0005, start_angle: 0. }, 0.00000000001, 1., None),
-            StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.005, start_angle: 0. }, 0.00000000001, 1., None),
-        ])
+        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 100_000., 10., None)])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::new(10., 0.), DVec2::new(0., 3.), 1., None),
-            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., None),
-            DynamicBody::new(DVec2::new(35., 0.), DVec2::new(0., 2.), 1., None),
-            DynamicBody::new(DVec2::new(100., 0.), DVec2::new(0., 1.), 1., None),
-            DynamicBody::new(DVec2::new(120., 0.), DVec2::new(0., 0.5), 1., None),
-            DynamicBody::new(DVec2::new(-10., 0.), DVec2::new(0., 3.), 1., None),
-            DynamicBody::new(DVec2::new(-20., 0.), DVec2::new(0., 2.5), 1., None),
-            DynamicBody::new(DVec2::new(-35., 0.), DVec2::new(0., 2.), 1., None),
-            DynamicBody::new(DVec2::new(-100., 0.), DVec2::new(0., 1.), 1., None),
-            DynamicBody::new(DVec2::new(-120., 0.), DVec2::new(0., 0.5), 1., None),
-            DynamicBody::new(DVec2::new(0., 10.), DVec2::new(3., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., 20.), DVec2::new(2.5, 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., 35.), DVec2::new(2., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., 100.), DVec2::new(1., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., 120.), DVec2::new(0.5, 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -10.), DVec2::new(3., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -20.), DVec2::new(2.5, 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -35.), DVec2::new(2., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -100.), DVec2::new(1., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -120.), DVec2::new(0.5, 0.), 1., None),
+            //DynamicBody::new(DVec2::new(1_000., 0.), DVec2::new(0., -10.), 1e-10, None)
         ]);
-    let parent_system = GravitySystemBuilder::new()
-        .with_radius(1_000_000_000.)
+        
+    let test_system = GravitySystemBuilder::new()
+        .with_radius(2e12)
         .with_position(StaticPosition::Still)
-        .with_time_step(10)
-        .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, 1_000_000_000., 100., None)
-        ])
-        .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::new(51_000., 0.), DVec2::new(0., 140.), 1., None),
-            DynamicBody::new(DVec2::new(40_000., 0.), DVec2::new(0., 160.), 1., None),
-            DynamicBody::new(DVec2::new(42_000., 0.), DVec2::new(0., 140.), 1., None),
-            DynamicBody::new(DVec2::new(43_000., 0.), DVec2::new(0., 140.), 1., None),
-            DynamicBody::new(DVec2::new(45_000., 0.), DVec2::new(0., 150.), 1., None),
-            DynamicBody::new(DVec2::new(50_000., 0.), DVec2::new(0., 150.), 1., None),
-            DynamicBody::new(DVec2::new(52_000., 0.), DVec2::new(0., 140.), 1., None),
-            DynamicBody::new(DVec2::new(56_000., 0.), DVec2::new(0., 120.), 1., None),
-            DynamicBody::new(DVec2::new(58_000., 0.), DVec2::new(0., 120.), 1., None),
-            DynamicBody::new(DVec2::new(60_000., 0.), DVec2::new(0., 100.), 1., None),
-
-            DynamicBody::new(DVec2::new(-51_000., 0.), DVec2::new(0., -140.), 1., None),
-            DynamicBody::new(DVec2::new(-40_000., 0.), DVec2::new(0., -160.), 1., None),
-            DynamicBody::new(DVec2::new(-42_000., 0.), DVec2::new(0., -140.), 1., None),
-            DynamicBody::new(DVec2::new(-43_000., 0.), DVec2::new(0., -140.), 1., None),
-            DynamicBody::new(DVec2::new(-45_000., 0.), DVec2::new(0., -150.), 1., None),
-            DynamicBody::new(DVec2::new(-50_000., 0.), DVec2::new(0., -150.), 1., None),
-            DynamicBody::new(DVec2::new(-52_000., 0.), DVec2::new(0., -140.), 1., None),
-            DynamicBody::new(DVec2::new(-56_000., 0.), DVec2::new(0., -120.), 1., None),
-            DynamicBody::new(DVec2::new(-58_000., 0.), DVec2::new(0., -120.), 1., None),
-            DynamicBody::new(DVec2::new(-60_000., 0.), DVec2::new(0., -100.), 1., None),
-        ])
-        .with_children(&[
-            test_system.clone().with_position(StaticPosition::Circular { radius: 105_000., speed: 0.000005, start_angle: 0.5 }),
-            test_system.clone().with_position(StaticPosition::Circular { radius: 160_000., speed: 0.0003, start_angle: 3.5 }),
-            test_system.clone().with_position(StaticPosition::Circular { radius: 117_000., speed: 0.00044, start_angle: 5. }),
-            test_system.clone().with_position(StaticPosition::Circular { radius: 122_000., speed: 0.00053, start_angle: 1.5 }),
-            test_system.clone().with_position(StaticPosition::Circular { radius: 136_000., speed: 0.00044, start_angle: 0.5 }),
-            test_system.clone().with_position(StaticPosition::Circular { radius: 140_000., speed: 0.00035, start_angle: 2. }),
-            test_system.clone().with_position(StaticPosition::Circular { radius: 100_000., speed: 0.0005, start_angle: 3. }),
-            test_system.clone().with_position(StaticPosition::Circular { radius: 100_000., speed: 0.0005, start_angle: 5.5 }),
-            test_system.clone().with_position(StaticPosition::Circular { radius: 110_000., speed: 0.0005, start_angle: 4. }),
-            test_system,
-        ]);
-    let entities = (0..parent_system.total_bodies()).map(|_|
+        .with_time_step(100)
+        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 1e15, 100., None)])
+        .with_children(&[child]);
+    let entities = (0..test_system.total_bodies()).map(|_|
         commands.spawn(VisualObjectBundle::new(VisualObjectData::default(), circle_mesh.0.clone().into(), &mut color_materials)).id()
     ).collect_vec();
-    let manager = GravitySystemManager::new(parent_system, &entities);
+    let manager = GravitySystemManager::new(test_system, &entities);
+    let systems_details = manager.system.get_system_position_gens_and_radii();
+    commands.insert_resource(SystemCircleResource { draw: true, gens: systems_details });
     commands.insert_resource(manager);
 }
 
+#[derive(Resource)]
+struct SystemCircleResource {
+    pub draw: bool,
+    pub gens: Vec<(PositionGenerator, f64)>
+}
 
+fn draw_system_circles(
+    mut gizmos: Gizmos,
+    systems_resource: Res<SystemCircleResource>,
+    state: Res<SimulationState>,
+    camera_query: Query<&CameraState>
+) {
+    if systems_resource.draw == false { return }
+    let camera = camera_query.single();
+    for (gen, radius) in &systems_resource.gens {
+        let position = gen.get(state.current_time);
+        gizmos.circle_2d(camera.physics_to_world_pos(position), *radius as f32*camera.get_scale(), CORNFLOWER_BLUE);
+    }
+}
 
 
 //need to adjust the viewport whenever the window is resized. (these events come ever frame for some reason)

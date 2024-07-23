@@ -13,59 +13,9 @@ pub mod position_generator;
 pub mod builder;
 pub mod system_manager;
 pub mod massive_object;
+pub mod generate;
 
 /*
-Lower levels of the tree must calculate gravity more often proportional to the change in time step between levels.
-So if level 0 uses a time step 1 and level 1 a time step 0.1, for every 1 iteration of level 0, level 1 must do 10 iterations.
-This is true for game tick calculations and future path calculations.
-This way the transfer of dynamic bodies between systems wont cause time conflicts.
-
-
-ScheduledEnter: Allow a dynamic body to exit the system it is currently in and enter a lower level system at any time.
-                The body does not actually enter the system until the system is ready to calculate its time step.
-
-What about bodies leaving the current system for a higher level one?
-Lower level systems will still have to calculate more often than higher level ones so bodies go up levels at discrete intervals
-This still has potential to cause issues if bodies are travelling so fast that they travel considerable distance from the system center
-    before entering the parent system. They will not experience acceleration from bodies in the parent system.
-Perhaps fast forwarding. Bodies exiting a system will enter the fast forward list where bodies are fast forwarded to the next
-    discrete system time step before entering the normal pool of bodies.
-To calculate the future path of a dynamic body, just make a copy of the system tree with your dynamic body as the only body.
-
-Higher levels of the tree will perform their calculations first. So when a particle enters a lower system, its time is
-guaranteed to be greater than or equal to the lower system so it will enter the wait list. When a particle enters a higher
-system, its time is guaranteed to be less than or equal to the higher system so it can be fast forwarded.
-
-What happens if a body is travelling so quickly that it skips over a system in one time step?
-Need some way to calculate if the velocity vector intersects the system. If it does intersect, fast forward the body using the child
-    system's timescale until it enters the system. 
-    Get the shortest distance to the line segment: https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-    If this distance is less than the system's radius, then calculate the line segment's intersection with the circle created by the radius.
-    Then based on the current position and velocity and intersection point, calculate what time the body enters the system.
-
-A system's time scale should only depend the orbital period of its children. If a system has children with a large orbital period,
-    then the system should use a large time scale. If it has children with a small orbital period then it should use a small time step.
-    If you want a system with some large period bodies and small period bodies, just make the center of the system a smaller system.
-Or should the time scale depend on the speed of its fastest static child? The speed of dynamic bodies will resemble the systems they come from.
-
-It is possible that a body entering a child system will exist at a time step that the child system never exactly calculates.
-    e.g. the body is schedules to enter at time 8, and the child system exists at time 6 with a time scale of 3
-Should you reverse or fast forward the body to the next logical time step?
-Reversing the body may cause issues with the detection of bodies exiting the system, and would likely be a shitty patch fix.
-Just fast forward the body to the next logical time step.
-
-the time scale of child systems should be a perfect divisor of the parent's time scale. Otherwise there is an edgecase where
-a body exiting a system may do so with a time ahead of the parent's time since the parent waits for the child to catch up before continuing.
-
-
-Consider a system operating on a time scale of 100, with a child system on a scale of 1. Both systems have one child dynamic body.
-On the first iteration, the parent system calculates to time 100, but calculates that its dynamic body will enter the child system at time 70.
-Therefore it enters the waitlist of the child system since it has only calculated to time 1.
-On the next iteration, the child system detects its child leaves the system at time 2, so it gets forwarded to time 100 to enter the parent system.
-The parent system notices that its child is not yet caught up to its time, so it does nothing.
-On the next iteration, the child system should pull the body from the wait list since it no longer has any active dynamic bodies at its current time.
-
-
 Use a binary search pattern to calculate when a body enters a lower system. parent has time scale 100, child 10
 If the body is outside the system at time 0, and inside at time 100, check time 90. If outside at 90 use 100, else check 50.
 If the body is outside at time 0 and 50, check 80.
@@ -82,13 +32,19 @@ This means dynamic bodies need some kind of hashable identifier.
 
 Also factoring in static bodies and sibling systems when calculating gravity for a system's
 dynamic bodies could be a good idea if it doesnt impact performance too much.
+
+Using relative coordinates for dynamic bodies causes small accuracy problems.
+It really only works well when bodies become trapped in the gravity well of the system, or enter then exit before the velocity of the child system changes too much 
+
+Consider if a body has a velocity of (1,0) when it enters a child system travelling at (0, 1)
+The body will get a relative velocity of (1,-1) to offset the velocity of the system.
+On the next time step, the body is still in the system, but now the system's velocity is slightly different from (0, 1), more like (-.001, 0.99)
 */
 
 
 #[derive(Debug, Clone)]
 pub struct SystemTree {
     /// How large of a time step this level of the tree takes each iteration \
-    /// This depends on the 
     time_step: u64,
     /// Time associated with the position of dynamic bodies \
     /// Last calculated time for this system
@@ -257,29 +213,6 @@ impl SystemTree {
             body.set_velocity(body.velocity() + acceleration*self.time_step as f64);
             body.set_position(body.position() + body.velocity()*self.time_step as f64);
         }
-
-        /*
-            //detect if the body is exiting the system
-            if body.position().length_squared() > self.radius.powi(2) {
-                //B'S POSITION MUST BE CONVERTED TO BE RELATIVE TO THE PARENT SYSTEM BEFORE ENTERING THE ELEVATOR
-                let system_center = self.position.get_cartesian_position(self.current_time);
-                body.set_position(body.position() + system_center);
-                body.set_velocity(body.velocity() + ((self.position.get_cartesian_position(self.current_time+self.time_step) - system_center)/self.time_step as f64));
-                elevator.push((body.clone(), self.current_time));
-                remove_list.push(index);
-                self.total_child_dynamic_bodies -= 1;
-                continue;
-            }            
-            // Detect if the body is entering a child system
-            if let Some((system, (system_position, _))) = multizip((&mut self.child_systems, &self.static_masses)).find(|(s, m)| (body.position()-m.0).length_squared() < s.radius.powi(2)) {
-                //B'S POSITION MUST BE CONVERTED TO BE RELATIVE TO THE CHILD SYSTEM BEFORE ENTERING THE WAIT SET
-                body.set_position(body.position() - *system_position);
-                //Keeping velocity consistent is a little more tricky, It should be done according to the child system's discrete velocity
-                body.set_velocity(body.velocity() - ((system.position.get_cartesian_position(self.current_time+system.time_step) - body.position()) / system.time_step as f64));
-                system.insert_body(self.current_time, body.clone());
-                remove_list.push(index);
-            }
-        */
     }
 
 
@@ -379,7 +312,7 @@ impl SystemTree {
         self.get_dynamic_bodies_recursive(&mut bodies);
         return bodies
     }
-    pub fn get_dynamic_bodies_recursive(&self, bodies: &mut Vec<DynamicBody>) {
+    fn get_dynamic_bodies_recursive(&self, bodies: &mut Vec<DynamicBody>) {
         let system_center = self.position_generator.get(0);
         let system_velocity = (self.position_generator.get(self.time_step) - system_center) / self.time_step as f64;
         for body in &self.dynamic_bodies {
@@ -388,7 +321,19 @@ impl SystemTree {
         for child in &self.child_systems {
             child.get_dynamic_bodies_recursive(bodies);
         }
-    } 
+    }
+
+    pub fn get_system_position_gens_and_radii(&self) -> Vec<(PositionGenerator, f64)> {
+        let mut res = vec![];
+        self.get_system_position_gens_and_radii_recursive(&mut res);
+        return res;
+    }
+    fn get_system_position_gens_and_radii_recursive(&self, res: &mut Vec<(PositionGenerator, f64)>) {
+        res.push((self.position_generator.clone(), self.radius));
+        for system in &self.child_systems {
+            system.get_system_position_gens_and_radii_recursive(res);
+        }
+    }
 
     pub fn total_bodies(&self) -> usize {
         self.total_child_dynamic_bodies + self.total_static_bodies()
