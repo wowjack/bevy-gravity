@@ -1,5 +1,7 @@
 // Bodies that do not affect gravity but are affected by it
 
+use crate::G;
+
 use super::massive_object::MassiveObject;
 use super::position_generator::PositionGenerator;
 use bevy::prelude::Entity;
@@ -10,12 +12,14 @@ use bevy::math::DVec2;
 pub struct DynamicBody {
     position: DVec2,
     velocity: DVec2,
-    mass: f64, // maybe gravitational parameter
+    /// Gravitational parameter (mass * G)
+    mu: f64,
+    radius: f64,
     entity: Option<Entity> // Index into flat vec of bodies?
 }
 impl DynamicBody {
-    pub fn new(position: DVec2, velocity: DVec2, mass: f64, entity: Option<Entity>) -> Self {
-        Self { position, velocity, mass, entity }
+    pub fn new(position: DVec2, velocity: DVec2, mu: f64, radius: f64, entity: Option<Entity>) -> Self {
+        Self { position, velocity, mu, radius, entity }
     }
 
     pub fn position(&self) -> DVec2 {
@@ -31,10 +35,16 @@ impl DynamicBody {
         self.velocity = velocity;
     }
     pub fn mass(&self) -> f64 {
-        self.mass
+        self.mu / G
     }
-    pub fn set_mass(&mut self, mass: f64) {
-        self.mass = mass;
+    pub fn mu(&self) -> f64 {
+        self.mu
+    }
+    pub fn set_mu(&mut self, mu: f64) {
+        self.mu = mu;
+    }
+    pub fn radius(&self) -> f64 {
+        self.radius
     }
     pub fn get_entity(&self) -> Option<Entity> {
         self.entity
@@ -42,7 +52,7 @@ impl DynamicBody {
     pub fn set_entity(&mut self, entity: Option<Entity>) {
         self.entity = entity;
     }
-    pub fn force_scalar(&self, position: DVec2, mass: f64) -> DVec2 {
+    pub fn force_scalar(&self, position: DVec2, mu: f64) -> DVec2 {
         let dir = position - self.position;
         let norm = dir.length_squared();
 
@@ -50,7 +60,7 @@ impl DynamicBody {
         if norm == 0. {
             dir
         } else {
-            dir * (mass / (norm * norm.sqrt()))
+            dir * (mu / (norm * norm.sqrt()))
         }
     }
 
@@ -73,7 +83,7 @@ impl Into<MassiveObject> for DynamicBody {
         MassiveObject { 
             position: bevy::math::DVec2::new(self.position.x, self.position.y),
             velocity: bevy::math::DVec2::new(self.velocity.x, self.velocity.y),
-            mass: self.mass
+            mass: self.mu / G
         }
     }
 }

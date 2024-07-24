@@ -11,7 +11,7 @@ pub struct VisualChangeEvent {
 
 
 pub enum VisualChange {
-    SetRadius(f32),
+    SetRadius(f64),
     SetColor(Color)
 }
 
@@ -26,7 +26,7 @@ pub fn process_visual_change_event(
         let Ok((mut data, mut color)) = object_query.get_mut(event.target) else { continue };
         match event.change {
             VisualChange::SetRadius(new_radius) => {
-                data.radius = new_radius;
+                data.radius = new_radius as f64;
             },
             VisualChange::SetColor(new_color) => {
                 //println!("Changing color to {:?}", new_color);

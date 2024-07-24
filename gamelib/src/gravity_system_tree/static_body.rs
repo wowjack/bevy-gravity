@@ -2,7 +2,7 @@
 // Can follow a set path or be still
 
 use bevy::{math::DVec2, prelude::Entity};
-use crate::math;
+use crate::{math, G};
 
 #[derive(Debug, Clone)]
 pub enum StaticPosition {
@@ -42,13 +42,18 @@ impl StaticPosition {
 #[derive(Debug, Clone)]
 pub struct StaticBody {
     pub position: StaticPosition,
-    pub mass: f64, //or gravitational parameter G*mass?
+    /// Gravitational parameter (mass * G)
+    pub mu: f64,
     pub radius: f64,
     pub entity: Option<Entity>
 }
 
 impl StaticBody {
-    pub fn new(position: StaticPosition, mass: f64, radius: f64, entity: Option<Entity>) -> Self {
-        Self { position, mass, radius, entity}
+    pub fn new(position: StaticPosition, mu: f64, radius: f64, entity: Option<Entity>) -> Self {
+        Self { position, mu, radius, entity}
+    }
+
+    pub fn mass(&self) -> f64 {
+        self.mu * G
     }
 }

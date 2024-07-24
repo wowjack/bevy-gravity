@@ -23,7 +23,7 @@ fn single_layer_single_body_tree_benchmark(c: &mut Criterion) {
             StaticBody::new(StaticPosition::Circular { radius: 1200., speed: 0.005, start_angle: 1.5 }, 0.00000000001, 1., None),
         ])
         .with_dynamic_bodies(&vec![
-            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., None),
+            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., 1., None),
         ])
         .build().expect("why did this fail?");
 
@@ -54,30 +54,30 @@ fn two_layer_populated_tree_benchmark(c: &mut Criterion) {
             StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.005, start_angle: 0. }, 0.00000000001, 1., None),
         ])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::new(10., 0.), DVec2::new(0., 3.), 1., None),
-            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., None),
-            DynamicBody::new(DVec2::new(35., 0.), DVec2::new(0., 2.), 1., None),
-            DynamicBody::new(DVec2::new(100., 0.), DVec2::new(0., 1.), 1., None),
-            DynamicBody::new(DVec2::new(120., 0.), DVec2::new(0., 0.5), 1., None),
+            DynamicBody::new(DVec2::new(10., 0.), DVec2::new(0., 3.), 1., 1., None),
+            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., 1., None),
+            DynamicBody::new(DVec2::new(35., 0.), DVec2::new(0., 2.), 1., 1., None),
+            DynamicBody::new(DVec2::new(100., 0.), DVec2::new(0., 1.), 1., 1., None),
+            DynamicBody::new(DVec2::new(120., 0.), DVec2::new(0., 0.5), 1., 1., None),
 
-            DynamicBody::new(DVec2::new(-10., 0.), DVec2::new(0., 3.), 1., None),
-            DynamicBody::new(DVec2::new(-20., 0.), DVec2::new(0., 2.5), 1., None),
-            DynamicBody::new(DVec2::new(-35., 0.), DVec2::new(0., 2.), 1., None),
-            DynamicBody::new(DVec2::new(-100., 0.), DVec2::new(0., 1.), 1., None),
-            DynamicBody::new(DVec2::new(-120., 0.), DVec2::new(0., 0.5), 1., None),
+            DynamicBody::new(DVec2::new(-10., 0.), DVec2::new(0., 3.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-20., 0.), DVec2::new(0., 2.5), 1., 1., None),
+            DynamicBody::new(DVec2::new(-35., 0.), DVec2::new(0., 2.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-100., 0.), DVec2::new(0., 1.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-120., 0.), DVec2::new(0., 0.5), 1., 1., None),
 
 
-            DynamicBody::new(DVec2::new(0., 10.), DVec2::new(3., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., 20.), DVec2::new(2.5, 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., 35.), DVec2::new(2., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., 100.), DVec2::new(1., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., 120.), DVec2::new(0.5, 0.), 1., None),
+            DynamicBody::new(DVec2::new(0., 10.), DVec2::new(3., 0.), 1., 1., None),
+            DynamicBody::new(DVec2::new(0., 20.), DVec2::new(2.5, 0.), 1., 1., None),
+            DynamicBody::new(DVec2::new(0., 35.), DVec2::new(2., 0.), 1., 1., None),
+            DynamicBody::new(DVec2::new(0., 100.), DVec2::new(1., 0.), 1., 1., None),
+            DynamicBody::new(DVec2::new(0., 120.), DVec2::new(0.5, 0.), 1., 1., None),
 
-            DynamicBody::new(DVec2::new(0., -10.), DVec2::new(3., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -20.), DVec2::new(2.5, 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -35.), DVec2::new(2., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -100.), DVec2::new(1., 0.), 1., None),
-            DynamicBody::new(DVec2::new(0., -120.), DVec2::new(0.5, 0.), 1., None),
+            DynamicBody::new(DVec2::new(0., -10.), DVec2::new(3., 0.), 1., 1., None),
+            DynamicBody::new(DVec2::new(0., -20.), DVec2::new(2.5, 0.), 1., 1., None),
+            DynamicBody::new(DVec2::new(0., -35.), DVec2::new(2., 0.), 1., 1., None),
+            DynamicBody::new(DVec2::new(0., -100.), DVec2::new(1., 0.), 1., 1., None),
+            DynamicBody::new(DVec2::new(0., -120.), DVec2::new(0.5, 0.), 1., 1., None),
         ]);
     let parent_system = GravitySystemBuilder::new()
         .with_radius(1_000_000_000.)
@@ -87,27 +87,27 @@ fn two_layer_populated_tree_benchmark(c: &mut Criterion) {
             StaticBody::new(StaticPosition::Still, 1_000_000_000., 100., None)
         ])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::new(51_000., 0.), DVec2::new(0., 140.), 1., None),
-            DynamicBody::new(DVec2::new(40_000., 0.), DVec2::new(0., 160.), 1., None),
-            DynamicBody::new(DVec2::new(42_000., 0.), DVec2::new(0., 140.), 1., None),
-            DynamicBody::new(DVec2::new(43_000., 0.), DVec2::new(0., 140.), 1., None),
-            DynamicBody::new(DVec2::new(45_000., 0.), DVec2::new(0., 150.), 1., None),
-            DynamicBody::new(DVec2::new(50_000., 0.), DVec2::new(0., 150.), 1., None),
-            DynamicBody::new(DVec2::new(52_000., 0.), DVec2::new(0., 140.), 1., None),
-            DynamicBody::new(DVec2::new(56_000., 0.), DVec2::new(0., 120.), 1., None),
-            DynamicBody::new(DVec2::new(58_000., 0.), DVec2::new(0., 120.), 1., None),
-            DynamicBody::new(DVec2::new(60_000., 0.), DVec2::new(0., 100.), 1., None),
+            DynamicBody::new(DVec2::new(51_000., 0.), DVec2::new(0., 140.), 1., 1., None),
+            DynamicBody::new(DVec2::new(40_000., 0.), DVec2::new(0., 160.), 1., 1., None),
+            DynamicBody::new(DVec2::new(42_000., 0.), DVec2::new(0., 140.), 1., 1., None),
+            DynamicBody::new(DVec2::new(43_000., 0.), DVec2::new(0., 140.), 1., 1., None),
+            DynamicBody::new(DVec2::new(45_000., 0.), DVec2::new(0., 150.), 1., 1., None),
+            DynamicBody::new(DVec2::new(50_000., 0.), DVec2::new(0., 150.), 1., 1., None),
+            DynamicBody::new(DVec2::new(52_000., 0.), DVec2::new(0., 140.), 1., 1., None),
+            DynamicBody::new(DVec2::new(56_000., 0.), DVec2::new(0., 120.), 1., 1., None),
+            DynamicBody::new(DVec2::new(58_000., 0.), DVec2::new(0., 120.), 1., 1., None),
+            DynamicBody::new(DVec2::new(60_000., 0.), DVec2::new(0., 100.), 1., 1., None),
 
-            DynamicBody::new(DVec2::new(-51_000., 0.), DVec2::new(0., -140.), 1., None),
-            DynamicBody::new(DVec2::new(-40_000., 0.), DVec2::new(0., -160.), 1., None),
-            DynamicBody::new(DVec2::new(-42_000., 0.), DVec2::new(0., -140.), 1., None),
-            DynamicBody::new(DVec2::new(-43_000., 0.), DVec2::new(0., -140.), 1., None),
-            DynamicBody::new(DVec2::new(-45_000., 0.), DVec2::new(0., -150.), 1., None),
-            DynamicBody::new(DVec2::new(-50_000., 0.), DVec2::new(0., -150.), 1., None),
-            DynamicBody::new(DVec2::new(-52_000., 0.), DVec2::new(0., -140.), 1., None),
-            DynamicBody::new(DVec2::new(-56_000., 0.), DVec2::new(0., -120.), 1., None),
-            DynamicBody::new(DVec2::new(-58_000., 0.), DVec2::new(0., -120.), 1., None),
-            DynamicBody::new(DVec2::new(-60_000., 0.), DVec2::new(0., -100.), 1., None),
+            DynamicBody::new(DVec2::new(-51_000., 0.), DVec2::new(0., -140.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-40_000., 0.), DVec2::new(0., -160.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-42_000., 0.), DVec2::new(0., -140.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-43_000., 0.), DVec2::new(0., -140.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-45_000., 0.), DVec2::new(0., -150.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-50_000., 0.), DVec2::new(0., -150.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-52_000., 0.), DVec2::new(0., -140.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-56_000., 0.), DVec2::new(0., -120.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-58_000., 0.), DVec2::new(0., -120.), 1., 1., None),
+            DynamicBody::new(DVec2::new(-60_000., 0.), DVec2::new(0., -100.), 1., 1., None),
         ])
         .with_children(&[
             test_system.clone().with_position(StaticPosition::Circular { radius: 105_000., speed: 0.00045, start_angle: 0.5 }),

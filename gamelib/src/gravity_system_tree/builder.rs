@@ -67,11 +67,11 @@ impl GravitySystemBuilder {
             self.system.child_systems.push(child_system);
         }
 
-        // Calculate system mass from mass of child systems
-        self.system.mass = self.system.child_systems
+        // Calculate system mu by sumo of mu of child systems
+        self.system.mu = self.system.child_systems
             .iter()
-            .map(|x| x.mass)
-            .chain(self.system.static_bodies.iter().map(|x| x.mass))
+            .map(|x| x.mu)
+            .chain(self.system.static_bodies.iter().map(|x| x.mu))
             .sum();
         self.system.total_child_dynamic_bodies = self.system.child_systems
             .iter()

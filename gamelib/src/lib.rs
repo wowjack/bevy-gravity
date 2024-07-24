@@ -35,6 +35,12 @@ pub mod gravity_system_tree;
 
 
 pub fn library_main() {
+    //println!("half hour speed: {}", std::f64::consts::TAU/(60.0f64.powi(2)*30.));
+    //let center_mass = 3e20;
+    //let orbit_radius = 1e10;
+    //let orbital_speed = get_orbital_speed(center_mass, orbit_radius);
+    //return
+    
     App::new()
         .add_plugins((
             DefaultPlugins/*.disable::<LogPlugin>()*/,
@@ -66,12 +72,14 @@ fn init(
     circle_mesh: Res<CircleMesh>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let child_speed = get_orbital_speed(1e15, 1e11);
+    let second_speed = std::f64::consts::TAU/60.;
+    println!("5 minute speed:  {}", second_speed/60./5.);
+
     let child = GravitySystemBuilder::new()
         .with_radius(100.)
-        .with_position(StaticPosition::Circular { radius: 1e4, speed: std::f64::consts::TAU/(60.0f64.powi(3)), start_angle: 0. })
+        .with_position(StaticPosition::Circular { radius: 1e4, speed: second_speed/60., start_angle: 0. })
         .with_time_step(1)
-        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 100_000., 10., None)])
+        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 100_000., 1., None)])
         .with_dynamic_bodies(&[
             //DynamicBody::new(DVec2::new(1_000., 0.), DVec2::new(0., -10.), 1e-10, None)
         ]);
@@ -79,13 +87,10 @@ fn init(
     let test_system = GravitySystemBuilder::new()
         .with_radius(2e12)
         .with_position(StaticPosition::Still)
-        .with_time_step(100)
+        .with_time_step(10)
         .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 1e15, 100., None)])
         .with_children(&[child]);
-    let entities = (0..test_system.total_bodies()).map(|_|
-        commands.spawn(VisualObjectBundle::new(VisualObjectData::default(), circle_mesh.0.clone().into(), &mut color_materials)).id()
-    ).collect_vec();
-    let manager = GravitySystemManager::new(test_system, &entities);
+    let manager = GravitySystemManager::new(test_system, &mut commands);
     let systems_details = manager.system.get_system_position_gens_and_radii();
     commands.insert_resource(SystemCircleResource { draw: true, gens: systems_details });
     commands.insert_resource(manager);

@@ -1,4 +1,4 @@
-use bevy::{prelude::{Entity, Resource}, utils::hashbrown::HashMap};
+use bevy::{prelude::{Commands, Entity, Resource}, utils::hashbrown::HashMap};
 use itertools::Itertools;
 //use crate::physics::MassiveObject;
 
@@ -16,9 +16,9 @@ pub struct GravitySystemManager {
 }
 impl GravitySystemManager {
     // Takes in a system builder to ensure the time hasn't advanced at all
-    pub fn new(system: GravitySystemBuilder, entities: &[Entity]) -> Self {
+    pub fn new(system: GravitySystemBuilder, commands: &mut Commands) -> Self {
         let mut system = system.build().unwrap();
-        system.distribute_entities(entities);
+        system.distribute_entities(commands);
         // Get dynamic body positions at time 0 to initially store in the map
         let dynamic_positions = system.get_dynamic_body_positions();
         let static_positions = system.get_static_body_positions();
@@ -37,7 +37,7 @@ impl GravitySystemManager {
             let object = MassiveObject {
                 position: bevy::math::DVec2::new(position.x, position.y),
                 velocity: bevy::math::DVec2::new(velocity.x, velocity.y),
-                mass: body.mass,
+                mass: body.mass(),
             };
             future_map.insert(entity, ObjectFuture::Static { object, generator });
         }

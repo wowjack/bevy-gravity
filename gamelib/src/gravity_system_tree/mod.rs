@@ -1,10 +1,12 @@
 use std::collections::VecDeque;
-use bevy::{math::DVec2, prelude::Entity};
+use bevy::{color::palettes::css::{LIGHT_GRAY, WHITE}, math::DVec2, prelude::{Commands, Entity}};
 use dynamic_body::DynamicBody;
 use itertools::{multizip, Itertools};
 use position_generator::PositionGenerator;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator};
 use static_body::{StaticBody, StaticPosition};
+
+use crate::visual_object::{VisualObjectBundle, VisualObjectData};
 
 
 pub mod static_body;
@@ -57,8 +59,8 @@ pub struct SystemTree {
     /// Polar coordinates
     position: StaticPosition,
     position_generator: PositionGenerator,
-    /// Total mass of all static bodies in the system. Mass of dynamic bodies is negligible.
-    mass: f64,
+    /// Total gravitational parameter of all static bodies in the system. Mass of dynamic bodies is negligible.
+    mu: f64,
 
     /// Total number of dynamic bodies that exist under this system. \
     total_child_dynamic_bodies: usize,
@@ -165,7 +167,7 @@ impl SystemTree {
                         //translate position and velocity to be relative to the child 
                         let system_velocity = (system.position.get_cartesian_position(self.current_time+system.time_step) - system_position) / system.time_step as f64;
                         let new_velocity = body.velocity() - system_velocity;
-                        let new_body = DynamicBody::new(position_difference, new_velocity, body.mass(), body.get_entity());
+                        let new_body = DynamicBody::new(position_difference, new_velocity, body.mu(), body.radius(), body.get_entity());
                         system.insert_body(self.current_time, new_body.clone());
                         changes.push((self.current_time, new_body.make_absolute(&system.position_generator, self.current_time, system.time_step)));
                         return Some(index);
@@ -187,7 +189,7 @@ impl SystemTree {
             .filter_map(|(index, body)| {
                 if body.position().length_squared() <= self.radius.powi(2) { return None }
                 // bodies are fast forwarded after entering the elevator
-                let new_body = DynamicBody::new(system_position+body.position(), body.velocity()+system_velocity, body.mass(), body.get_entity());
+                let new_body = DynamicBody::new(system_position+body.position(), body.velocity()+system_velocity, body.mu(), body.radius(), body.get_entity());
                 elevator.push((self.current_time, new_body));
                 return Some(index);
             }).collect_vec();
@@ -222,10 +224,10 @@ impl SystemTree {
     fn set_static_masses_to(&mut self, time: u64) {
         self.static_masses.clear();
         for s in &self.child_systems {
-            self.static_masses.push((s.position.get_cartesian_position(time), s.mass));
+            self.static_masses.push((s.position.get_cartesian_position(time), s.mu));
         }
         for sb in &self.static_bodies {
-            self.static_masses.push((sb.position.get_cartesian_position(time), sb.mass));
+            self.static_masses.push((sb.position.get_cartesian_position(time), sb.mu));
         }
     }
 
@@ -272,25 +274,22 @@ impl SystemTree {
     }
 
     // Distribute bevy entity references to the dynamic and static bodies
-    pub fn distribute_entities(&mut self, entities: &[Entity]) {
-        if entities.len() < self.total_bodies() { panic!() }
-        self.distribute_entities_recursive(entities, &mut 0)
+    pub fn distribute_entities(&mut self, commands: &mut Commands) {
+        self.distribute_entities_recursive(commands);
     }
-    fn distribute_entities_recursive(&mut self, entities: &[Entity], index: &mut usize) {
+    fn distribute_entities_recursive(&mut self, commands: &mut Commands) {
         for static_body in &mut self.static_bodies {
-            static_body.entity = Some(entities[*index]);
-            *index += 1;
+            static_body.entity = Some(commands.spawn(VisualObjectBundle::new(VisualObjectData::new(DVec2::ZERO, DVec2::ZERO, static_body.mass(), static_body.radius, LIGHT_GRAY.into()))).id());
         }
         for dynamic_body in &mut self.dynamic_bodies {
-            dynamic_body.set_entity(Some(entities[*index]));
-            *index += 1;
+            dynamic_body.set_entity(Some(commands.spawn(VisualObjectBundle::new(VisualObjectData::new(DVec2::ZERO, DVec2::ZERO, dynamic_body.mass(), dynamic_body.radius(), WHITE.into()))).id()));
         }
         for child in &mut self.child_systems {
-            child.distribute_entities_recursive(entities, index);
+            child.distribute_entities_recursive(commands);
         }
     }
 
-    /// Get the mass and position generator for every static body \
+    /// Get the mu and position generator for every static body \
     /// (This is useful for drawing the static objects without having to look at the tree
     pub fn get_static_body_positions(&self) -> Vec<(StaticBody, PositionGenerator)> {
         let mut res = vec![];
@@ -316,7 +315,7 @@ impl SystemTree {
         let system_center = self.position_generator.get(0);
         let system_velocity = (self.position_generator.get(self.time_step) - system_center) / self.time_step as f64;
         for body in &self.dynamic_bodies {
-            bodies.push(DynamicBody::new(system_center+body.position(), system_velocity+body.velocity(), body.mass(), body.get_entity()));
+            bodies.push(DynamicBody::new(system_center+body.position(), system_velocity+body.velocity(), body.mu(), body.radius(), body.get_entity()));
         }
         for child in &self.child_systems {
             child.get_dynamic_bodies_recursive(bodies);
@@ -369,7 +368,7 @@ impl Default for SystemTree {
             radius: 1.,
             position: StaticPosition::Still,
             position_generator: PositionGenerator::new().extend(StaticPosition::Still),
-            mass: 0.,
+            mu: 0.,
             total_child_dynamic_bodies: 0,
             wait_list: VecDeque::new(),
             dynamic_bodies: Default::default(),
@@ -399,12 +398,12 @@ mod tests {
         let mut test_system = SystemTree {
             radius: 100.,
             total_child_dynamic_bodies: 1,
-            dynamic_bodies: vec![DynamicBody::new(DVec2::ZERO, DVec2::new(0., 1.), 1., None)],
+            dynamic_bodies: vec![DynamicBody::new(DVec2::ZERO, DVec2::new(0., 1.), 1., 1., None)],
             ..SystemTree::default()
         };
         test_system.calculate_gravity();
         let body = test_system.dynamic_bodies.first().unwrap();
-        assert_eq!(*body, DynamicBody::new(DVec2::new(0., 1.), DVec2::new(0., 1.), 1., None));
+        assert_eq!(*body, DynamicBody::new(DVec2::new(0., 1.), DVec2::new(0., 1.), 1., 1., None));
     }
 
 
@@ -415,66 +414,66 @@ mod tests {
             .with_position(StaticPosition::Still)
             .with_time_step(1)
             .with_radius(500.)
-            .with_dynamic_bodies(&[DynamicBody::new(DVec2::ZERO, DVec2::Y, 0., None)]);
+            .with_dynamic_bodies(&[DynamicBody::new(DVec2::ZERO, DVec2::Y, 0., 1., None)]);
         let child = GravitySystemBuilder::new()
             .with_position(StaticPosition::Still)
             .with_time_step(5)
             .with_radius(10_000.)
-            .with_dynamic_bodies(&[DynamicBody::new(DVec2::X*5000., DVec2::Y, 1., None)])
+            .with_dynamic_bodies(&[DynamicBody::new(DVec2::X*5000., DVec2::Y, 1., 1., None)])
             .with_children(&[grandchild]);
         let mut parent = GravitySystemBuilder::new()
             .with_position(StaticPosition::Still)
             .with_time_step(10)
             .with_radius(1_000_000.)
-            .with_dynamic_bodies(&[DynamicBody::new(DVec2::X*50_000., DVec2::Y, 2., None)])
+            .with_dynamic_bodies(&[DynamicBody::new(DVec2::X*50_000., DVec2::Y, 2., 1., None)])
             .with_children(&[child])
             .build()
             .unwrap();
         
         let res = parent.calculate_gravity();
         println!("{res:?}");
-        assert!(res.contains(&(1, DynamicBody::new(DVec2::Y, DVec2::Y, 0., None))));
-        assert!(res.contains(&(5, DynamicBody::new(DVec2::new(5000., 5.), DVec2::Y, 1., None))));
-        assert!(res.contains(&(10, DynamicBody::new(DVec2::new(50_000., 10.), DVec2::Y, 2., None))));
+        assert!(res.contains(&(1, DynamicBody::new(DVec2::Y, DVec2::Y, 0., 1., None))));
+        assert!(res.contains(&(5, DynamicBody::new(DVec2::new(5000., 5.), DVec2::Y, 1., 1., None))));
+        assert!(res.contains(&(10, DynamicBody::new(DVec2::new(50_000., 10.), DVec2::Y, 2., 1., None))));
 
 
 
         let res = parent.calculate_gravity();
         println!("{:?}", res);
-        assert!(res.contains(&(2, DynamicBody::new(DVec2::Y*2., DVec2::Y, 0., None))));
+        assert!(res.contains(&(2, DynamicBody::new(DVec2::Y*2., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(3, DynamicBody::new(DVec2::Y*3., DVec2::Y, 0., None))));
+        assert!(res.contains(&(3, DynamicBody::new(DVec2::Y*3., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(4, DynamicBody::new(DVec2::Y*4., DVec2::Y, 0., None))));
+        assert!(res.contains(&(4, DynamicBody::new(DVec2::Y*4., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(5, DynamicBody::new(DVec2::Y*5., DVec2::Y, 0., None))));
+        assert!(res.contains(&(5, DynamicBody::new(DVec2::Y*5., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(6, DynamicBody::new(DVec2::Y*6., DVec2::Y, 0., None))));
-        assert!(res.contains(&(10, DynamicBody::new(DVec2::new(5000., 10.), DVec2::Y, 1., None))));
+        assert!(res.contains(&(6, DynamicBody::new(DVec2::Y*6., DVec2::Y, 0., 1., None))));
+        assert!(res.contains(&(10, DynamicBody::new(DVec2::new(5000., 10.), DVec2::Y, 1., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(7, DynamicBody::new(DVec2::Y*7., DVec2::Y, 0., None))));
+        assert!(res.contains(&(7, DynamicBody::new(DVec2::Y*7., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(8, DynamicBody::new(DVec2::Y*8., DVec2::Y, 0., None))));
+        assert!(res.contains(&(8, DynamicBody::new(DVec2::Y*8., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(9, DynamicBody::new(DVec2::Y*9., DVec2::Y, 0., None))));
+        assert!(res.contains(&(9, DynamicBody::new(DVec2::Y*9., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(10, DynamicBody::new(DVec2::Y*10., DVec2::Y, 0., None))));
+        assert!(res.contains(&(10, DynamicBody::new(DVec2::Y*10., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(11, DynamicBody::new(DVec2::Y*11., DVec2::Y, 0., None))));
-        assert!(res.contains(&(15, DynamicBody::new(DVec2::new(5000., 15.), DVec2::Y, 1., None))));
-        assert!(res.contains(&(20, DynamicBody::new(DVec2::new(50_000., 20.), DVec2::Y, 2., None))));
+        assert!(res.contains(&(11, DynamicBody::new(DVec2::Y*11., DVec2::Y, 0., 1., None))));
+        assert!(res.contains(&(15, DynamicBody::new(DVec2::new(5000., 15.), DVec2::Y, 1., 1., None))));
+        assert!(res.contains(&(20, DynamicBody::new(DVec2::new(50_000., 20.), DVec2::Y, 2., 1., None))));
 
         let res = parent.calculate_gravity();
-        assert!(res.contains(&(12, DynamicBody::new(DVec2::Y*12., DVec2::Y, 0., None))));
+        assert!(res.contains(&(12, DynamicBody::new(DVec2::Y*12., DVec2::Y, 0., 1., None))));
     }
 
 
@@ -484,7 +483,7 @@ mod tests {
             .with_position(StaticPosition::Still)
             .with_time_step(1)
             .with_radius(3.)
-            .with_dynamic_bodies(&[DynamicBody::new(DVec2::ZERO, DVec2::Y, 0., None)]);
+            .with_dynamic_bodies(&[DynamicBody::new(DVec2::ZERO, DVec2::Y, 0., 1., None)]);
         let mut parent = GravitySystemBuilder::new()
             .with_position(StaticPosition::Still)
             .with_time_step(10)
@@ -495,22 +494,22 @@ mod tests {
 
         let res = parent.calculate_gravity();
         println!("{res:?}");
-        assert!(res.contains(&(1, DynamicBody::new(DVec2::Y, DVec2::Y, 0., None))));
+        assert!(res.contains(&(1, DynamicBody::new(DVec2::Y, DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
         println!("{res:?}");
-        assert!(res.contains(&(2, DynamicBody::new(DVec2::Y*2., DVec2::Y, 0., None))));
+        assert!(res.contains(&(2, DynamicBody::new(DVec2::Y*2., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
         println!("{res:?}");
-        assert!(res.contains(&(3, DynamicBody::new(DVec2::Y*3., DVec2::Y, 0., None))));
+        assert!(res.contains(&(3, DynamicBody::new(DVec2::Y*3., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
         println!("{res:?}");
-        assert!(res.contains(&(10, DynamicBody::new(DVec2::Y*10., DVec2::Y, 0., None))));
+        assert!(res.contains(&(10, DynamicBody::new(DVec2::Y*10., DVec2::Y, 0., 1., None))));
 
         let res = parent.calculate_gravity();
         println!("{res:?}");
-        assert!(res.contains(&(20, DynamicBody::new(DVec2::Y*20., DVec2::Y, 0., None))));
+        assert!(res.contains(&(20, DynamicBody::new(DVec2::Y*20., DVec2::Y, 0., 1., None))));
     }
 }

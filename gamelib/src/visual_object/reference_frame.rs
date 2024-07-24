@@ -17,5 +17,5 @@ pub fn draw_ref_object_halo(
     let Some(e) = ref_frame_resource.ref_entity else { return };
     let camera = camera_query.single();
     let Ok((trans, object)) = object_query.get(e.clone()) else { return };
-    gizmos.circle_2d(trans.translation.truncate(), object.radius*camera.get_scale(), Color::linear_rgb(1., 0., 1.)).resolution(CIRCLE_VERTICES);
+    gizmos.circle_2d(trans.translation.truncate(), object.radius as f32*camera.get_scale(), Color::linear_rgb(1., 0., 1.)).resolution(CIRCLE_VERTICES);
 }

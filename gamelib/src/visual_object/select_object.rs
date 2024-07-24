@@ -120,7 +120,7 @@ pub fn draw_selected_object_halo(
     let camera = camera_query.single();
     for e in &selected_objects.selected {
         let Ok((trans, object)) = object_query.get(e.clone()) else { continue };
-        gizmos.circle_2d(trans.translation.truncate(), object.radius*camera.get_scale(), Color::WHITE).resolution(CIRCLE_VERTICES);
+        gizmos.circle_2d(trans.translation.truncate(), object.radius as f32*camera.get_scale(), Color::WHITE).resolution(CIRCLE_VERTICES);
     }
 }
 

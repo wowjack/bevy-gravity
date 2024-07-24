@@ -38,11 +38,11 @@ pub struct VisualObjectData {
     pub position: DVec2,
     pub velocity: DVec2,
     pub mass: f64,
-    pub radius: f32,
+    pub radius: f64,
     pub color: Color,
 }
 impl VisualObjectData {
-    pub fn new(position: DVec2, velocity: DVec2, mass: f64, radius: f32, color: Color) -> Self {
+    pub fn new(position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Color) -> Self {
         Self { position, velocity, mass, radius, color }
     }
 }
@@ -65,6 +65,7 @@ impl Plugin for VisualObjectPlugin {
             .add_systems(Startup, (init, spawn_background_rect))
             .add_systems(PreUpdate, update_object_data)
             .add_systems(Update, (
+                add_material_mesh,
                 move_pseudo_camera,
                 draw_selection_rect,
                 rect_select,

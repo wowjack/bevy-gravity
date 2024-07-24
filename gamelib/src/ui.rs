@@ -12,7 +12,7 @@ pub struct ObjectSpawnOptions {
     position: DVec2,
     velocity: DVec2,
     mass: f64,
-    radius: f32,
+    radius: f64,
     rgb: [f32; 3]
 }
 impl Default for ObjectSpawnOptions {
@@ -90,7 +90,7 @@ pub fn side_panel(
                     ui.label("Radius");
                     ui.style_mut().spacing.slider_width = 225.;
                     ui.add(
-                        Slider::new(&mut spawn_options.radius, 1.0..=10_000.)
+                        Slider::new(&mut spawn_options.radius, 1.0f64..=10_000.)
                             .logarithmic(true)
                     );
                 });
@@ -106,7 +106,7 @@ pub fn side_panel(
                         spawn_options.radius,
                         Color::linear_rgb(spawn_options.rgb[0], spawn_options.rgb[1], spawn_options.rgb[2]),
                     );
-                    let bundle = VisualObjectBundle::new(object_data.clone(), circle_mesh.0.clone().into(), &mut color_materials);
+                    let bundle = VisualObjectBundle::new(object_data.clone());
                     //let entity = commands.spawn(bundle).id();
                     //let event = ChangeEvent { entity, change: crate::physics::Change::CreateObject(MassiveObject::from(object_data))};
                     //change_event_writer.send(event);

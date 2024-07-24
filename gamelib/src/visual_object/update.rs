@@ -68,7 +68,7 @@ pub fn update_object_positions(
     
     for (object, mut transform) in object_query.iter_mut() {
         transform.translation = camera.physics_to_world_pos(object.position).extend(0.);
-        transform.scale = Vec3::splat(camera.get_scale() * object.radius);
+        transform.scale = Vec3::splat(camera.get_scale() * object.radius as f32);
     }
 }
 
