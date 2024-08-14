@@ -69,26 +69,22 @@ pub const G: f64 = 6.6743015e-11;
 
 fn init(
     mut commands: Commands,
-    circle_mesh: Res<CircleMesh>,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let second_speed = std::f64::consts::TAU/60.;
-    println!("5 minute speed:  {}", second_speed/60./5.);
 
     let child = GravitySystemBuilder::new()
-        .with_radius(100.)
-        .with_position(StaticPosition::Circular { radius: 1e4, speed: second_speed/60., start_angle: 0. })
+        .with_radius(2000.)
+        .with_position(StaticPosition::Circular { radius: 1e5, speed: get_orbital_speed(1e8, 1e5), start_angle: 0. })
         .with_time_step(1)
-        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 100_000., 1., None)])
+        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 1000., 1., None)])
         .with_dynamic_bodies(&[
-            //DynamicBody::new(DVec2::new(1_000., 0.), DVec2::new(0., -10.), 1e-10, None)
+            DynamicBody::new(DVec2::new(1_000., 0.), DVec2::new(-0.8, 0.7), 1e-10, 100., None)
         ]);
         
     let test_system = GravitySystemBuilder::new()
         .with_radius(2e12)
         .with_position(StaticPosition::Still)
         .with_time_step(10)
-        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 1e15, 100., None)])
+        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 1e8, 100., None)])
         .with_children(&[child]);
     let manager = GravitySystemManager::new(test_system, &mut commands);
     let systems_details = manager.system.get_system_position_gens_and_radii();

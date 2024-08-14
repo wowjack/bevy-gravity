@@ -43,6 +43,20 @@ The body will get a relative velocity of (1,-1) to offset the velocity of the sy
 On the next time step, the body is still in the system, but now the system's velocity is slightly different from (0, 1), more like (-.001, 0.99)
 */
 
+/*
+Gravitational acceleration will be updated based on the time step of individual bodies and stored in a map.
+Every dynamic body will be updated every individual time step.
+
+For a gravity acceleration update step, it is O(n*k) where n is dynamic bodies and k is static bodies within the system.
+For a regular update it is an O(n) operation where n is the total number of dynamic bodies.
+
+This way bodies in high level systems are able to accelerate themselves at any discrete time step instead of only at time step intervals.
+
+Large time jumps are still possible of the dynamic body does not accelerate too much.
+A body in a 1000 time scale system can easily calculate its position at time 1000 as long as it doesn't accelerate itself.
+If that body begins accelerating itself at time 500, then you can calculate position at time 500, accelerate it, then use the new acceleration to calculate time at 1000.
+*/
+
 
 #[derive(Debug, Clone)]
 pub struct SystemTree {
