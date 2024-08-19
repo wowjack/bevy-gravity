@@ -1,6 +1,5 @@
 use bevy::color::palettes::css::CORNFLOWER_BLUE;
 use bevy::math::DVec2;
-use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::WindowResized;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::camera::Viewport};
 use bevy_egui::EguiPlugin;
@@ -10,16 +9,13 @@ use gravity_system_tree::builder::GravitySystemBuilder;
 use gravity_system_tree::dynamic_body::DynamicBody;
 use gravity_system_tree::position_generator::PositionGenerator;
 use gravity_system_tree::static_body::StaticBody;
-use itertools::Itertools;
 use math::get_orbital_speed;
-//use physics::{Change, ChangeEvent, MassiveObject};
 use pseudo_camera::camera::CameraState;
 use pseudo_camera::pseudo_camera_plugin;
 use gravity_system_tree::{static_body::StaticPosition, system_manager::GravitySystemManager};
-use gravity_system_tree::SystemTree;
 use ui::SIDE_PANEL_WIDTH;
 //use util::generate_system;
-use visual_object::{CircleMesh, SimulationState, VisualObjectBundle, VisualObjectData};
+use visual_object::SimulationState;
 pub use bevy;
 pub use itertools;
 
@@ -68,7 +64,7 @@ pub const G: f64 = 6.6743015e-11;
 
 
 fn init(
-    mut commands: Commands,
+    world: &mut World
 ) {
 
     let child = GravitySystemBuilder::new()
@@ -77,7 +73,7 @@ fn init(
         .with_time_step(1)
         .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 1000., 1., None)])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::new(1_000., 0.), DVec2::new(-0.8, 0.7), 1e-10, 100., None)
+            DynamicBody::new(DVec2::new(1_000., 0.), DVec2::new(-0.8, 0.7), 1e-10, 100.)
         ]);
         
     let test_system = GravitySystemBuilder::new()
@@ -86,10 +82,11 @@ fn init(
         .with_time_step(10)
         .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 1e8, 100., None)])
         .with_children(&[child]);
-    let manager = GravitySystemManager::new(test_system, &mut commands);
+    let mut manager = GravitySystemManager::new(test_system);
     let systems_details = manager.system.get_system_position_gens_and_radii();
-    commands.insert_resource(SystemCircleResource { draw: true, gens: systems_details });
-    commands.insert_resource(manager);
+    world.insert_resource(SystemCircleResource { draw: true, gens: systems_details });
+    manager.spawn_entities(world);
+    world.insert_non_send_resource(manager);
 }
 
 #[derive(Resource)]

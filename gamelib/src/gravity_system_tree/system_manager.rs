@@ -1,88 +1,58 @@
-use bevy::{prelude::{Commands, Entity, Resource}, utils::hashbrown::HashMap};
+use std::{cell::RefCell, rc::Rc};
+
+use bevy::{color::palettes::css::LIGHT_GRAY, math::DVec2, prelude::{Commands, Entity, Resource, World}, utils::hashbrown::HashMap};
 use itertools::Itertools;
 //use crate::physics::MassiveObject;
 
-use super::{massive_object::MassiveObject, builder::GravitySystemBuilder, dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::{StaticBody, StaticPosition}, SystemTree};
+use crate::{visual_object::{VisualObjectBundle, VisualObjectData}, G};
+
+use super::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, massive_object::MassiveObject, position_generator::PositionGenerator, system_tree::GravitySystemTree};
 
 
 
-#[derive(Resource)]
 pub struct GravitySystemManager {
-    pub system: SystemTree,
+    pub system: GravitySystemTree,
     /// Smallest time returned in the updates of the last gravity calculation
-    smallest_time: u64,
+    pub latest_time: u64,
     /// Latest calculated position of bodies indexed by the entities that represent them
     pub future_map: HashMap<Entity, ObjectFuture>
 }
 impl GravitySystemManager {
-    // Takes in a system builder to ensure the time hasn't advanced at all
-    pub fn new(system: GravitySystemBuilder, commands: &mut Commands) -> Self {
-        let mut system = system.build().unwrap();
-        system.distribute_entities(commands);
-        // Get dynamic body positions at time 0 to initially store in the map
-        let dynamic_positions = system.get_dynamic_body_positions();
-        let static_positions = system.get_static_body_positions();
-        let mut future_map = HashMap::new();
-        // populate the future map with time 0 
-        for body in dynamic_positions {
-            let Some(entity) = body.get_entity() else { continue };
-            let o: MassiveObject = body.into();
-            future_map.insert(entity, ObjectFuture::Dynamic { prev: o.clone(), prev_time: 0, next: o, next_time: 0 });
-        }
-        for (body, generator) in static_positions {
-            let Some(entity) = body.entity else { continue };
-            let position = generator.get(0);
-            let velocity = generator.get(1) - position;
-
-            let object = MassiveObject {
-                position: bevy::math::DVec2::new(position.x, position.y),
-                velocity: bevy::math::DVec2::new(velocity.x, velocity.y),
-                mass: body.mass(),
-            };
-            future_map.insert(entity, ObjectFuture::Static { object, generator });
-        }
+    pub fn new(system: GravitySystemBuilder) -> Self {
         Self {
-            system: system,
-            smallest_time: 0,
-            future_map,
+            system: system.build().unwrap(),
+            latest_time: 0,
+            future_map: HashMap::new(),
         }
     }
-
     pub fn get_state_at_time(&mut self, time: u64) -> Vec<(Entity, MassiveObject)> {
-        while time > self.smallest_time {
-            let changes = self.system.calculate_gravity();
-            self.process_changes_vec(changes);
+        while time > self.latest_time {
+            self.latest_time += 1;
+            self.system.accelerate_and_move_bodies_recursive(self.latest_time, &mut vec![]);
         }
-
-        self.future_map
-            .iter()
-            .map(|(entity, of)| (entity.clone(), of.get_state(time).unwrap()))
-            .collect_vec()
+        
+        self.future_map.iter().map(|(e, of)| (e.clone(), of.get_state(time).unwrap())).collect_vec()
     }
 
-    /// Update positions in map and self.smallest_time
-    fn process_changes_vec(&mut self, changes: Vec<(u64, DynamicBody)>) {
-        self.smallest_time = u64::MAX;
-        for (new_time, new_body) in changes {
-            if new_time < self.smallest_time {
-                self.smallest_time = new_time
-            }
-            let Some(entity) = new_body.get_entity() else { continue };
-            match self.future_map.get_mut(&entity) {
-                Some(ObjectFuture::Static { .. }) => panic!("How did this happen"),
-                Some(ObjectFuture::Dynamic { prev, prev_time, next, next_time }) => {
-                    //assert_eq!(*next_time, new_time);// A change should only appear if we have caught up the the last reported time
-                    *prev = next.clone(); *prev_time = *next_time;
-                    *next = new_body.into(); *next_time = new_time;
-                },
-                None => {
-                    panic!("How did a new entity appear?")
-                }
-            }
+    pub fn spawn_entities(&mut self, world: &mut World) {
+        let mut res = vec![];
+        self.system.get_dynamic_bodies_recursive(&mut res);
+        for body in res {
+            let body_ref = body.borrow();
+            let entity = world.spawn(VisualObjectBundle::new(VisualObjectData::new(body_ref.relative_stats.get_position_absolute(0), body_ref.relative_stats.get_velocity_absolute(0), body_ref.mu/G, body_ref.radius, LIGHT_GRAY.into()))).id();
+            self.future_map.insert(entity, ObjectFuture::Dynamic { body: body.clone() });
+        }
+
+        let mut res = vec![];
+        self.system.get_static_bodies_recursive(&mut res);
+        for (body, position_generator) in res {
+            let position = position_generator.get(0);
+            let velocity = position_generator.get(1) - position;
+            let entity = world.spawn(VisualObjectBundle::new(VisualObjectData::new(position, velocity, body.mass(), body.radius, LIGHT_GRAY.into()))).id();
+            self.future_map.insert(entity, ObjectFuture::Static { object: MassiveObject { position, velocity, mass: body.mass() }, generator: position_generator });
         }
     }
 }
-
 
 
 pub enum ObjectFuture {
@@ -91,10 +61,7 @@ pub enum ObjectFuture {
         generator: PositionGenerator
     },
     Dynamic {
-        prev: MassiveObject,
-        prev_time: u64,
-        next: MassiveObject,
-        next_time: u64,
+        body: Rc<RefCell<DynamicBody>>
     }
 }
 
@@ -105,21 +72,15 @@ impl ObjectFuture {
                 let position = generator.get(time);
                 return Some(MassiveObject { position: bevy::math::DVec2::new(position.x, position.y), ..object.clone() })
             },
-            Self::Dynamic { prev, prev_time, next, next_time } => {
-                if time > *next_time { panic!("no position available. requested: {time} available: {next_time}") }
-                if time < *prev_time { panic!("no position available. requested: {time} initial: {prev_time}") }
-                if time == *next_time {
-                    return Some(next.clone());
-                }
-                if time == *prev_time {
-                    panic!("How return previous time?");
-                }
-                let total_time_diff = next_time - prev_time;
-                let request_time_diff = time - prev_time;
-                let scalar = request_time_diff as f64 / total_time_diff as f64;
-                let position = prev.position + scalar*(next.position - prev.position);
-                return Some(MassiveObject { position, velocity: prev.velocity, mass: prev.mass });
+            Self::Dynamic { body } => {
+                let body = body.borrow();
+                let object = MassiveObject {
+                    position: body.relative_stats.get_position_absolute(time),
+                    velocity: body.relative_stats.get_velocity_absolute(time),
+                    mass: body.mu/G,
+                };
+                return Some(object)
             }
         }
-    } 
+    }
 }

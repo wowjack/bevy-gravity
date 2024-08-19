@@ -1,14 +1,16 @@
-use bevy::prelude::Entity;
+
+use std::{cell::RefCell, rc::Rc};
+
 use itertools::Itertools;
 
-use super::{dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::{StaticBody, StaticPosition}, SystemTree};
+use super::{dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::{StaticBody, StaticPosition}, system_tree::GravitySystemTree};
 
 
 /// Only way to construct SystemTree objects
 /// When constructing the tree, it makes sure all parameters are correct before returning it.
 #[derive(Clone)]
 pub struct GravitySystemBuilder {
-    system: SystemTree,
+    system: GravitySystemTree,
     set_position: bool,
     /// Store child system builders so they can be built with proper coordinates from the top down
     child_systems: Vec<GravitySystemBuilder>,
@@ -25,7 +27,7 @@ impl GravitySystemBuilder {
     }
     /// Add dynamic bodies relative to the current system
     pub fn with_dynamic_bodies(mut self, bodies: &[DynamicBody]) -> Self {
-        self.system.dynamic_bodies.extend_from_slice(bodies);
+        self.system.dynamic_bodies.extend(bodies.iter().map(|b| Rc::new(RefCell::new(b.clone()))));
         self
     }
     pub fn with_position(mut self, position: StaticPosition) -> Self {
@@ -53,21 +55,25 @@ impl GravitySystemBuilder {
     /// Position needs to be calculated from the top down
     /// mass and child bodies needs to be calculated from the bottom up
     /// Assign each static and dynamic body with a bevy entity used to associate it with a visual object
-    pub fn build(self) -> Result<SystemTree, SystemTreeError> {
-        GravitySystemBuilder::validate_tree(self.build_recursive(PositionGenerator::new())?)
+    pub fn build(self) -> Result<GravitySystemTree, SystemTreeError> {
+        GravitySystemBuilder::validate_tree(self.build_recursive(PositionGenerator::default())?)
     }
 
-    fn build_recursive(mut self, parent_generator: PositionGenerator) -> Result<SystemTree, SystemTreeError> {
+    fn build_recursive(mut self, parent_generator: PositionGenerator) -> Result<GravitySystemTree, SystemTreeError> {
         if !self.set_position { return Err(SystemTreeError::NoPosition) }
 
         self.system.position_generator = parent_generator.extend(self.system.position.clone());
+
+        for body in &self.system.dynamic_bodies {
+            body.borrow_mut().relative_stats.set_generator(self.system.position_generator.clone());
+        }
 
         for child_system in self.child_systems {
             let child_system = child_system.build_recursive(self.system.position_generator.clone())?;
             self.system.child_systems.push(child_system);
         }
 
-        // Calculate system mu by sumo of mu of child systems
+        // Calculate system mu by sum of mu of child systems
         self.system.mu = self.system.child_systems
             .iter()
             .map(|x| x.mu)
@@ -80,7 +86,7 @@ impl GravitySystemBuilder {
         return Ok(self.system)
     }
 
-    fn validate_tree(tree: SystemTree) -> Result<SystemTree, SystemTreeError> {
+    fn validate_tree(tree: GravitySystemTree) -> Result<GravitySystemTree, SystemTreeError> {
         for (index, child) in tree.child_systems.iter().enumerate() {
             if child.time_step > tree.time_step {
                 return Err(SystemTreeError::MinTimeScale)
@@ -113,7 +119,7 @@ impl GravitySystemBuilder {
 }
 
 /// Difference between orbital radii must be greater than the sum of system radii to ensure they dont potentially
-fn are_systems_near(system1: &SystemTree, system2: &SystemTree) -> bool {
+fn are_systems_near(system1: &GravitySystemTree, system2: &GravitySystemTree) -> bool {
     (system1.position.get_radius() - system2.position.get_radius()).abs() > (system1.radius + system2.radius)
 }
 

@@ -4,7 +4,7 @@
 use bevy::{math::DVec2, prelude::Entity};
 use crate::{math, G};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StaticPosition {
     /// A Body that remains motionless relative to the system, staying perfectly in the center
     Still,

@@ -14,7 +14,7 @@ pub fn update_object_data(
     //future: Res<PhysicsFuture>,
     mut sim_state: ResMut<SimulationState>,
     delta_time: Res<Time>,
-    mut gravity_system_manager: ResMut<GravitySystemManager>,
+    mut gravity_system_manager: NonSendMut<GravitySystemManager>,
 ) {
     sim_state.timer.tick(delta_time.delta());
 
