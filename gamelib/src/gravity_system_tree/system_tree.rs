@@ -81,7 +81,7 @@ impl GravitySystemTree {
 
             // Get the scalar change in distance to the system center squared
             // This is used to scale the acceleration vector as a body changes distance from the system center within iterations in a system's time_step
-            // Without this, elliptical orbits decay into circular ones
+            // Without this, elliptical orbits decay into circular ones (this still happens with this change, just extremely slowly)
             let distance_diff = old_position.length_squared() / new_position.length_squared();
 
             body.gravitational_acceleration = DVec2::from_angle(old_position.angle_between(new_position)).rotate(body.gravitational_acceleration)*distance_diff;
