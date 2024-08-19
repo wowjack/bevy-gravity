@@ -18,31 +18,6 @@ pub mod massive_object;
 pub mod generate;
 pub mod system_tree;
 
-/*
-Use a binary search pattern to calculate when a body enters a lower system. parent has time scale 100, child 10
-If the body is outside the system at time 0, and inside at time 100, check time 90. If outside at 90 use 100, else check 50.
-If the body is outside at time 0 and 50, check 80.
-If inside at 80, check 70. If outside at 70, use 80. Always choose the first timestep where the body is inside the system according to the child time scale.
-This problem would be very hard to solve analytically since the position of the system changes with each time step.
-*/
-
-
-/*
-After performing a gravity calculation, all changes should be reported and stored in a future map.
-Previous systems can read from the future map like previously to draw objects onto the screen.
-This means dynamic bodies need some kind of hashable identifier.
-
-
-Also factoring in static bodies and sibling systems when calculating gravity for a system's
-dynamic bodies could be a good idea if it doesnt impact performance too much.
-
-Using relative coordinates for dynamic bodies causes small accuracy problems.
-It really only works well when bodies become trapped in the gravity well of the system, or enter then exit before the velocity of the child system changes too much 
-
-Consider if a body has a velocity of (1,0) when it enters a child system travelling at (0, 1)
-The body will get a relative velocity of (1,-1) to offset the velocity of the system.
-On the next time step, the body is still in the system, but now the system's velocity is slightly different from (0, 1), more like (-.001, 0.99)
-*/
 
 /*
 Gravitational acceleration will be updated based on the time step of individual bodies and stored in a map.
@@ -64,6 +39,13 @@ This will certainly slow things down since each body needs to be mutated and che
 still only occurs according to the time_step of the system.
     (except when a body exits a system or enters a child one, the gravity calculation must be done even if its between time steps. 
     Or does it, this would really only matter for super fast objects that travel a considerable distance relative to the system size within a time_step)
+*/
+
+
+/*
+Updating position every iteration but updating acceleration only based on system time_step causes bodies to slowly increase their orbit.
+
+Possibly rotate the acceleration vector based on the movement of the body. How to do this while always keeping the future path the same.
 */
 
 

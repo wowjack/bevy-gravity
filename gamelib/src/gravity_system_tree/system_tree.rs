@@ -75,9 +75,11 @@ impl GravitySystemTree {
             ////////////////////////////////////////////////////////////
             // This is where I will get acceleration from future actions
             ////////////////////////////////////////////////////////////
-
             let new_velocity = body.relative_stats.get_velocity_relative() + acceleration;
-            let new_position = body.relative_stats.get_position_relative() + new_velocity;
+            let old_position = body.relative_stats.get_position_relative();
+            let new_position = old_position + new_velocity;
+
+            body.gravitational_acceleration = DVec2::from_angle(old_position.angle_between(new_position)).rotate(body.gravitational_acceleration);
 
             body.relative_stats.set_velocity_relative(new_velocity);
             body.relative_stats.set_position_relative(new_position);

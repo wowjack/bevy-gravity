@@ -26,12 +26,7 @@ pub fn draw_future_paths(
     selected_objects: Res<SelectedObjects>,
     ref_frame_resource: ResMut<ReferenceFrameResource>,
     */
-) {
-    
-    // My new system tree can calculate 100_000 steps into the future every single frame while only bringing the fps down to 15-20
-    // Very long calculations can be made if this calculation does not take place every frame
-
-    
+) { 
     if draw_options.draw_future_path == false { return }
     let Some((entity, _)) = selected_objects.focused else { return };
     let camera_state = camera_query.single();
@@ -50,9 +45,9 @@ pub fn draw_future_paths(
             let mut new_dynamic_bodies = vec![];
             new_system.get_dynamic_bodies_recursive(&mut new_dynamic_bodies);
             let body = new_dynamic_bodies.first().unwrap().clone();
-            let iter = (gravity_system.latest_time..gravity_system.latest_time+50_000).map(|i| {
-                new_system.accelerate_and_move_bodies_recursive(i, &mut vec![]);
-                camera_state.physics_to_world_pos(body.borrow().relative_stats.get_position_absolute(i))
+            let iter = (1..50_000).map(|i| {
+                new_system.accelerate_and_move_bodies_recursive(gravity_system.latest_time+i, &mut vec![]);
+                camera_state.physics_to_world_pos(body.borrow().relative_stats.get_position_absolute(gravity_system.latest_time+i))
             });
             gizmos.linestrip_2d(
                 iter,
