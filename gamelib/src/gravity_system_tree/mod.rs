@@ -45,7 +45,7 @@ still only occurs according to the time_step of the system.
 /*
 Updating position every iteration but updating acceleration only based on system time_step causes bodies to slowly increase their orbit.
 
-Possibly rotate the acceleration vector based on the movement of the body. How to do this while always keeping the future path the same.
+Possibly rotate the acceleration vector based on the movement of the body. This causes elliptical orbits to decay into circular ones.
 */
 
 

@@ -67,15 +67,15 @@ fn init(
     world: &mut World
 ) {
 
-    let child = GravitySystemBuilder::new()
-        .with_radius(5000.)
-        .with_position(StaticPosition::Circular { radius: 1e6, speed: get_orbital_speed(3e8, 1e6), start_angle: 0. })
-        .with_time_step(1)
-        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3000., 1., None)])
-        .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::new(2_000., 0.), DVec2::new(-0.8, 0.7), 1e-10, 100.),
-            DynamicBody::new(DVec2::new(3_000., 0.), DVec2::new(-6., 0.1), 1e-10, 100.),
-        ]);
+    //let child = GravitySystemBuilder::new()
+    //    .with_radius(5000.)
+    //    .with_position(StaticPosition::Circular { radius: 1e6, speed: get_orbital_speed(3e8, 1e6), start_angle: 0. })
+    //    .with_time_step(1)
+    //    .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3000., 1., None)])
+    //    .with_dynamic_bodies(&[
+    //        DynamicBody::new(DVec2::new(2_000., 0.), DVec2::new(-0.8, 0.7), 1e-10, 100.),
+    //        DynamicBody::new(DVec2::new(3_000., 0.), DVec2::new(-6., 0.1), 1e-10, 100.),
+    //    ]);
         
     let test_system = GravitySystemBuilder::new()
         .with_radius(2e12)
@@ -83,11 +83,11 @@ fn init(
         .with_time_step(10)
         .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3e8, 100., None)])
         .with_dynamic_bodies(&[
-            //DynamicBody::new(DVec2::X*1e4, DVec2::Y*get_orbital_speed(1e8, 1e4)*1e4, 1e-10, 10.),
+            DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(1e8, 1e5)*1e5*0.9, 1e-10, 10.),
             //DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(1e8, 1e5)*1e5, 1e-10, 10.),
             //DynamicBody::new(DVec2::X*1e6, DVec2::Y*get_orbital_speed(1e8, 1e6)*1e6, 1e-10, 10.),
-        ])
-        .with_children(&[child]);
+        ]);
+        //.with_children(&[child]);
     let mut manager = GravitySystemManager::new(test_system);
     let systems_details = manager.system.get_system_position_gens_and_radii();
     world.insert_resource(SystemCircleResource { draw: true, gens: systems_details });
