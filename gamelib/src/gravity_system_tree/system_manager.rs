@@ -1,12 +1,11 @@
-use std::{arch::x86_64, cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
-use bevy::{color::palettes::css::LIGHT_GRAY, math::DVec2, prelude::{Commands, Entity, Resource, World}, utils::hashbrown::HashMap};
+use bevy::prelude::{Entity, World};
 use itertools::Itertools;
-//use crate::physics::MassiveObject;
 
-use crate::{visual_object::{VisualObjectBundle, VisualObjectData}, G};
+use crate::visual_object::{VisualObjectBundle, VisualObjectData};
 
-use super::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, position_generator::{self, PositionGenerator}, static_body::StaticBody, system_tree::GravitySystemTree};
+use super::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, static_body::StaticBody, system_tree::GravitySystemTree};
 
 
 

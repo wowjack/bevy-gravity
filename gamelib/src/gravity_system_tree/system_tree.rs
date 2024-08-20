@@ -5,7 +5,6 @@ use itertools::Itertools;
 
 use super::{dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::{StaticBody, StaticPosition}};
 
-#[derive(Clone)]
 pub struct GravitySystemTree {
     /// References to dynamic bodies within this system \
     /// Most of the time only an immutable reference is required
@@ -181,6 +180,23 @@ impl Default for GravitySystemTree {
             static_bodies: Default::default(),
             child_systems: Default::default(),
             static_masses: Default::default()
+        }
+    }
+}
+
+// Implementing clone myself so the value inside the Rc get cloned, not the Rc itself
+impl Clone for GravitySystemTree {
+    fn clone(&self) -> Self {
+        Self {
+            dynamic_bodies: self.dynamic_bodies.iter().map(|x| Rc::new(RefCell::new((*x.borrow()).clone()))).collect_vec(),
+            static_bodies: self.static_bodies.clone(),
+            child_systems: self.child_systems.clone(),
+            static_masses: self.static_masses.clone(),
+            time_step: self.time_step.clone(),
+            radius: self.radius.clone(),
+            position_generator: self.position_generator.clone(),
+            mu: self.mu.clone(),
+            total_child_dynamic_bodies: self.total_child_dynamic_bodies.clone()
         }
     }
 }
