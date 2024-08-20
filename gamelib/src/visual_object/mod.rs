@@ -74,11 +74,12 @@ pub struct VisualObjectPlugin;
 impl Plugin for VisualObjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SelectInRectEvent>()
+            .init_gizmo_group::<FuturePathLineConfig>()
             .insert_resource(SimulationState::default())
             .insert_resource(DrawOptions::default())
             .insert_resource(SelectedObjects::default())
             .insert_resource(FollowObjectResource::default())
-            .add_systems(Startup, (init, spawn_background_rect))
+            .add_systems(Startup, (init, spawn_background_rect, set_future_path_gizmo_config))
             .add_systems(PreUpdate, update_object_data)
             .add_systems(Update, (
                 add_material_mesh,

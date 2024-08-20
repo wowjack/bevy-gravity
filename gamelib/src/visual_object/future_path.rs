@@ -2,10 +2,12 @@ use bevy::prelude::*;
 use crate::{gravity_system_tree::system_manager::GravitySystemManager, pseudo_camera::camera::CameraState};
 use super::{follow_object::StaticBody, DrawOptions, SelectedObjects};
 
+#[derive(Default, Reflect, GizmoConfigGroup)]
+pub struct FuturePathLineConfig {}
 
 pub fn draw_future_paths(
     camera_query: Query<&CameraState>,
-    mut gizmos: Gizmos,
+    mut gizmos: Gizmos<FuturePathLineConfig>,
     draw_options: Res<DrawOptions>,
     selected_objects: Res<SelectedObjects>,
     gravity_system: NonSend<GravitySystemManager>,
@@ -43,4 +45,10 @@ pub fn draw_future_paths(
         You tried to get the future position of a visual object that doesnt appear to exist in the gravity system.
         ")
     }
+}
+
+
+
+pub fn set_future_path_gizmo_config(mut cs: ResMut<GizmoConfigStore>) {
+    cs.config_mut::<FuturePathLineConfig>().0.line_width = 1.;
 }

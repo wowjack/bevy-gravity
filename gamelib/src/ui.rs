@@ -102,6 +102,57 @@ pub fn side_panel(
                     //change_event_writer.send(event);
                 }
             });
+
+            ui.separator();
+
+            ui.collapsing("Focused Object Editor", |ui| {
+                let Some((e, mut data)) = selected_objects.focused .clone() else { 
+                    ui.label("No Object Focused");
+                    return;
+                };
+                ui.label(format!("{:?}", e));
+                ui.horizontal(|ui| {
+                    ui.label("Position");
+                    let x_pos_changed = ui.add(DragValue::new(&mut data.position.x).prefix("X: ")).changed();
+                    let y_pos_changed = ui.add(DragValue::new(&mut data.position.y).prefix("Y: ")).changed();
+                    if x_pos_changed || y_pos_changed {
+                        //let event = ChangeEvent::new(e, Change::SetPosition(data.position));
+                        //change_event_writer.send(event);
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Velocity");
+                    let x_vel_changed = ui.add(DragValue::new(&mut data.velocity.x).prefix("X: ")).changed();
+                    let y_vel_changed = ui.add(DragValue::new(&mut data.velocity.y).prefix("Y: ")).changed();
+                    if x_vel_changed || y_vel_changed {
+                        //let event = ChangeEvent::new(e, Change::SetVelocity(data.velocity));
+                        //change_event_writer.send(event);
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Mass");
+                    ui.style_mut().spacing.slider_width = 225.;
+                    let mass_slider = ui.add(
+                        Slider::new(&mut data.mass, 1.0..=1e30)
+                            .logarithmic(true)
+                            .custom_formatter(|num, _| format!("{:1.1e}", num))
+                    );
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Radius");
+                    ui.style_mut().spacing.slider_width = 225.;
+                    let radius_slider = ui.add(
+                        Slider::new(&mut data.radius, 1.0..=10_000.)
+                            .logarithmic(true)
+                    );
+                });
+
+                let mut rgb: [f32; 3] = data.color.to_linear().to_f32_array_no_alpha();
+                ui.horizontal(|ui| {
+                    ui.label("Color");
+                    let color_changed = bevy_egui::egui::color_picker::color_edit_button_rgb(ui, &mut rgb).changed();
+                });
+            });
         });
 }
 
