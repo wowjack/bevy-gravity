@@ -14,5 +14,5 @@ pub fn move_pseudo_camera(follow_resource: Res<FollowObjectResource>, selected_o
     let Some((_, VisualObjectData { position, .. })) = &selected_objects.focused else { return };
     let Ok(mut camera_state) = camera_query.get_single_mut() else { return };
     let camera_position = camera_state.position.clone();
-    camera_state.position += (position.clone() - camera_position) * (1.0 - (SPEED*time.delta().as_millis() as f64).exp());
+    camera_state.position = position.clone(); //+= (position.clone() - camera_position) * (1.0 - (SPEED*time.delta().as_millis() as f64).exp());
 }

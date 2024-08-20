@@ -1,8 +1,10 @@
 // A Body that effects gravity but is not affected.
 // Can follow a set path or be still
 
-use bevy::{math::DVec2, prelude::Entity};
+use bevy::{color::Color, math::DVec2, prelude::Entity};
 use crate::{math, G};
+
+use super::position_generator::PositionGenerator;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StaticPosition {
@@ -41,19 +43,19 @@ impl StaticPosition {
 
 #[derive(Debug, Clone)]
 pub struct StaticBody {
-    pub position: StaticPosition,
+    pub position_generator: PositionGenerator,
     /// Gravitational parameter (mass * G)
     pub mu: f64,
     pub radius: f64,
-    pub entity: Option<Entity>
+    pub color: Color
 }
 
 impl StaticBody {
-    pub fn new(position: StaticPosition, mu: f64, radius: f64, entity: Option<Entity>) -> Self {
-        Self { position, mu, radius, entity}
+    pub fn new(position: StaticPosition, mu: f64, radius: f64, color: Color) -> Self {
+        Self { position_generator: PositionGenerator::from(position), mu, radius, color}
     }
 
     pub fn mass(&self) -> f64 {
-        self.mu * G
+        self.mu / G
     }
 }

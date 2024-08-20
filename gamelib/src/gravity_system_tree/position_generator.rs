@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{clone, collections::VecDeque};
 use bevy::math::DVec2;
 
 use super::static_body::StaticPosition;
@@ -45,17 +45,38 @@ impl PositionGenerator {
         self.position_chain.push_back(new);
         self
     }
+    pub fn extend_generator(mut self, new: PositionGenerator) -> Self {
+        self.position_chain.extend(new.position_chain.into_iter());
+        self
+    }
 
     pub fn prepend(&mut self, new: StaticPosition) {
         if let StaticPosition::Still = new { return }
         self.position_chain.push_front(new);
+    }
+    pub fn prepend_generator(&mut self, gen: &PositionGenerator) {
+        for pos in gen.position_chain.iter().rev() {
+            self.position_chain.push_front(pos.clone());
+        }
     }
 
     pub fn pop_end(&mut self) {
         self.position_chain.pop_back();
     }
 
+    pub fn get_end(&self) -> StaticPosition {
+        self.position_chain.back().map_or(StaticPosition::Still, clone::Clone::clone)
+    }
+
     pub fn len(&self) -> usize {
         self.position_chain.len()
+    }
+}
+
+impl From<StaticPosition> for PositionGenerator {
+    fn from(value: StaticPosition) -> Self {
+        let mut position_chain = VecDeque::new();
+        position_chain.push_back(value);
+        Self { position_chain }
     }
 }

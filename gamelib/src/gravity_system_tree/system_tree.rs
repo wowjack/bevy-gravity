@@ -27,9 +27,7 @@ pub struct GravitySystemTree {
     /// If a dynamic body is within a distance of radius from the system center, it is part of the system or one of its children. 
     pub radius: f64,
 
-    /// Center position of the system relative to the parent system. \
-    /// Polar coordinates
-    pub position: StaticPosition,
+    /// Used to calculate the position of the system at a point in time
     pub position_generator: PositionGenerator,
 
     /// Total gravitational parameter of all static bodies in the system, including bodies in child systems. Mass of dynamic bodies is negligible.
@@ -81,7 +79,7 @@ impl GravitySystemTree {
 
             // Get the scalar change in distance to the system center squared
             // This is used to scale the acceleration vector as a body changes distance from the system center within iterations in a system's time_step
-            // Without this, elliptical orbits decay into circular ones (this still happens with this change, just extremely slowly)
+            // Without this, elliptical orbits decay into circular ones
             let distance_diff = old_position.length_squared() / new_position.length_squared();
 
             body.gravitational_acceleration = DVec2::from_angle(old_position.angle_between(new_position)).rotate(body.gravitational_acceleration)*distance_diff;
@@ -94,10 +92,10 @@ impl GravitySystemTree {
     fn set_static_masses_to(&mut self, time: u64) {
         self.static_masses.clear();
         for s in &self.child_systems {
-            self.static_masses.push((s.position.get_cartesian_position(time), s.mu));
+            self.static_masses.push((s.position_generator.get_partial_end(time, 1), s.mu));
         }
         for sb in &self.static_bodies {
-            self.static_masses.push((sb.position.get_cartesian_position(time), sb.mu));
+            self.static_masses.push((sb.position_generator.get_partial_end(time, 1), sb.mu));
         }
     }
 
@@ -106,15 +104,15 @@ impl GravitySystemTree {
         for (index, body) in self.dynamic_bodies.iter().enumerate() {
             let mut body_mut = body.borrow_mut();
             if body_mut.relative_stats.get_position_relative().length_squared() > self.radius.powi(2) {
-                body_mut.relative_stats.move_to_parent(new_time);
+                body_mut.relative_stats.translate_to_parent(new_time);
                 elevator.push(body.clone());
                 remove_list.push(index);
                 continue;
             }
             for child_system in &mut self.child_systems {
-                let system_position = child_system.position.get_cartesian_position(new_time);
+                let system_position = child_system.position_generator.get_partial_end(new_time, 1);
                 if body_mut.relative_stats.get_position_relative().distance_squared(system_position) > child_system.radius.powi(2) { continue }
-                body_mut.relative_stats.move_to_child(new_time, child_system.position.clone());
+                body_mut.relative_stats.translate_to_child(new_time, child_system.position_generator.clone());
                 child_system.insert_body(body.clone());
                 remove_list.push(index);
                 break;
@@ -149,8 +147,8 @@ impl GravitySystemTree {
             child_system.get_dynamic_bodies_recursive(res);
         }
     }
-    pub fn get_static_bodies_recursive(&self, res: &mut Vec<(StaticBody, PositionGenerator)>) {
-        res.extend(self.static_bodies.iter().map(|b| (b.clone(), self.position_generator.clone().extend(b.position.clone()))));
+    pub fn get_static_bodies_recursive(&self, res: &mut Vec<StaticBody>) {
+        res.extend(self.static_bodies.iter().map(|b| b.clone()));
         for child_system in &self.child_systems {
             child_system.get_static_bodies_recursive(res);
         }
@@ -176,8 +174,7 @@ impl Default for GravitySystemTree {
         Self {
             time_step: 1,
             radius: 1.,
-            position: StaticPosition::Still,
-            position_generator: PositionGenerator::default().extend(StaticPosition::Still),
+            position_generator: PositionGenerator::from(StaticPosition::Still),
             mu: 0.,
             total_child_dynamic_bodies: 0,
             dynamic_bodies: Default::default(),

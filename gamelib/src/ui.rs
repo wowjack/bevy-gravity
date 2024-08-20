@@ -1,7 +1,7 @@
 use bevy::{math::DVec2, prelude::*};
 use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider, Button}, EguiContexts};
 use rand::Rng;
-use crate::{visual_object::{CircleMesh, DrawOptions, FollowObjectResource, ReferenceFrameResource, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
+use crate::visual_object::{CircleMesh, DrawOptions, FollowObjectResource, SelectedObjects, SimulationState, VisualObjectBundle, VisualObjectData};
 
 
 
@@ -31,8 +31,6 @@ pub fn side_panel(
     circle_mesh: Res<CircleMesh>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     selected_objects: Res<SelectedObjects>,
-    mut visual_change_event_writer: EventWriter<VisualChangeEvent>,
-    mut ref_frame_resource: ResMut<ReferenceFrameResource>,
     mut follow_object_resource: ResMut<FollowObjectResource>,
 ) {
     SidePanel::new(panel::Side::Right, "sidepanel")
@@ -53,14 +51,6 @@ pub fn side_panel(
             ui.collapsing("Draw Options", |ui| {
                 ui.checkbox(&mut draw_options.draw_velocity_arrow, "Show Velocity");
                 ui.checkbox(&mut draw_options.draw_future_path, "Show Path");
-                if ui.button("Set Reference Frame").clicked() {
-                    ref_frame_resource.is_setting_ref_frame = true;
-                    ref_frame_resource.ref_entity = None;
-                }
-                if ui.button("Unset Reference Frame").clicked() {
-                    ref_frame_resource.is_setting_ref_frame = false;
-                    ref_frame_resource.ref_entity = None;
-                }
                 ui.checkbox(&mut follow_object_resource.follow_object, "Follow Focused Object");
             });
 
@@ -112,79 +102,6 @@ pub fn side_panel(
                     //change_event_writer.send(event);
                 }
             });
-
-            ui.separator();
-
-            ui.collapsing("Focused Object Editor", |ui| {
-                let Some((e, mut data)) = selected_objects.focused .clone() else { 
-                    ui.label("No Object Focused");
-                    return;
-                };
-                ui.label(format!("{:?}", e));
-                ui.horizontal(|ui| {
-                    ui.label("Position");
-                    let x_pos_changed = ui.add(DragValue::new(&mut data.position.x).prefix("X: ")).changed();
-                    let y_pos_changed = ui.add(DragValue::new(&mut data.position.y).prefix("Y: ")).changed();
-                    if x_pos_changed || y_pos_changed {
-                        //let event = ChangeEvent::new(e, Change::SetPosition(data.position));
-                        //change_event_writer.send(event);
-                    }
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Velocity");
-                    let x_vel_changed = ui.add(DragValue::new(&mut data.velocity.x).prefix("X: ")).changed();
-                    let y_vel_changed = ui.add(DragValue::new(&mut data.velocity.y).prefix("Y: ")).changed();
-                    if x_vel_changed || y_vel_changed {
-                        //let event = ChangeEvent::new(e, Change::SetVelocity(data.velocity));
-                        //change_event_writer.send(event);
-                    }
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Mass");
-                    ui.style_mut().spacing.slider_width = 225.;
-                    let mass_slider = ui.add(
-                        Slider::new(&mut data.mass, 1.0..=1e30)
-                            .logarithmic(true)
-                            .custom_formatter(|num, _| format!("{:1.1e}", num))
-                    );
-                    if mass_slider.changed() {
-                        //let event = ChangeEvent::new(e, Change::SetMass(data.mass));
-                        //change_event_writer.send(event);
-                    }
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Radius");
-                    ui.style_mut().spacing.slider_width = 225.;
-                    let radius_slider = ui.add(
-                        Slider::new(&mut data.radius, 1.0..=10_000.)
-                            .logarithmic(true)
-                    );
-                    if radius_slider.changed() {
-                        visual_change_event_writer.send(VisualChangeEvent { target: e, change: VisualChange::SetRadius(data.radius) });
-                    }
-                });
-
-                let mut rgb: [f32; 3] = data.color.to_linear().to_f32_array_no_alpha();
-                ui.horizontal(|ui| {
-                    ui.label("Color");
-                    let color_changed = bevy_egui::egui::color_picker::color_edit_button_rgb(ui, &mut rgb).changed();
-                    if color_changed {
-                        visual_change_event_writer.send(VisualChangeEvent { target: e, change: VisualChange::SetColor(LinearRgba::from_f32_array_no_alpha(rgb).into()) });
-                    }
-                });
-            });
-
-            if let Some((_, object_data)) = &selected_objects.focused {
-                if ui.button("spawn orbital body").clicked() {
-                    //let new_object = get_orbital_body(object_data.clone());
-                    //let visual_object_bundle = VisualObjectBundle::new(new_object.clone(), circle_mesh.0.clone().into(), &mut color_materials);
-                    //let entity = commands.spawn(visual_object_bundle).id();
-                    //let event = ChangeEvent { entity, change: Change::CreateObject(MassiveObject::from(new_object)) };
-                    //change_event_writer.send(event);
-                }
-            }
-            //check if pointer is within the ui
-            //println!("{}", ui.rect_contains_pointer(Rect::everything_right_of(window.width() - SIDE_PANEL_WIDTH)));
         });
 }
 

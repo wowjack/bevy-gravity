@@ -31,7 +31,7 @@ impl GravitySystemBuilder {
         self
     }
     pub fn with_position(mut self, position: StaticPosition) -> Self {
-        self.system.position = position;
+        self.system.position_generator = PositionGenerator::from(position);
         self.set_position = true;
         self
     }
@@ -62,10 +62,14 @@ impl GravitySystemBuilder {
     fn build_recursive(mut self, parent_generator: PositionGenerator) -> Result<GravitySystemTree, SystemTreeError> {
         if !self.set_position { return Err(SystemTreeError::NoPosition) }
 
-        self.system.position_generator = parent_generator.extend(self.system.position.clone());
+        self.system.position_generator = parent_generator.extend_generator(self.system.position_generator);
 
         for body in &self.system.dynamic_bodies {
             body.borrow_mut().relative_stats.set_generator(self.system.position_generator.clone());
+        }
+
+        for body in &mut self.system.static_bodies {
+            body.position_generator.prepend_generator(&self.system.position_generator);
         }
 
         for child_system in self.child_systems {
@@ -120,7 +124,7 @@ impl GravitySystemBuilder {
 
 /// Difference between orbital radii must be greater than the sum of system radii to ensure they dont potentially
 fn are_systems_near(system1: &GravitySystemTree, system2: &GravitySystemTree) -> bool {
-    (system1.position.get_radius() - system2.position.get_radius()).abs() > (system1.radius + system2.radius)
+    (system1.position_generator.get_end().get_radius() - system2.position_generator.get_end().get_radius()).abs() > (system1.radius + system2.radius)
 }
 
 

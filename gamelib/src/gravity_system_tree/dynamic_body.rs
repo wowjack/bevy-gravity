@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bevy::math::DVec2;
+use bevy::{color::Color, math::DVec2};
 
 use super::{position_generator::PositionGenerator, static_body::StaticPosition};
 
@@ -11,6 +11,7 @@ pub struct DynamicBody {
     /// Gravitational parameter (mass * G)
     pub mu: f64,
     pub radius: f64,
+    pub color: Color,
 
     /// Acceleration due to gravity \
     /// Pretty sure this acceleration is not relative
@@ -31,11 +32,12 @@ impl DynamicBody {
             dir * (mu / (norm * norm.sqrt()))
         }
     }
-    pub fn new(position: DVec2, velocity: DVec2, mu: f64, radius: f64) -> Self {
+    pub fn new(position: DVec2, velocity: DVec2, mu: f64, radius: f64, color: Color) -> Self {
         Self {
             relative_stats: DynamicBodyRelativeStats::new(position, velocity, PositionGenerator::default()),
             mu,
             radius,
+            color,
             gravitational_acceleration: DVec2::ZERO,
             future_actions: VecDeque::new()
         }
@@ -93,16 +95,16 @@ impl DynamicBodyRelativeStats {
     }
 
     /// Translate the position and velocity to be relative to the parent system and pop from the end of the generator
-    pub fn move_to_parent(&mut self, time: u64) {
+    pub fn translate_to_parent(&mut self, time: u64) {
         self.velocity = self.get_velocity_relative_to_ancestor(time, 1);
         self.position = self.get_position_relative_to_ancestor(time, 1);
         self.generator.pop_end();
     }
     /// Translate the position and velocity to be relative to the child position and extend the generator
-    pub fn move_to_child(&mut self, time: u64, child_position: StaticPosition) {
-        let child_system_position = child_position.get_cartesian_position(time);
-        self.velocity -= child_position.get_cartesian_position(time+1) - child_system_position;
+    pub fn translate_to_child(&mut self, time: u64, child_position_gen: PositionGenerator) {
+        let child_system_position = child_position_gen.get_partial_end(time, 1);
+        self.velocity -= child_position_gen.get_partial_end(time+1, 1) - child_system_position;
         self.position -= child_system_position;
-        self.generator = self.generator.clone().extend(child_position);
+        self.generator = child_position_gen;
     }
 }

@@ -1,3 +1,4 @@
+use bevy::color::palettes::css::WHITE;
 use rand::Rng;
 use rand::{rngs::StdRng, SeedableRng};
 use crate::math::get_orbital_speed;
@@ -28,7 +29,7 @@ fn generate_galaxy(rng: &mut StdRng) -> GravitySystemBuilder {
         .with_position(StaticPosition::Still)
         .with_time_step(10)
         .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, center_mass, 1e6, None)
+            StaticBody::new(StaticPosition::Still, center_mass, 1e6, WHITE.into())
         ]);
     GravitySystemBuilder::new()
         .with_radius(1e100)

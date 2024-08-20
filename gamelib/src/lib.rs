@@ -1,4 +1,4 @@
-use bevy::color::palettes::css::CORNFLOWER_BLUE;
+use bevy::color::palettes::css::{CORNFLOWER_BLUE, WHITE};
 use bevy::math::DVec2;
 use bevy::window::WindowResized;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::camera::Viewport};
@@ -24,19 +24,12 @@ pub use itertools;
 mod ui;
 mod visual_object;
 mod pseudo_camera;
-//mod physics;
 mod util;
 mod math;
 pub mod gravity_system_tree;
 
 
 pub fn library_main() {
-    //println!("half hour speed: {}", std::f64::consts::TAU/(60.0f64.powi(2)*30.));
-    //let center_mass = 3e20;
-    //let orbit_radius = 1e10;
-    //let orbital_speed = get_orbital_speed(center_mass, orbit_radius);
-    //return
-    
     App::new()
         .add_plugins((
             DefaultPlugins/*.disable::<LogPlugin>()*/,
@@ -44,7 +37,6 @@ pub fn library_main() {
             DefaultPickingPlugins.build().disable::<DebugPickingPlugin>().disable::<DefaultHighlightingPlugin>(),
             FrameTimeDiagnosticsPlugin,
             //LogDiagnosticsPlugin::default(),
-            //physics::PhysicsPlugin,
             visual_object::VisualObjectPlugin,
             Shape2dPlugin::default(),
             pseudo_camera_plugin
@@ -81,9 +73,9 @@ fn init(
         .with_radius(2e12)
         .with_position(StaticPosition::Still)
         .with_time_step(10)
-        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3e8, 100., None)])
+        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3e8, 100., WHITE.into())])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(3e8, 1e5)*1e5*1.3, 1e-10, 10.),
+            DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(3e8, 1e5)*1e5*1.3, 1e-10, 10., WHITE.into()),
             //DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(1e8, 1e5)*1e5, 1e-10, 10.),
             //DynamicBody::new(DVec2::X*1e6, DVec2::Y*get_orbital_speed(1e8, 1e6)*1e6, 1e-10, 10.),
         ]);
