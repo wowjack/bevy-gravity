@@ -1,4 +1,4 @@
-use bevy::color::palettes::css::{CORNFLOWER_BLUE, WHITE};
+use bevy::color::palettes::css::{CORNFLOWER_BLUE, RED, WHITE};
 use bevy::math::DVec2;
 use bevy::window::WindowResized;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::camera::Viewport};
@@ -73,7 +73,7 @@ fn init(
         .with_radius(2e12)
         .with_position(StaticPosition::Still)
         .with_time_step(10)
-        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3e8, 100., WHITE.into())])
+        .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3e8, 100., RED.into())])
         .with_dynamic_bodies(&[
             DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(3e8, 1e5)*1e5*1.3, 1e-10, 10., WHITE.into()),
             //DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(1e8, 1e5)*1e5, 1e-10, 10.),

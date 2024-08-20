@@ -3,14 +3,6 @@ use crate::{gravity_system_tree::system_manager::GravitySystemManager, pseudo_ca
 use super::{follow_object::StaticBody, DrawOptions, SelectedObjects};
 
 
-/// Use a marker type used for deciding which objects to draw a future path for?
-/// 
-/// Ideally this future path should only be created when it needs to.
-/// First read The full buffer from the future.
-/// Afterwards only read starting at whatever time the previous read ended at.
-/// And reread the entire buffer is a change happens.
-
-
 pub fn draw_future_paths(
     camera_query: Query<&CameraState>,
     mut gizmos: Gizmos,

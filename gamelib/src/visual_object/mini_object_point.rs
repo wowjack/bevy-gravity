@@ -6,10 +6,11 @@ use bevy_vector_shapes::{painter::ShapePainter, shapes::DiscPainter};
 
 pub fn draw_mini_object_point(
     mut painter: ShapePainter,
-    object_query: Query<&Transform, With<VisualObjectData>>,
+    object_query: Query<(&Transform, &VisualObjectData)>,
 ) {
-    for transform in object_query.iter().filter(|t| t.scale.x < 2.) {
+    for (transform, VisualObjectData { color, .. }) in object_query.iter().filter(|(t, _)| t.scale.x < 2.) {
         painter.set_translation(transform.translation);
+        painter.set_color(*color);
         painter.circle(2.);
     }
 }
