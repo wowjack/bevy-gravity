@@ -18,11 +18,12 @@ pub fn draw_future_paths(
 
     if let Some(i) = gravity_system.static_body_entities.iter().position(|x| *x == entity) {
         let StaticBody { position_generator, .. } = &gravity_system.static_bodies[i];
-        let iter = (0..100_000).map(|i| camera_state.physics_to_world_pos(position_generator.get(gravity_system.latest_time + i.max((i as f32/(1000.*camera_state.get_scale())) as u64))));
-            gizmos.linestrip_2d(
-                iter,
-                Color::linear_rgb(0.75, 0.75, 0.75)
-            );
+        //let iter = (0..100_000).map(|i| camera_state.physics_to_world_pos(position_generator.get(gravity_system.latest_time + i.max((i as f32/(1000.*camera_state.get_scale())) as u64))));
+        let iter = (0..100_000).map(|i| camera_state.physics_to_world_pos(position_generator.get(gravity_system.latest_time + i)));
+        gizmos.linestrip_2d(
+            iter,
+            Color::linear_rgb(0.75, 0.75, 0.75)
+        );
     }
     else if let Some(i) = gravity_system.dynamic_body_entities.iter().position(|x| *x == entity) {
         let body = &gravity_system.dynamic_bodies[i];
