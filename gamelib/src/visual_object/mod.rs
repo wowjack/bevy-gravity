@@ -80,7 +80,7 @@ impl Plugin for VisualObjectPlugin {
             .insert_resource(SelectedObjects::default())
             .insert_resource(FollowObjectResource::default())
             .add_systems(Startup, (init, spawn_background_rect, set_future_path_gizmo_config))
-            .add_systems(PreUpdate, update_object_data)
+            .add_systems(PreUpdate, (update_object_data, update_object_positions.after(update_object_data)))
             .add_systems(Update, (
                 add_material_mesh,
                 move_pseudo_camera,
@@ -88,10 +88,9 @@ impl Plugin for VisualObjectPlugin {
                 rect_select,
                 draw_selected_object_halo,
                 update_focused_object_data,
-                update_object_positions,
-                draw_future_paths.after(update_object_positions),
-                draw_velocity_arrows.after(update_object_positions),
-                draw_mini_object_point.after(update_object_positions),
+                draw_future_paths,
+                draw_velocity_arrows,
+                draw_mini_object_point,
             ));
     }
 }

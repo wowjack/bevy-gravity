@@ -1,9 +1,11 @@
-use bevy::color::palettes::css::{CORNFLOWER_BLUE, GREEN, ORANGE, RED, WHITE, YELLOW};
+use bevy::color::palettes::css::{CORNFLOWER_BLUE, GREEN, PURPLE, WHITE, YELLOW};
 use bevy::math::DVec2;
 use bevy::window::WindowResized;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::camera::Viewport};
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
+use bevy_vector_shapes::prelude::ShapePainter;
+use bevy_vector_shapes::shapes::DiscPainter;
 use bevy_vector_shapes::Shape2dPlugin;
 use gravity_system_tree::builder::GravitySystemBuilder;
 use gravity_system_tree::dynamic_body::DynamicBody;
@@ -14,7 +16,6 @@ use pseudo_camera::camera::CameraState;
 use pseudo_camera::pseudo_camera_plugin;
 use gravity_system_tree::{static_body::StaticPosition, system_manager::GravitySystemManager};
 use ui::SIDE_PANEL_WIDTH;
-//use util::generate_system;
 use visual_object::SimulationState;
 pub use bevy;
 pub use itertools;
@@ -58,41 +59,18 @@ pub const G: f64 = 6.6743015e-11;
 fn init(
     world: &mut World
 ) {
-
-    //let child = GravitySystemBuilder::new()
-    //    .with_radius(5000.)
-    //    .with_position(StaticPosition::Circular { radius: 1e6, speed: get_orbital_speed(3e8, 1e6), start_angle: 0. })
-    //    .with_time_step(1)
-    //    .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3000., 1., None)])
-    //    .with_dynamic_bodies(&[
-    //        DynamicBody::new(DVec2::new(2_000., 0.), DVec2::new(-0.8, 0.7), 1e-10, 100.),
-    //        DynamicBody::new(DVec2::new(3_000., 0.), DVec2::new(-6., 0.1), 1e-10, 100.),
-    //    ]);
-        
-    //let test_system = GravitySystemBuilder::new()
-    //    .with_radius(2e12)
-    //    .with_position(StaticPosition::Still)
-    //    .with_time_step(10)
-    //    .with_static_bodies(&[StaticBody::new(StaticPosition::Still, 3e8, 100., RED.into())])
-    //    .with_dynamic_bodies(&[
-    //        DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(3e8, 1e5)*1e5*1.3, 1e-10, 10., WHITE.into()),
-    //        //DynamicBody::new(DVec2::X*1e5, DVec2::Y*get_orbital_speed(1e8, 1e5)*1e5, 1e-10, 10.),
-    //        //DynamicBody::new(DVec2::X*1e6, DVec2::Y*get_orbital_speed(1e8, 1e6)*1e6, 1e-10, 10.),
-    //    ]);
-        //.with_children(&[child]);
-
     let galaxy_mu = 1e33*G/100.;
     let galaxy_system_radius = 1e20;
     let galaxy_system_time_step = 100;
     let galaxy_radius = 1000.;
-    let galaxy_color = Color::from(YELLOW);
+    let galaxy_color = Color::from(PURPLE);
 
     let stellar_orbital_radius = 1e12;
     let stellar_mu = 1.9891e30*G/100.;
-    let stellar_system_radius = 1e10;
+    let stellar_system_radius = 5e9;
     let stellar_system_time_step = 10;
     let stellar_radius = 100.;
-    let stellar_color = Color::from(ORANGE);
+    let stellar_color = Color::from(YELLOW);
 
     let planet_orbital_radius = 1.5135e8;
     let planet_mu = 5.972e24*G/100.;
@@ -114,11 +92,9 @@ fn init(
         .with_static_bodies(&[
             StaticBody::new(StaticPosition::Still, planet_mu, planet_radius, planet_color),
             StaticBody::new(StaticPosition::Circular { radius: moon_orbital_radius, speed: get_orbital_speed(planet_mu, moon_orbital_radius), start_angle: 0. }, moon_mu, moon_radius, moon_color),
-            //StaticBody::new(StaticPosition::Circular { radius: 800., speed: 0.0005, start_angle: 0. }, 0.00000000001, 1., WHITE.into()),
-            //StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.005, start_angle: 0. }, 0.00000000001, 1., WHITE.into()),
         ])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::X*-100_000., -1.*DVec2::Y*get_orbital_speed(planet_mu, 100_000.)*100_000., 1e-20, 1., CORNFLOWER_BLUE.into()),
+            DynamicBody::new(DVec2::X*-100_000., 1.3*DVec2::Y*get_orbital_speed(planet_mu, 100_000.)*100_000., 1e-20, 1., CORNFLOWER_BLUE.into()),
         ]);
     let stellar_system = GravitySystemBuilder::new()
         .with_radius(stellar_system_radius)
@@ -152,16 +128,20 @@ struct SystemCircleResource {
 }
 
 fn draw_system_circles(
-    mut gizmos: Gizmos,
+    mut painter: ShapePainter,
     systems_resource: Res<SystemCircleResource>,
     state: Res<SimulationState>,
     camera_query: Query<&CameraState>
 ) {
     if systems_resource.draw == false { return }
     let camera = camera_query.single();
+    painter.hollow = true;
+    painter.color = CORNFLOWER_BLUE.into();
+
     for (gen, radius) in &systems_resource.gens {
-        let position = gen.get(state.current_time);
-        gizmos.circle_2d(camera.physics_to_world_pos(position), *radius as f32*camera.get_scale(), CORNFLOWER_BLUE);
+        let position = camera.physics_to_world_pos(gen.get(state.current_time));
+        painter.transform.translation = position.extend(0.);
+        painter.circle(*radius as f32*camera.get_scale());
     }
 }
 

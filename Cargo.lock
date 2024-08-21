@@ -2385,11 +2385,9 @@ dependencies = [
  "bevy_mod_picking",
  "bevy_vector_shapes",
  "bincode",
- "crossbeam-channel",
  "egui_extras",
  "itertools 0.13.0",
  "rand",
- "rayon",
 ]
 
 [[package]]

@@ -1,14 +1,3 @@
-use std::collections::VecDeque;
-use bevy::{color::palettes::css::{LIGHT_GRAY, WHITE}, math::DVec2, prelude::{Commands, Entity}};
-use dynamic_body::DynamicBody;
-use itertools::{multizip, Itertools};
-use position_generator::PositionGenerator;
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator};
-use static_body::{StaticBody, StaticPosition};
-
-use crate::visual_object::{VisualObjectBundle, VisualObjectData};
-
-
 pub mod static_body;
 pub mod dynamic_body;
 pub mod position_generator;

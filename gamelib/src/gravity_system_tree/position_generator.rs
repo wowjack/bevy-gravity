@@ -30,7 +30,7 @@ impl PositionGenerator {
             .fold(DVec2::ZERO, |acc, e| acc + e.get_cartesian_position(time))
     }
 
-    /// Get position only using the last n positions in the position generator \
+    /// Get position only using the first n positions in the position generator \
     /// If n == position_chain.len() then get_partial_start == get \
     pub fn get_partial_start(&self, time: u64, n: usize) -> DVec2 {
         assert!(n <= self.position_chain.len());
@@ -38,6 +38,26 @@ impl PositionGenerator {
             .iter()
             .take(n)
             .fold(DVec2::ZERO, |acc, e| acc + e.get_cartesian_position(time))
+    }
+
+    pub fn get_orbit_circle(&self, time: u64) -> Option<(DVec2, f64)> {
+        let mut orbit_radius = 0.;
+        let mut index = 0;
+
+        let mut iter = self.position_chain.iter().enumerate().rev();
+        loop {
+            match iter.next() {
+                None => return None,
+                Some((_, StaticPosition::Still)) => continue,
+                Some((i, StaticPosition::Circular { radius, .. })) => {
+                    orbit_radius = *radius;
+                    index = i;
+                    break;
+                }
+            }
+        }
+
+        return Some((self.get_partial_start(time, index), orbit_radius))
     }
 
     pub fn extend(mut self, new: StaticPosition) -> Self {

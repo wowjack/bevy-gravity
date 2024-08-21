@@ -71,6 +71,9 @@ impl DynamicBodyRelativeStats {
     pub fn get_position_relative_to_ancestor(&self, time: u64, ancestor_level: usize) -> DVec2 {
         self.generator.get_partial_end(time, ancestor_level) + self.position
     }
+    pub fn get_ancestor_position(&self, time: u64, ancestor_level: usize) -> DVec2 {
+        self.generator.get_partial_start(time, self.num_ancestors()-ancestor_level)
+    }
     pub fn get_position_absolute(&self, time: u64) -> DVec2 { self.generator.get(time) + self.position }
     pub fn set_position_relative(&mut self, position: DVec2) { self.position = position }
 
