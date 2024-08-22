@@ -42,7 +42,7 @@ pub fn library_main() {
             Shape2dPlugin::default(),
             pseudo_camera_plugin
         ))
-        .insert_resource(ClearColor(Color::linear_rgb(0.7, 0.7, 0.7)))
+        .insert_resource(ClearColor(Color::linear_rgb(0.001, 0.001, 0.001)))
         .add_systems(PostStartup, init)
         .add_systems(Update, (
             window_resize,

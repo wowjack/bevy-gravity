@@ -1,4 +1,4 @@
-use bevy::{diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, prelude::*, text::TextLayoutInfo};
+use bevy::{diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin}, prelude::*};
 
 use crate::pseudo_camera::camera::CameraState;
 
