@@ -45,7 +45,7 @@ impl GravitySystemTree {
             self.calculate_accelerations();
         }
         
-        self.accelerate_and_move_bodies();
+        self.accelerate_and_move_bodies(new_time);
 
         let mut child_elevator = vec![];
         for child_system in &mut self.child_systems {
@@ -66,13 +66,28 @@ impl GravitySystemTree {
         }
     }
 
-    fn accelerate_and_move_bodies(&self) {
+    fn accelerate_and_move_bodies(&self, new_time: u64) {
         for body in &self.dynamic_bodies {
             let mut body = body.borrow_mut();
-            let acceleration = body.gravitational_acceleration;
+            let mut acceleration = body.gravitational_acceleration;
             ////////////////////////////////////////////////////////////
             // This is where I will get acceleration from future actions
+            loop {
+                match body.future_actions.front() {
+                    None => break,
+                    Some((time, accel)) => {
+                        if *time > new_time-1 { break }
+                        if *time < new_time-1 {
+                            body.future_actions.pop_front();
+                            continue;
+                        }
+                        acceleration += *accel;
+                        body.future_actions.pop_front();
+                    }
+                }
+            }
             ////////////////////////////////////////////////////////////
+            
             let new_velocity = body.relative_stats.get_velocity_relative() + acceleration;
             let old_position = body.relative_stats.get_position_relative();
             let new_position = old_position + new_velocity;

@@ -19,7 +19,7 @@ pub struct DynamicBody {
 
     /// Actions that the body will make in the future like accelerating
     /// TODO!
-    pub future_actions: VecDeque<()>,
+    pub future_actions: VecDeque<(u64, DVec2)>,
 }
 impl DynamicBody {
     pub fn force_scalar(&self, position: DVec2, mu: f64) -> DVec2 {

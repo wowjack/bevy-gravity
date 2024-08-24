@@ -1,3 +1,6 @@
+use core::f64;
+use std::collections::VecDeque;
+
 use bevy::color::palettes::css::{CORNFLOWER_BLUE, GREEN, MAGENTA, PURPLE, WHITE, YELLOW};
 use bevy::math::DVec2;
 use bevy::window::WindowResized;
@@ -11,7 +14,7 @@ use gravity_system_tree::builder::GravitySystemBuilder;
 use gravity_system_tree::dynamic_body::DynamicBody;
 use gravity_system_tree::position_generator::PositionGenerator;
 use gravity_system_tree::static_body::StaticBody;
-use math::get_orbital_speed;
+use math::{get_orbital_radius, get_orbital_speed};
 use pseudo_camera::camera::CameraState;
 use pseudo_camera::pseudo_camera_plugin;
 use gravity_system_tree::{static_body::StaticPosition, system_manager::GravitySystemManager};
@@ -84,6 +87,21 @@ fn init(
     let moon_color = Color::from(WHITE);
 
 
+    let mut planet_orbiter = DynamicBody::new(DVec2::X*-7_000., DVec2::Y*get_orbital_speed(planet_mu, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into());
+    
+    planet_orbiter.future_actions.extend((1u64..98).map(|x| (x, DVec2::Y*2.)));
+    planet_orbiter.future_actions.extend((200u64..203).map(|x| (x, DVec2::X*-1.)));
+    planet_orbiter.future_actions.push_back((203, DVec2::Y));
+    planet_orbiter.future_actions.push_back((204, DVec2::Y*0.5));
+    planet_orbiter.future_actions.push_back((4500, DVec2::X*-1.));
+    planet_orbiter.future_actions.push_back((4682, DVec2::splat(-20.)));
+    planet_orbiter.future_actions.push_back((4683, DVec2::X*-10.));
+    planet_orbiter.future_actions.push_back((4684, DVec2::X*-10.));
+    planet_orbiter.future_actions.push_back((4685, DVec2::X*-10.));
+    planet_orbiter.future_actions.push_back((4686, DVec2::Y*10.));
+    planet_orbiter.future_actions.push_back((4687, DVec2::Y*3.5));
+
+
     let planet_system = GravitySystemBuilder::new()
         .with_radius(planet_system_radius)
         .with_position(StaticPosition::Circular { radius: planet_orbital_radius, speed: get_orbital_speed(stellar_mu, planet_orbital_radius), start_angle: 0. })
@@ -93,7 +111,7 @@ fn init(
             StaticBody::new(StaticPosition::Circular { radius: moon_orbital_radius, speed: get_orbital_speed(planet_mu, moon_orbital_radius), start_angle: 0. }, moon_mu, moon_radius, moon_color),
         ])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::X*-7_000., DVec2::Y*get_orbital_speed(planet_mu, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into()),
+            planet_orbiter,
             //DynamicBody::new(DVec2::X*(moon_orbital_radius+500.), DVec2::Y*get_orbital_speed(moon_mu, 500.)*500., 1e-30, 1., MAGENTA.into())
         ]);
     let stellar_system = GravitySystemBuilder::new()

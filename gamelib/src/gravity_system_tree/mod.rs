@@ -42,6 +42,11 @@ To get a suggested system radius:
     Find distance to system where force exerted by system and force exerted by parent system center is equal.
     Divide the distance by some scalar? 0.5?
     Maybe depends on the distance to the parent systemn center.
+
+To determine if a single static body should have its own system:
+    Find the orbital radius where the orbital speed causes the body to orbit its center is < 60 time steps ( < 1 second per revolution)
+    tau / 60. radians per second
+    If this radius is withing the radius of the static body, dont bother creating a smaller system
 */
 
 
