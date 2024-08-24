@@ -87,6 +87,10 @@ impl GravitySystemBuilder {
             .iter()
             .map(|s| s.total_child_dynamic_bodies)
             .sum::<usize>() + self.system.dynamic_bodies.len();
+
+        self.system.set_static_masses_to(0);
+        self.system.calculate_accelerations();
+
         return Ok(self.system)
     }
 

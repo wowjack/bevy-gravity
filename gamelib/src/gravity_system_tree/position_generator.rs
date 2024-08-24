@@ -22,12 +22,15 @@ impl PositionGenerator {
     /// Get position only using the last n positions in the position generator \
     /// If n == position_chain.len() then get_partial_end == get \
     pub fn get_partial_end(&self, time: u64, n: usize) -> DVec2 {
-        assert!(n <= self.position_chain.len());
+        //assert!(n <= self.position_chain.len());
         self.position_chain
             .iter()
             .rev()
             .take(n)
             .fold(DVec2::ZERO, |acc, e| acc + e.get_cartesian_position(time))
+    }
+    pub fn get_end_position(&self, time: u64) -> DVec2 {
+        self.position_chain.back().map_or(DVec2::ZERO, |x| x.get_cartesian_position(time))
     }
 
     /// Get position only using the first n positions in the position generator \

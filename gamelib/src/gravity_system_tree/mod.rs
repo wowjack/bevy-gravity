@@ -37,3 +37,11 @@ Possibly rotate the acceleration vector based on the movement of the body. This 
 */
 
 
+/*
+To get a suggested system radius:
+    Find distance to system where force exerted by system and force exerted by parent system center is equal.
+    Divide the distance by some scalar? 0.5?
+    Maybe depends on the distance to the parent systemn center.
+*/
+
+

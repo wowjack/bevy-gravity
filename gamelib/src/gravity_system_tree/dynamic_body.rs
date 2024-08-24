@@ -105,8 +105,8 @@ impl DynamicBodyRelativeStats {
     }
     /// Translate the position and velocity to be relative to the child position and extend the generator
     pub fn translate_to_child(&mut self, time: u64, child_position_gen: PositionGenerator) {
-        let child_system_position = child_position_gen.get_partial_end(time, 1);
-        self.velocity -= child_position_gen.get_partial_end(time+1, 1) - child_system_position;
+        let child_system_position = child_position_gen.get_end_position(time);
+        self.velocity -= child_position_gen.get_end_position(time+1) - child_system_position;
         self.position -= child_system_position;
         self.generator = child_position_gen;
     }

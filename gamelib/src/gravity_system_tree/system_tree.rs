@@ -5,6 +5,7 @@ use itertools::Itertools;
 
 use super::{dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::{StaticBody, StaticPosition}};
 
+
 pub struct GravitySystemTree {
     /// References to dynamic bodies within this system \
     /// Most of the time only an immutable reference is required
@@ -39,7 +40,7 @@ impl GravitySystemTree {
     /// new_time must be last_time+1 for the position of static bodies to be correct
     pub fn accelerate_and_move_bodies_recursive(&mut self, new_time: u64, elevator: &mut Vec<Rc<RefCell<DynamicBody>>>) {
         // calculate acceleration if needed
-        if new_time % self.time_step == 0 {
+        if new_time % self.time_step == 0 && self.dynamic_bodies.len() > 0 {
             self.set_static_masses_to(new_time-1);
             self.calculate_accelerations();
         }
@@ -57,7 +58,7 @@ impl GravitySystemTree {
         self.ascend_or_descend_bodies(new_time, elevator);
     }
 
-    fn calculate_accelerations(&self) {
+    pub fn calculate_accelerations(&self) {
         for body in &self.dynamic_bodies {
             let mut body = body.borrow_mut();
             let acceleration = self.static_masses.iter().fold(DVec2::ZERO, |acceleration, static_mass| { acceleration + body.force_scalar(static_mass.0, static_mass.1) });
@@ -88,13 +89,13 @@ impl GravitySystemTree {
         }
     }
 
-    fn set_static_masses_to(&mut self, time: u64) {
+    pub fn set_static_masses_to(&mut self, time: u64) {
         self.static_masses.clear();
         for s in &self.child_systems {
-            self.static_masses.push((s.position_generator.get_partial_end(time, 1), s.mu));
+            self.static_masses.push((s.position_generator.get_end_position(time), s.mu));
         }
         for sb in &self.static_bodies {
-            self.static_masses.push((sb.position_generator.get_partial_end(time, 1), sb.mu));
+            self.static_masses.push((sb.position_generator.get_end_position(time), sb.mu));
         }
     }
 
@@ -109,7 +110,7 @@ impl GravitySystemTree {
                 continue;
             }
             for child_system in &mut self.child_systems {
-                let system_position = child_system.position_generator.get_partial_end(new_time, 1);
+                let system_position = child_system.position_generator.get_end_position(new_time);
                 if body_mut.relative_stats.get_position_relative().distance_squared(system_position) > child_system.radius.powi(2) { continue }
                 body_mut.relative_stats.translate_to_child(new_time, child_system.position_generator.clone());
                 child_system.insert_body(body.clone());
