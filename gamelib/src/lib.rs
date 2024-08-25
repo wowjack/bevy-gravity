@@ -90,14 +90,14 @@ const ganymede_orbital_radius: f64 = 1_070_000.;
 fn init(
     world: &mut World
 ) {
-    let galaxy_mu = 1e34*G/1e6;
+    let galaxy_mu = 1e34*G/1e5;
     let galaxy_system_radius = 1e20;
     let galaxy_system_time_step = 100;
     let galaxy_radius = 1000.;
     let galaxy_color = Color::from(PURPLE);
 
     let stellar_orbital_radius = 1e12;
-    let stellar_mu = 1.9891e30*G/1e6;
+    let stellar_mu = 1.9891e30*G/1e5;
     let stellar_system_radius = 5e9;
     let stellar_system_time_step = 10;
     let stellar_radius = 69340.;
@@ -105,7 +105,7 @@ fn init(
 
     let planet_orbital_radius = 1.5135e8;
     let planet_mu = 5.972e24*G/1e6;
-    let planet_system_radius = 3e6;
+    let planet_system_radius = 1e6;
     let planet_system_time_step = 1;
     let planet_radius = 6378.14;
     let planet_color = Color::from(GREEN);
@@ -129,6 +129,18 @@ fn init(
     planet_orbiter.future_actions.push_back((4685, DVec2::X*-10.));
     planet_orbiter.future_actions.push_back((4686, DVec2::Y*10.));
     planet_orbiter.future_actions.push_back((4687, DVec2::Y*3.5));
+
+    planet_orbiter.future_actions.extend((6635..6665).map(|x| (x, DVec2::Y*-1.)));
+    planet_orbiter.future_actions.extend((25000..26000).map(|x| (x, DVec2::Y*-0.01)));
+    planet_orbiter.future_actions.extend((26200..26260).map(|x| (x, DVec2::splat(-1.))));
+    planet_orbiter.future_actions.push_back((26260, DVec2::new(-1., 1.)));
+    planet_orbiter.future_actions.extend((28200..31430).map(|x| (x, DVec2::splat(1.))));
+
+    planet_orbiter.future_actions.extend((159_000..162_000).map(|x| (x, DVec2::new(-0.5, -1.))));
+    planet_orbiter.future_actions.extend((162_000..163_000).map(|x| (x, DVec2::Y*-1.)));
+    planet_orbiter.future_actions.extend((164_000..164_100).map(|x| (x, DVec2::splat(-1.))));
+    planet_orbiter.future_actions.extend((165_800..166_000).map(|x| (x, DVec2::new(-1., 1.))));
+
 
 
     let earth_system = GravitySystemBuilder::new()
@@ -156,29 +168,31 @@ fn init(
             ]);
     let stellar_system = GravitySystemBuilder::new()
         .with_radius(stellar_system_radius)
-        .with_position(StaticPosition::Circular { radius: stellar_orbital_radius, speed: get_orbital_speed(galaxy_mu, stellar_orbital_radius), start_angle: 0. })
+        .with_position(StaticPosition::Still)//Circular { radius: stellar_orbital_radius, speed: get_orbital_speed(galaxy_mu, stellar_orbital_radius), start_angle: 0. })
         .with_time_step(stellar_system_time_step)
         .with_static_bodies(&[
             StaticBody::new(StaticPosition::Still, stellar_mu, stellar_radius, stellar_color),
+        ])
+        .with_dynamic_bodies(&[
         ])
         .with_children(&[
             earth_system,
             jupiter_system
         ]);
-    let galactic_system = GravitySystemBuilder::new()
-        .with_radius(galaxy_system_radius)
-        .with_position(StaticPosition::Still)
-        .with_time_step(galaxy_system_time_step)
-        .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, galaxy_mu, galaxy_radius, galaxy_color)
-        ])
-        .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::X*100_000_000., DVec2::Y*50_000., 1e-30, 1., CORNFLOWER_BLUE.into()),
-        ])
-        .with_children(&[stellar_system]);
+    //let galactic_system = GravitySystemBuilder::new()
+    //    .with_radius(galaxy_system_radius)
+    //    .with_position(StaticPosition::Still)
+    //    .with_time_step(galaxy_system_time_step)
+    //    .with_static_bodies(&[
+    //        StaticBody::new(StaticPosition::Still, galaxy_mu, galaxy_radius, galaxy_color)
+    //    ])
+    //    .with_dynamic_bodies(&[
+    //        DynamicBody::new(DVec2::X*100_000_000., DVec2::Y*50_000., 1e-30, 1., CORNFLOWER_BLUE.into()),
+    //    ])
+    //    .with_children(&[stellar_system]);
 
 
-    let mut manager = GravitySystemManager::new(galactic_system);
+    let mut manager = GravitySystemManager::new(stellar_system);
     let systems_details = manager.system.get_system_position_gens_and_radii();
     world.insert_resource(SystemCircleResource { draw: true, gens: systems_details });
     manager.spawn_entities(world);
