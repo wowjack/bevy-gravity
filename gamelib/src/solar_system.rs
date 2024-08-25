@@ -96,31 +96,19 @@ pub const MOON_COLOR: Srgba = WHITE;
 
 pub fn earth_system() -> GravitySystemBuilder {
     let mut planet_orbiter = DynamicBody::new(DVec2::X*-7_000., DVec2::Y*get_orbital_speed(EARTH_MU, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into());
-    
-    planet_orbiter.future_actions.extend((1u64..98).map(|x| (x, DVec2::Y*2.)));
-    planet_orbiter.future_actions.extend((200u64..203).map(|x| (x, DVec2::X*-1.)));
-    planet_orbiter.future_actions.push_back((203, DVec2::Y));
-    planet_orbiter.future_actions.push_back((204, DVec2::Y*0.5));
-    planet_orbiter.future_actions.push_back((4500, DVec2::X*-1.));
-    planet_orbiter.future_actions.push_back((4682, DVec2::splat(-20.)));
-    planet_orbiter.future_actions.push_back((4683, DVec2::X*-10.));
-    planet_orbiter.future_actions.push_back((4684, DVec2::X*-10.));
-    planet_orbiter.future_actions.push_back((4685, DVec2::X*-10.));
-    planet_orbiter.future_actions.push_back((4686, DVec2::Y*10.));
-    planet_orbiter.future_actions.push_back((4687, DVec2::Y*3.5));
-
-    planet_orbiter.future_actions.extend((6635..6665).map(|x| (x, DVec2::Y*-1.)));
-    planet_orbiter.future_actions.extend((25000..26000).map(|x| (x, DVec2::Y*-0.01)));
-    planet_orbiter.future_actions.extend((26200..26260).map(|x| (x, DVec2::splat(-1.))));
-    planet_orbiter.future_actions.push_back((26260, DVec2::new(-1., 1.)));
-    planet_orbiter.future_actions.extend((28200..31430).map(|x| (x, DVec2::splat(1.))));
-
-    planet_orbiter.future_actions.extend((159_000..162_000).map(|x| (x, DVec2::new(-0.5, -1.))));
-    planet_orbiter.future_actions.extend((162_000..163_000).map(|x| (x, DVec2::Y*-1.)));
-    planet_orbiter.future_actions.extend((164_000..164_100).map(|x| (x, DVec2::splat(-1.))));
-    planet_orbiter.future_actions.extend((165_800..166_000).map(|x| (x, DVec2::new(-1., 1.))));
-
-    planet_orbiter.future_actions.extend((2_000_000..3_000_000).map(|x| (x, DVec2::new(-0.0009, -0.0003))));
+    planet_orbiter.future_actions.extend((1650..1670).map(|x| (x, DVec2::Y)));
+    planet_orbiter.future_actions.extend((1900..1920).map(|x| (x, DVec2::Y)));
+    planet_orbiter.future_actions.extend((2250..2270).map(|x| (x, DVec2::Y)));
+    planet_orbiter.future_actions.extend((2865..2885).map(|x| (x, DVec2::Y)));
+    planet_orbiter.future_actions.extend((4470..4511).map(|x| (x, DVec2::Y)));
+    planet_orbiter.future_actions.push_back((4511, DVec2::Y*0.59));
+    planet_orbiter.future_actions.extend((7310..7350).map(|x| (x, DVec2::new(-1., -0.3))));
+    planet_orbiter.future_actions.extend((7350..8000).map(|x| (x, DVec2::new(1., -0.25))));
+    planet_orbiter.future_actions.extend((136_000..141_300).map(|x| (x, DVec2::new(-0.1, 0.))));
+    planet_orbiter.future_actions.extend((178_000..178_200).map(|x| (x, DVec2::new(-0.1, 0.1))));
+    planet_orbiter.future_actions.extend((178_665..178_700).map(|x| (x, DVec2::new(-0.41, 0.))));
+    planet_orbiter.future_actions.extend((179_200..179_220).map(|x| (x, DVec2::new(1., -1.))));
+    planet_orbiter.future_actions.extend((179_470..179_481).map(|x| (x, DVec2::new(0., -1.))));
 
     GravitySystemBuilder::new()
         .with_position(StaticPosition::Still)
