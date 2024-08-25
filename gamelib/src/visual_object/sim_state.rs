@@ -13,7 +13,7 @@ pub struct SimulationState {
 impl Default for SimulationState {
     fn default() -> Self {
         Self {
-            running: true,
+            running: false,
             current_time: 0,
             run_speed: 1,
             timer: Timer::new(Duration::from_millis(17), TimerMode::Repeating)

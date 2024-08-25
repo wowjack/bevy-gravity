@@ -1,14 +1,10 @@
 
-use bevy::prelude::*;
-use bevy_math::{DVec2, dvec2, Vec2, vec2};
+use bevy::{math::DVec2, prelude::*};
 use bevy_mod_picking::prelude::*;
 
 /// Systems for updating the position of massive objects each frame by reading from the future.
 mod update;
 pub use update::*;
-/// Functionality for dragging objects to move them.
-mod drag;
-pub use drag::*;
 /// Bundle for easily creating objects.
 mod bundle;
 pub use bundle::*;
@@ -25,10 +21,12 @@ mod draw_options;
 pub use draw_options::*;
 mod select_object;
 pub use select_object::*;
-mod visual_change_event;
-pub use visual_change_event::*;
 mod spawn;
 pub use spawn::*;
+mod follow_object;
+pub use follow_object::*;
+
+use crate::{gravity_system_tree::{dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::StaticBody}, G};
 
 pub const CIRCLE_VERTICES: usize = 100;
 
@@ -38,12 +36,32 @@ pub struct VisualObjectData {
     pub position: DVec2,
     pub velocity: DVec2,
     pub mass: f64,
-    pub radius: f32,
+    pub radius: f64,
     pub color: Color,
 }
 impl VisualObjectData {
-    pub fn new(position: DVec2, velocity: DVec2, mass: f64, radius: f32, color: Color) -> Self {
+    pub fn new(position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Color) -> Self {
         Self { position, velocity, mass, radius, color }
+    }
+
+    pub fn from_dynamic_body(dynamic_body: &DynamicBody, time: u64) -> Self {
+        Self {
+            position: dynamic_body.relative_stats.get_position_absolute(time),
+            velocity: dynamic_body.relative_stats.get_velocity_absolute(time),
+            mass: dynamic_body.mu / G,
+            radius: dynamic_body.radius,
+            color: dynamic_body.color,
+        }
+    }
+
+    pub fn from_static_body(static_body: &StaticBody, time: u64) -> Self {
+        Self {
+            position: static_body.position_generator.get(time),
+            velocity: static_body.position_generator.get(time+1) - static_body.position_generator.get(time),
+            mass: static_body.mu / G,
+            radius: static_body.radius,
+            color: static_body.color,
+        }
     }
 }
 
@@ -56,22 +74,23 @@ pub struct VisualObjectPlugin;
 impl Plugin for VisualObjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SelectInRectEvent>()
-            .add_event::<VisualChangeEvent>()
+            .init_gizmo_group::<FuturePathLineConfig>()
             .insert_resource(SimulationState::default())
             .insert_resource(DrawOptions::default())
             .insert_resource(SelectedObjects::default())
-            .add_systems(Startup, (init, spawn_background_rect))
-            .add_systems(PreUpdate, update_object_data)
+            .insert_resource(FollowObjectResource::default())
+            .add_systems(Startup, (init, spawn_background_rect, set_future_path_gizmo_config))
+            .add_systems(PreUpdate, (update_object_data, update_object_positions.after(update_object_data)))
             .add_systems(Update, (
+                add_material_mesh,
+                move_pseudo_camera,
                 draw_selection_rect,
                 rect_select,
                 draw_selected_object_halo,
                 update_focused_object_data,
-                process_visual_change_event,
-                update_object_positions,
-                draw_future_paths.after(update_object_positions),
-                draw_velocity_arrows.after(update_object_positions),
-                draw_mini_object_point.after(update_object_positions),
+                draw_future_paths,
+                draw_velocity_arrows,
+                draw_mini_object_point,
             ));
     }
 }
@@ -84,6 +103,6 @@ fn init(
     config_store.config_mut::<DefaultGizmoConfigGroup>().0.line_width = 2.;
 
     commands.insert_resource(
-        CircleMesh(meshes.add(bevy_math::prelude::RegularPolygon::new(1., CIRCLE_VERTICES)))
+        CircleMesh(meshes.add(bevy::math::prelude::RegularPolygon::new(1., CIRCLE_VERTICES)))
     );
 }

@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider}, EguiContexts};
-use bevy_math::DVec2;
-use crate::{physics::{Change, ChangeEvent, MassiveObject}, visual_object::{CircleMesh, DrawOptions, SelectedObjects, SimulationState, VisualChange, VisualChangeEvent, VisualObjectBundle, VisualObjectData}};
+use bevy::{math::DVec2, prelude::*};
+use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider, Button}, EguiContexts};
+use rand::Rng;
+use crate::visual_object::{CircleMesh, DrawOptions, FollowObjectResource, SelectedObjects, SimulationState, VisualObjectBundle, VisualObjectData};
 
 
 
@@ -12,18 +12,18 @@ pub struct ObjectSpawnOptions {
     position: DVec2,
     velocity: DVec2,
     mass: f64,
-    radius: f32,
+    radius: f64,
     rgb: [f32; 3]
 }
 impl Default for ObjectSpawnOptions {
     fn default() -> Self {
-        Self { position: Default::default(), velocity: Default::default(), mass: 1., radius: 1., rgb: Color::DARK_GREEN.rgb_linear_to_vec3().into() }
+        Self { position: Default::default(), velocity: Default::default(), mass: 1., radius: 1., rgb: [1., 1., 1.] }
     }
 }
 
 pub fn side_panel(
     mut contexts: EguiContexts,
-    mut change_event_writer: EventWriter<ChangeEvent>,
+    //mut change_event_writer: EventWriter<ChangeEvent>,
     mut commands: Commands,
     mut sim_state: ResMut<SimulationState>,
     mut draw_options: ResMut<DrawOptions>,
@@ -31,7 +31,7 @@ pub fn side_panel(
     circle_mesh: Res<CircleMesh>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
     selected_objects: Res<SelectedObjects>,
-    mut visual_change_event_writer: EventWriter<VisualChangeEvent>,
+    mut follow_object_resource: ResMut<FollowObjectResource>,
 ) {
     SidePanel::new(panel::Side::Right, "sidepanel")
         .exact_width(SIDE_PANEL_WIDTH)
@@ -43,14 +43,19 @@ pub fn side_panel(
                 ui.add_space(20.);
             });
 
-            ui.horizontal(|ui| {
-                ui.checkbox(&mut sim_state.running, "Run:");
-                ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 1..=50_000).logarithmic(true))
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut sim_state.running, "Run:");
+                    ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 1..=50_000).logarithmic(true))
+                });
+                ui.label(format!("tick: {}", sim_state.current_time))
             });
+            
 
             ui.collapsing("Draw Options", |ui| {
                 ui.checkbox(&mut draw_options.draw_velocity_arrow, "Show Velocity");
-                ui.checkbox(&mut draw_options.draw_future_path, "Show Path")
+                ui.checkbox(&mut draw_options.draw_future_path, "Show Path");
+                ui.checkbox(&mut follow_object_resource.follow_object, "Follow Focused Object");
             });
 
             ui.separator();
@@ -79,7 +84,7 @@ pub fn side_panel(
                     ui.label("Radius");
                     ui.style_mut().spacing.slider_width = 225.;
                     ui.add(
-                        Slider::new(&mut spawn_options.radius, 1.0..=10_000.)
+                        Slider::new(&mut spawn_options.radius, 1.0f64..=10_000.)
                             .logarithmic(true)
                     );
                 });
@@ -93,19 +98,19 @@ pub fn side_panel(
                         spawn_options.velocity,
                         spawn_options.mass,
                         spawn_options.radius,
-                        Color::rgb_linear_from_array(spawn_options.rgb)
+                        Color::linear_rgb(spawn_options.rgb[0], spawn_options.rgb[1], spawn_options.rgb[2]),
                     );
-                    let bundle = VisualObjectBundle::new(object_data.clone(), circle_mesh.0.clone().into(), &mut color_materials);
-                    let entity = commands.spawn(bundle).id();
-                    let event = ChangeEvent { entity, change: crate::physics::Change::CreateObject(MassiveObject::from(object_data))};
-                    change_event_writer.send(event);
+                    let bundle = VisualObjectBundle::new(object_data.clone());
+                    //let entity = commands.spawn(bundle).id();
+                    //let event = ChangeEvent { entity, change: crate::physics::Change::CreateObject(MassiveObject::from(object_data))};
+                    //change_event_writer.send(event);
                 }
             });
 
             ui.separator();
 
             ui.collapsing("Focused Object Editor", |ui| {
-                let Some((e, mut data)) = selected_objects.focused .clone() else { 
+                let Some((e, mut data)) = selected_objects.focused.clone() else { 
                     ui.label("No Object Focused");
                     return;
                 };
@@ -115,8 +120,8 @@ pub fn side_panel(
                     let x_pos_changed = ui.add(DragValue::new(&mut data.position.x).prefix("X: ")).changed();
                     let y_pos_changed = ui.add(DragValue::new(&mut data.position.y).prefix("Y: ")).changed();
                     if x_pos_changed || y_pos_changed {
-                        let event = ChangeEvent::new(e, Change::SetPosition(data.position));
-                        change_event_writer.send(event);
+                        //let event = ChangeEvent::new(e, Change::SetPosition(data.position));
+                        //change_event_writer.send(event);
                     }
                 });
                 ui.horizontal(|ui| {
@@ -124,8 +129,8 @@ pub fn side_panel(
                     let x_vel_changed = ui.add(DragValue::new(&mut data.velocity.x).prefix("X: ")).changed();
                     let y_vel_changed = ui.add(DragValue::new(&mut data.velocity.y).prefix("Y: ")).changed();
                     if x_vel_changed || y_vel_changed {
-                        let event = ChangeEvent::new(e, Change::SetVelocity(data.velocity));
-                        change_event_writer.send(event);
+                        //let event = ChangeEvent::new(e, Change::SetVelocity(data.velocity));
+                        //change_event_writer.send(event);
                     }
                 });
                 ui.horizontal(|ui| {
@@ -136,10 +141,6 @@ pub fn side_panel(
                             .logarithmic(true)
                             .custom_formatter(|num, _| format!("{:1.1e}", num))
                     );
-                    if mass_slider.changed() {
-                        let event = ChangeEvent::new(e, Change::SetMass(data.mass));
-                        change_event_writer.send(event);
-                    }
                 });
                 ui.horizontal(|ui| {
                     ui.label("Radius");
@@ -148,22 +149,16 @@ pub fn side_panel(
                         Slider::new(&mut data.radius, 1.0..=10_000.)
                             .logarithmic(true)
                     );
-                    if radius_slider.changed() {
-                        visual_change_event_writer.send(VisualChangeEvent { target: e, change: VisualChange::SetRadius(data.radius) });
-                    }
                 });
 
-                let mut rgb: [f32; 3] = data.color.rgb_linear_to_vec3().into();
+                let mut rgb: [f32; 3] = data.color.to_linear().to_f32_array_no_alpha();
                 ui.horizontal(|ui| {
                     ui.label("Color");
                     let color_changed = bevy_egui::egui::color_picker::color_edit_button_rgb(ui, &mut rgb).changed();
-                    if color_changed {
-                        visual_change_event_writer.send(VisualChangeEvent { target: e, change: VisualChange::SetColor(Color::rgb_linear_from_array(rgb)) });
-                    }
                 });
             });
-
-            //check if pointer is within the ui
-            //println!("{}", ui.rect_contains_pointer(Rect::everything_right_of(window.width() - SIDE_PANEL_WIDTH)));
         });
 }
+
+
+

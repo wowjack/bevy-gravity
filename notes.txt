@@ -1,0 +1,52 @@
+Using polar coordinates will make it easy to
+compress circular orbits and eliminate repeat data.
+The radius will remain the same for perfectly circular orbits.
+
+A system consists of a central body or system and any orbiting bodies or systems.
+This allows them to be stored in a tree-like structure.
+
+Should the path of main bodies in the tree be fixed?
+So for the main bodies, it doesn't actually do a gravity calculation.
+All bodies will have a predetermined circular or elliptical orbit,
+allowing their future positions to be instantly calculated for any time.
+
+Only important objects (like the player and their projectiles) will really move
+according to gravitational acceleration.
+
+Important objects moving through lower-level systems will need to perform
+the gravity calculation with a much higher speed than those in a larger system.
+An object orbiting around a planet requires a finer resolution of movement than
+one orbiting a star. Ideally each level scales proportionately, so if a system
+orbits its parent with a period 100 times smaller than its parent's period,
+then it should calculate gravity with 100 times the resolution.
+
+This means lower levels of the tree require more
+calculation than higher levels. So lower levels should have
+fewer bodies with very stable orbits.
+
+The real future should follow the predicted future
+as closely as possible for gameplay purposes.
+
+
+All important objects that interact with gravity will stay small 
+so wont effect each other. This allows asteroids to exist without
+making things intractable.
+(maybe precompute the path of some large inter-system bodies to add physics-effecting
+bodies with interesting trajectories)
+
+
+What happens if a body is moving fast enough to escape its system
+and its parent system in one time step?
+
+fn do_gravity(root):
+    for dynamic_body in root.dynamic_bodies:
+        # calculate acceleration based on root.child_systems, root.child_bodies, and root.center
+        # move bodies based on acceleration
+    for system in root.child_systems ?
+    for body in root.dynamic_bodies ?
+
+    
+
+
+
+
