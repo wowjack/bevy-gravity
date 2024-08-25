@@ -36,7 +36,7 @@ pub fn draw_future_paths(
             let body = new_dynamic_bodies.first().unwrap().clone();
             let system_depth = body.borrow().relative_stats.num_ancestors();
 
-            let iter = (1..100_000).map_while(|i| {
+            let iter = (1..50_000).map_while(|i| {
                 let body = body.borrow();
                 if body.relative_stats.num_ancestors() != system_depth {
                     return None

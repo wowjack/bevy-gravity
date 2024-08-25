@@ -43,10 +43,14 @@ pub fn side_panel(
                 ui.add_space(20.);
             });
 
-            ui.horizontal(|ui| {
-                ui.checkbox(&mut sim_state.running, "Run:");
-                ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 1..=50_000).logarithmic(true))
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut sim_state.running, "Run:");
+                    ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 1..=50_000).logarithmic(true))
+                });
+                ui.label(format!("tick: {}", sim_state.current_time))
             });
+            
 
             ui.collapsing("Draw Options", |ui| {
                 ui.checkbox(&mut draw_options.draw_velocity_arrow, "Show Velocity");

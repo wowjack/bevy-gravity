@@ -1,7 +1,8 @@
 use core::f64;
 use std::collections::VecDeque;
 
-use bevy::color::palettes::css::{CORNFLOWER_BLUE, GREEN, MAGENTA, PURPLE, WHITE, YELLOW};
+use bevy::color::palettes::css::{ALICE_BLUE, BLUE, CORNFLOWER_BLUE, GRAY, GREEN, MAGENTA, ORANGE, PURPLE, WHITE, YELLOW};
+use bevy::color::palettes::tailwind::YELLOW_100;
 use bevy::math::DVec2;
 use bevy::window::WindowResized;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::camera::Viewport};
@@ -57,11 +58,39 @@ pub fn library_main() {
 
 pub const G: f64 = 6.6743015e-11;
 
+const jupiter_mu: f64 = 1.898e27*G/1e6;
+const jupiter_radius: f64 = 69_911.;
+const jupiter_color: Srgba = ORANGE;
+const jupiter_orbital_radius: f64 = 7.78e8;
+const jupiter_system_radius: f64 = 3e6;
+const jupiter_system_time_step: u64 = 1;
+
+const io_mu: f64 = 8.9319e22*G/1e6;
+const io_radius: f64 = 1_821.6;
+const io_color: Srgba = ALICE_BLUE;
+const io_orbital_radius: f64 = 422_000.;
+
+const europa_mu: f64 = 4.799844e22*G/1e6;
+const europa_radius: f64 = 1_560.8;
+const europa_color: Srgba = BLUE;
+const europa_orbital_radius: f64 = 671_000.;
+
+const callisto_mu: f64 = 1.075938e23*G/1e6;
+const callisto_radius: f64 = 2_410.3;
+const callisto_color: Srgba = YELLOW_100;
+const callisto_orbital_radius: f64 = 1_883_000.;
+
+const ganymede_mu: f64 = 1.4819e23*G/1e6;
+const ganymede_radius: f64 = 2_634.1;
+const ganymede_color: Srgba = GRAY;
+const ganymede_orbital_radius: f64 = 1_070_000.;
+
+
 
 fn init(
     world: &mut World
 ) {
-    let galaxy_mu = 1e33*G/1e6;
+    let galaxy_mu = 1e34*G/1e6;
     let galaxy_system_radius = 1e20;
     let galaxy_system_time_step = 100;
     let galaxy_radius = 1000.;
@@ -76,7 +105,7 @@ fn init(
 
     let planet_orbital_radius = 1.5135e8;
     let planet_mu = 5.972e24*G/1e6;
-    let planet_system_radius = 5e6;
+    let planet_system_radius = 3e6;
     let planet_system_time_step = 1;
     let planet_radius = 6378.14;
     let planet_color = Color::from(GREEN);
@@ -102,7 +131,7 @@ fn init(
     planet_orbiter.future_actions.push_back((4687, DVec2::Y*3.5));
 
 
-    let planet_system = GravitySystemBuilder::new()
+    let earth_system = GravitySystemBuilder::new()
         .with_radius(planet_system_radius)
         .with_position(StaticPosition::Circular { radius: planet_orbital_radius, speed: get_orbital_speed(stellar_mu, planet_orbital_radius), start_angle: 0. })
         .with_time_step(planet_system_time_step)
@@ -114,6 +143,17 @@ fn init(
             planet_orbiter,
             //DynamicBody::new(DVec2::X*(moon_orbital_radius+500.), DVec2::Y*get_orbital_speed(moon_mu, 500.)*500., 1e-30, 1., MAGENTA.into())
         ]);
+    let jupiter_system = GravitySystemBuilder::new()
+            .with_radius(jupiter_system_radius)
+            .with_position(StaticPosition::Circular { radius: jupiter_orbital_radius, speed: get_orbital_speed(stellar_mu, jupiter_orbital_radius), start_angle: 1. })
+            .with_time_step(jupiter_system_time_step)
+            .with_static_bodies(&[
+                StaticBody::new(StaticPosition::Still, jupiter_mu, jupiter_radius, jupiter_color.into()),
+                StaticBody::new(StaticPosition::Circular { radius: io_orbital_radius, speed: get_orbital_speed(jupiter_mu, io_orbital_radius), start_angle: 0. }, io_mu, io_radius, io_color.into()),
+                StaticBody::new(StaticPosition::Circular { radius: europa_orbital_radius, speed: get_orbital_speed(jupiter_mu, europa_orbital_radius), start_angle: 0. }, europa_mu, europa_radius, europa_color.into()),
+                StaticBody::new(StaticPosition::Circular { radius: callisto_orbital_radius, speed: get_orbital_speed(jupiter_mu, callisto_orbital_radius), start_angle: 0. }, callisto_mu, callisto_radius, callisto_color.into()),
+                StaticBody::new(StaticPosition::Circular { radius: ganymede_orbital_radius, speed: get_orbital_speed(jupiter_mu, ganymede_orbital_radius), start_angle: 0. }, ganymede_mu, ganymede_radius, ganymede_color.into()),
+            ]);
     let stellar_system = GravitySystemBuilder::new()
         .with_radius(stellar_system_radius)
         .with_position(StaticPosition::Circular { radius: stellar_orbital_radius, speed: get_orbital_speed(galaxy_mu, stellar_orbital_radius), start_angle: 0. })
@@ -121,7 +161,10 @@ fn init(
         .with_static_bodies(&[
             StaticBody::new(StaticPosition::Still, stellar_mu, stellar_radius, stellar_color),
         ])
-        .with_children(&[planet_system]);
+        .with_children(&[
+            earth_system,
+            jupiter_system
+        ]);
     let galactic_system = GravitySystemBuilder::new()
         .with_radius(galaxy_system_radius)
         .with_position(StaticPosition::Still)
@@ -130,7 +173,7 @@ fn init(
             StaticBody::new(StaticPosition::Still, galaxy_mu, galaxy_radius, galaxy_color)
         ])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::X*100_000_000., DVec2::Y*10_000., 1e-30, 1., CORNFLOWER_BLUE.into()),
+            DynamicBody::new(DVec2::X*100_000_000., DVec2::Y*50_000., 1e-30, 1., CORNFLOWER_BLUE.into()),
         ])
         .with_children(&[stellar_system]);
 
