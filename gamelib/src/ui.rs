@@ -110,7 +110,7 @@ pub fn side_panel(
             ui.separator();
 
             ui.collapsing("Focused Object Editor", |ui| {
-                let Some((e, mut data)) = selected_objects.focused .clone() else { 
+                let Some((e, mut data)) = selected_objects.focused.clone() else { 
                     ui.label("No Object Focused");
                     return;
                 };
