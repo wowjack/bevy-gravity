@@ -1,8 +1,5 @@
 
 use std::{cell::RefCell, rc::Rc};
-
-use itertools::Itertools;
-
 use super::{dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::{StaticBody, StaticPosition}, system_tree::GravitySystemTree};
 
 

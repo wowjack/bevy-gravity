@@ -47,7 +47,7 @@ impl VisualObjectData {
     pub fn from_dynamic_body(dynamic_body: &DynamicBody, time: u64) -> Self {
         Self {
             position: dynamic_body.relative_stats.get_position_absolute(time),
-            velocity: dynamic_body.relative_stats.get_velocity_absolute(time),
+            velocity: dynamic_body.relative_stats.get_velocity_relative(),
             mass: dynamic_body.mu / G,
             radius: dynamic_body.radius,
             color: dynamic_body.color,
