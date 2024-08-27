@@ -6,14 +6,14 @@ use super::G;
 const MASS_DIVISOR: f64 = 1e6;
 
 // SOLAR SYSTEM ////////////////////////////////////////
-const SUN_ORBITAL_RADIUS: f64 = 1e12;
+pub const SUN_ORBITAL_RADIUS: f64 = 1e12;
 
-const SUN_SYSTEM_RADIUS: f64 = 7e9;
-const SUN_SYSTEM_TIME_STEP: u64 = 10;
+pub const SUN_SYSTEM_RADIUS: f64 = 7e9;
+pub const SUN_SYSTEM_TIME_STEP: u64 = 10;
 
-const SUN_MU: f64 = /*10. **/ 1.9891e30*G/MASS_DIVISOR; // increased sun mass by factor of 10 to speed up orbital time
-const SUN_RADIUS: f64 = 69340.;
-const SUN_COLOR: Srgba = YELLOW;
+pub const SUN_MU: f64 = /*10. **/ 1.9891e30*G/MASS_DIVISOR; // increased sun mass by factor of 10 to speed up orbital time
+pub const SUN_RADIUS: f64 = 69340.;
+pub const SUN_COLOR: Srgba = YELLOW;
 
 pub fn solar_system() -> GravitySystemBuilder {
     GravitySystemBuilder::new()

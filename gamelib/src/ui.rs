@@ -23,13 +23,9 @@ impl Default for ObjectSpawnOptions {
 
 pub fn side_panel(
     mut contexts: EguiContexts,
-    //mut change_event_writer: EventWriter<ChangeEvent>,
-    mut commands: Commands,
     mut sim_state: ResMut<SimulationState>,
     mut draw_options: ResMut<DrawOptions>,
     mut spawn_options: Local<ObjectSpawnOptions>,
-    circle_mesh: Res<CircleMesh>,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
     selected_objects: Res<SelectedObjects>,
     mut follow_object_resource: ResMut<FollowObjectResource>,
 ) {
@@ -46,9 +42,9 @@ pub fn side_panel(
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.checkbox(&mut sim_state.running, "Run:");
-                    ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 1..=50_000).logarithmic(true))
+                    ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 0.01..=50_000.0).logarithmic(true))
                 });
-                ui.label(format!("tick: {}", sim_state.current_time))
+                ui.label(format!("tick: {}", unsafe { sim_state.current_time.to_int_unchecked::<u64>() }))
             });
             
 

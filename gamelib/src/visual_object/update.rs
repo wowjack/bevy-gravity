@@ -7,13 +7,12 @@ pub fn update_object_data(
     delta_time: Res<Time>,
     mut gravity_system_manager: ResMut<GravitySystemManager>,
 ) {
-    sim_state.timer.tick(delta_time.delta());
 
     gravity_system_manager.update_visual_objects(sim_state.current_time as f64, &mut object_query);
 
     // About 60 updates per second
     if sim_state.running == false { return }
-    sim_state.current_time = sim_state.current_time + (sim_state.timer.times_finished_this_tick() as u64 * sim_state.run_speed);
+    sim_state.current_time += delta_time.delta().as_millis() as f64/17.0 * sim_state.run_speed;
 }
 
 

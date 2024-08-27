@@ -51,7 +51,7 @@ impl GravitySystemTree {
         }
     }
 
-    pub fn move_dynamic_bodies(&mut self, new_time: DiscreteGravitySystemTime, body_vec: &mut Vec<DynamicBody>, parent_pos: DVec2, parent_vel: DVec2) {
+    pub fn move_dynamic_bodies(&mut self, new_time: DiscreteGravitySystemTime, body_vec: &mut Vec<DynamicBody>, parent_pos: DVec2, parent_vel: DVec2, step: u64) {
         for index in &self.dynamic_body_indices {
             let body = unsafe { body_vec.get_unchecked_mut(*index) };
             let mut acceleration = body.gravitational_acceleration;
@@ -77,12 +77,14 @@ impl GravitySystemTree {
             let old_position = body.stats.current_relative_position;
             let new_position = old_position + new_velocity;
 
-            // Get the scalar change in distance to the system center squared
-            // This is used to scale the acceleration vector as a body changes distance from the system center within iterations in a system's time_step
-            // Without this, elliptical orbits decay into circular ones
-            let distance_diff = old_position.length_squared() / new_position.length_squared();
-
-            body.gravitational_acceleration = DVec2::from_angle(old_position.angle_between(new_position)).rotate(body.gravitational_acceleration)*distance_diff;
+            // Only rotate and scale gravitational acceleration vector if gravity will not be recalculated on the next time step
+            if step+1 == self.time_step {
+                // Get the scalar change in distance to the system center squared
+                // This is used to scale the acceleration vector as a body changes distance from the system center within iterations in a system's time_step
+                // Without this, elliptical orbits decay into circular ones
+                let distance_diff = old_position.length_squared() / new_position.length_squared();
+                body.gravitational_acceleration = DVec2::from_angle(old_position.angle_between(new_position)).rotate(body.gravitational_acceleration)*distance_diff;
+            }
 
             body.stats.set_relative_velocity(new_velocity);
             body.stats.set_absolute_velocity(body.stats.current_relative_velocity+parent_vel);
@@ -163,11 +165,14 @@ impl BodyStore {
         elevator: &mut Vec<usize>,
     ) {
         let new_ftime = new_time as GravitySystemTime;
-
-        if system_tree.dynamic_body_indices.len() > 0 && new_time % system_tree.time_step == 0 {
-            system_tree.calculate_gravity(new_ftime-1., &self.static_bodies, &mut self.dynamic_bodies);
-        }
-        system_tree.move_dynamic_bodies(new_time, &mut self.dynamic_bodies, parent_pos, parent_vel);
+        if system_tree.dynamic_body_indices.len() != 0 {
+            let step = new_time % system_tree.time_step;
+            if step == 0 {
+                system_tree.calculate_gravity(new_ftime-1., &self.static_bodies, &mut self.dynamic_bodies);
+            }
+            system_tree.move_dynamic_bodies(new_time, &mut self.dynamic_bodies, parent_pos, parent_vel, step);
+        } 
+        
 
         let mut child_elevator = vec![];
         for child_system in &mut system_tree.child_systems {
