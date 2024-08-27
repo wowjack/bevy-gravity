@@ -141,7 +141,7 @@ impl GravitySystemTree {
 /// Used to keep track of dynamic and static bodies and their associated entities
 #[derive(Default, Debug, Clone)]
 pub struct BodyStore {
-    dynamic_bodies: Vec<DynamicBody>,
+    pub dynamic_bodies: Vec<DynamicBody>,
     dynamic_entities: Vec<Entity>,
 
     static_bodies: Vec<StaticBody>,

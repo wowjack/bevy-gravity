@@ -118,12 +118,13 @@ fn two_layer_populated_tree_benchmark(c: &mut Criterion) {
             test_system.clone().with_position(StaticPosition::Circular { radius: 110_000., speed: 0.0005, start_angle: 4. }),
             test_system,
         ]);
-    let mut manager = GravitySystemManager::new(parent_system);
-    let mut time = 1;
+    let manager = GravitySystemManager::new(parent_system);
 
     c.bench_function("two layer populated tree", |b| b.iter(|| {
-        manager.step();
-        time += 1;
+        let mut manager = manager.clone();
+        for _ in 0..100_000 {
+            manager.step();
+        }
     }));
     black_box(manager);
 }
@@ -185,10 +186,13 @@ fn deep_tree_single_body(c: &mut Criterion) {
         .with_children(&[stellar_system]);
 
 
-    let mut system = GravitySystemManager::new(galactic_system);
+    let system = GravitySystemManager::new(galactic_system);
 
     c.bench_function("deep tree single body", |b| b.iter(|| {
-        system.step();
+        let mut system = system.clone();
+        for _ in 0..100_000 {
+            system.step();
+        }
     }));
     black_box(system);
 }
