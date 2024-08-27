@@ -144,10 +144,10 @@ impl GravitySystemTree {
 #[derive(Default, Debug, Clone)]
 pub struct BodyStore {
     pub dynamic_bodies: Vec<DynamicBody>,
-    dynamic_entities: Vec<Entity>,
+    pub dynamic_entities: Vec<Entity>,
 
-    static_bodies: Vec<StaticBody>,
-    static_entities: Vec<Entity>,
+    pub static_bodies: Vec<StaticBody>,
+    pub static_entities: Vec<Entity>,
 }
 impl BodyStore {
     /// Performs one time step of gravity calculation \
