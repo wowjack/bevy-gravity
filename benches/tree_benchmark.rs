@@ -122,7 +122,7 @@ fn two_layer_populated_tree_benchmark(c: &mut Criterion) {
 
     c.bench_function("two layer populated tree", |b| b.iter(|| {
         let mut manager = manager.clone();
-        for _ in 0..100_000 {
+        for _ in 0..1_000 {
             manager.step();
         }
     }));
