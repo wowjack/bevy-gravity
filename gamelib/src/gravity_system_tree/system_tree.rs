@@ -2,6 +2,7 @@ use core::f64;
 use std::collections::VecDeque;
 
 use bevy::{color::Color, math::DVec2, prelude::{Commands, Entity, Query}};
+use itertools::Itertools;
 
 use crate::visual_object::{VisualObjectBundle, VisualObjectData};
 
@@ -137,6 +138,26 @@ impl GravitySystemTree {
             self.static_masses.push((body.static_position.get_cartesian_position(time), body.mu));
         }
     }
+
+
+    /// Clone the system tree, retaining only the dynamic body index \
+    /// The provided index will be replaced with 0 in the result
+    pub fn retain_clone(&self, index: usize) -> Self {
+        let child_systems = self.child_systems.iter().map(|s| s.retain_clone(index)).collect_vec();
+        let dynamic_body_indices = if self.dynamic_body_indices.contains(&index) {vec![0]} else {vec![]};
+        let total_child_dynamic_bodies = child_systems.iter().map(|s| s.total_child_dynamic_bodies).sum::<usize>() + dynamic_body_indices.len();
+        Self {
+            dynamic_body_indices,
+            static_body_indices: self.static_body_indices.clone(),
+            child_systems,
+            static_masses: self.static_masses.clone(),
+            time_step: self.time_step,
+            radius: self.radius,
+            position: self.position.clone(),
+            mu: self.mu,
+            total_child_dynamic_bodies,
+        }
+    }
 }
 
 
@@ -266,6 +287,25 @@ impl BodyStore {
     pub fn add_static_body_to_store(&mut self, body: StaticBody) -> usize {
         self.static_bodies.push(body);
         self.static_bodies.len()-1
+    }
+
+
+    /// Clone the body store, retaining only the dynamic body associated with the provided entity
+    pub fn retain_clone(&self, entity: Entity) -> Option<(Self, usize)> {
+        let Some(idx) = self.dynamic_entities
+            .iter()
+            .position(|e| *e == entity)
+            else { return None };
+        
+        return Some((
+            Self {
+                dynamic_bodies: vec![self.dynamic_bodies[idx].clone()],
+                dynamic_entities: vec![entity],
+                static_bodies: self.static_bodies.clone(),
+                static_entities: self.static_entities.clone()
+            },
+            idx
+        ))
     }
 }
 

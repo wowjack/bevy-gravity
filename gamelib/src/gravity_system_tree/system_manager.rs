@@ -1,4 +1,4 @@
-use bevy::prelude::{Commands, Query, Resource};
+use bevy::{ecs::system, prelude::{Commands, Entity, Query, Resource}};
 
 use crate::visual_object::VisualObjectData;
 
@@ -54,5 +54,17 @@ impl GravitySystemManager {
 
     pub fn get_current_time(&self) -> DiscreteGravitySystemTime {
         self.current_time
+    }
+
+    /// Copy the system and retain one dynamic body
+    pub fn retain_clone(&self, entity: Entity) -> Option<Self> {
+        let Some((body_store, idx)) = self.body_store.retain_clone(entity) else { return None };
+        let system_tree = self.system_tree.retain_clone(idx);
+        if system_tree.total_child_dynamic_bodies == 0 { return None };
+        Some(Self {
+            system_tree,
+            body_store,
+            current_time: self.current_time
+        })
     }
 }

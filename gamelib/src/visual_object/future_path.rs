@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use bevy_vector_shapes::{painter, prelude::ShapePainter, shapes::DiscPainter};
+use bevy_vector_shapes::{prelude::ShapePainter, shapes::DiscPainter};
 use crate::{gravity_system_tree::system_manager::GravitySystemManager, pseudo_camera::camera::CameraState};
-use super::{follow_object::StaticBody, DrawOptions, SelectedObjects};
+use super::{DrawOptions, SelectedObjects};
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
 pub struct FuturePathLineConfig {}
@@ -32,30 +32,17 @@ pub fn draw_future_paths(
         painter.circle(radius as f32);
 
     }
-    /*
-    else if let Some(i) = gravity_system.dynamic_body_entities.iter().position(|x| *x == entity) {
-        let body = &gravity_system.dynamic_bodies[i];
-        let mut new_system = gravity_system.system.empty_copy(body.clone());
-            let mut new_dynamic_bodies = vec![];
-            new_system.get_dynamic_bodies_recursive(&mut new_dynamic_bodies);
-            let body = new_dynamic_bodies.first().unwrap().clone();
-            let system_depth = body.borrow().relative_stats.num_ancestors();
-
-            let iter = (1..50_000).map_while(|i| {
-                let body = body.borrow();
-                if body.relative_stats.num_ancestors() != system_depth {
-                    return None
-                }
-                let ret = Some(camera_state.physics_to_world_pos(body.relative_stats.get_ancestor_position(gravity_system.latest_time, 1) + body.relative_stats.get_position_relative_to_ancestor(gravity_system.latest_time, 1)));
-                std::mem::drop(body);
-                new_system.accelerate_and_move_bodies_recursive(gravity_system.latest_time+i, &mut vec![]);
-                
-                ret
-            });
-            gizmos.linestrip_2d(
-                iter,
-                Color::linear_rgb(0.75, 0.75, 0.75)
-            );
+    else if let Some(mut new_system) = gravity_system.retain_clone(entity) {
+        let iter = (0..50_000).map(|_| {
+            let body = unsafe { new_system.body_store.dynamic_bodies.get_unchecked(0) };
+            let ret = camera_state.physics_to_world_pos(body.stats.previous_absolute_position);
+            new_system.step();
+            ret
+        });
+        gizmos.linestrip_2d(
+            iter,
+            Color::linear_rgb(0.75, 0.75, 0.75)
+        );
     }
     else {
         panic!("
@@ -63,7 +50,6 @@ pub fn draw_future_paths(
         You tried to get the future position of a visual object that doesnt appear to exist in the gravity system.
         ")
     }
-    */
 }
 
 

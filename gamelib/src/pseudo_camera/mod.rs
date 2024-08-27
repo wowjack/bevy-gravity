@@ -25,9 +25,11 @@ pub fn pseudo_camera_plugin(app: &mut App) {
 }
 
 fn init(mut commands: Commands, mut cs: ResMut<GizmoConfigStore>) {
+    let mut camera_state = CameraState::default();
+    camera_state.set_target_scale(0.001);
     commands.spawn((
         Camera2dBundle::default(),
-        CameraState::default()
+        camera_state
     ));
 
     cs.config_mut::<AxesConfig>().0.line_width = 0.025;
