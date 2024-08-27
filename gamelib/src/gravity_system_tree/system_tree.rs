@@ -44,16 +44,16 @@ impl GravitySystemTree {
         dynamic_body_vec: &mut Vec<DynamicBody>,
     ) {
         self.update_static_masses(static_body_vec, current_time);
-        for index in &self.dynamic_body_indices {
-            let body = unsafe { dynamic_body_vec.get_unchecked_mut(*index) };
+        for index in self.dynamic_body_indices.iter().cloned() {
+            let body = unsafe { dynamic_body_vec.get_unchecked_mut(index) };
             let acceleration = self.static_masses.iter().fold(DVec2::ZERO, |acceleration, static_mass| { acceleration + body.force_scalar(static_mass.0, static_mass.1) });
             body.gravitational_acceleration = acceleration;
         }
     }
 
     pub fn move_dynamic_bodies(&mut self, new_time: DiscreteGravitySystemTime, body_vec: &mut Vec<DynamicBody>, parent_pos: DVec2, parent_vel: DVec2, step: u64) {
-        for index in &self.dynamic_body_indices {
-            let body = unsafe { body_vec.get_unchecked_mut(*index) };
+        for index in self.dynamic_body_indices.iter().cloned() {
+            let body = unsafe { body_vec.get_unchecked_mut(index) };
             let mut acceleration = body.gravitational_acceleration;
             ////////////////////////////////////////////////////////////
             // This is where I will get acceleration from future actions
@@ -97,11 +97,11 @@ impl GravitySystemTree {
     fn ascend_or_descend_bodies(&mut self, new_time: GravitySystemTime, bodies_vec: &mut Vec<DynamicBody>, elevator: &mut Vec<usize>) {
         let mut remove_list = vec![];
 
-        for (index, body_index) in self.dynamic_body_indices.iter().enumerate() {
-            let body_mut = unsafe { bodies_vec.get_unchecked_mut(*body_index) };
+        for (index, body_index) in self.dynamic_body_indices.iter().cloned().enumerate() {
+            let body_mut = unsafe { bodies_vec.get_unchecked_mut(body_index) };
             if body_mut.stats.current_relative_position.length_squared() > self.radius.powi(2) {
                 body_mut.stats.translate_to_parent(new_time, &self.position);
-                elevator.push(*body_index);
+                elevator.push(body_index);
                 remove_list.push(index);
                 self.total_child_dynamic_bodies -= 1;
                 continue;
@@ -110,7 +110,7 @@ impl GravitySystemTree {
                 let system_position = child_system.position.get_cartesian_position(new_time as f64);
                 if body_mut.stats.current_relative_position.distance_squared(system_position) > child_system.radius.powi(2) { continue }
                 body_mut.stats.translate_to_child(new_time, &child_system.position);
-                child_system.insert_body_index(*body_index);
+                child_system.insert_body_index(body_index);
                 remove_list.push(index);
                 break;
             }
@@ -132,8 +132,8 @@ impl GravitySystemTree {
         for child_system in &self.child_systems {
             child_system.position.get_cartesian_position(time);
         }
-        for body_index in &self.static_body_indices {
-            let body = unsafe { body_vec.get_unchecked(*body_index) };
+        for body_index in self.static_body_indices.iter().cloned() {
+            let body = unsafe { body_vec.get_unchecked(body_index) };
             self.static_masses.push((body.static_position.get_cartesian_position(time), body.mu));
         }
     }
@@ -143,7 +143,7 @@ impl GravitySystemTree {
 /// Used to keep track of dynamic and static bodies and their associated entities
 #[derive(Default, Debug, Clone)]
 pub struct BodyStore {
-    dynamic_bodies: Vec<DynamicBody>,
+    pub dynamic_bodies: Vec<DynamicBody>,
     dynamic_entities: Vec<Entity>,
 
     static_bodies: Vec<StaticBody>,
@@ -201,8 +201,8 @@ impl BodyStore {
         self.update_static_bodies_recursive(system_tree, time as f64, (DVec2::ZERO, DVec2::ZERO));
     }
     fn update_static_bodies_recursive(&mut self, system_tree: &GravitySystemTree, time: GravitySystemTime, parent_stats: (DVec2, DVec2)) {
-        for i in &system_tree.static_body_indices {
-            let static_body = unsafe { self.static_bodies.get_unchecked_mut(*i) };
+        for i in system_tree.static_body_indices.iter().cloned() {
+            let static_body = unsafe { self.static_bodies.get_unchecked_mut(i) };
             let (pos, vel) = static_body.static_position.get_position_and_velocity(time);
             static_body.stats.current_relative_position = pos;
             static_body.stats.previous_relative_position = pos;
