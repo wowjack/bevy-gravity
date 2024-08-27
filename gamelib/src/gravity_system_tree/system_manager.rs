@@ -1,78 +1,58 @@
-use std::{cell::RefCell, rc::Rc};
+use bevy::prelude::{Commands, Query, Resource};
 
-use bevy::prelude::{Entity, World};
-use itertools::Itertools;
+use crate::visual_object::VisualObjectData;
 
-use crate::visual_object::{VisualObjectBundle, VisualObjectData};
-
-use super::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, static_body::StaticBody, system_tree::GravitySystemTree};
+use super::{builder::GravitySystemBuilder, system_tree::{BodyStore, DiscreteGravitySystemTime, GravitySystemTime, GravitySystemTree}};
 
 
 
+#[derive(Resource, Clone)]
 pub struct GravitySystemManager {
-    pub system: GravitySystemTree,
-    pub latest_time: u64,
+    system_tree: GravitySystemTree,
 
-    pub dynamic_bodies: Vec<Rc<RefCell<DynamicBody>>>,
-    pub dynamic_body_entities: Vec<Entity>,
+    /// Dynamic and static bodies along with their entities if they have them
+    pub body_store: BodyStore,
 
-    pub static_bodies: Vec<StaticBody>,
-    pub static_body_entities: Vec<Entity>,
+    /// The time associated with the current position of bodies
+    current_time: DiscreteGravitySystemTime
 }
 impl GravitySystemManager {
-    pub fn new(system: GravitySystemBuilder) -> Self {
-        let system = system.build().unwrap();
-
-        let mut dynamic_bodies = vec![];
-        system.get_dynamic_bodies_recursive(&mut dynamic_bodies);
-
-        let mut static_bodies = vec![];
-        system.get_static_bodies_recursive(&mut static_bodies);
-
-        Self {
-            system,
-            latest_time: 0,
-            dynamic_bodies,
-            dynamic_body_entities: vec![],
-            static_bodies,
-            static_body_entities: vec![],
-        }
+    pub fn new(builder: GravitySystemBuilder) -> Self {
+        let (system_tree, body_store) = builder.build().unwrap();
+        Self { system_tree, body_store, current_time: 0 }
     }
-    pub fn get_state_at_time(&mut self, time: u64) -> Vec<(Entity, VisualObjectData)> {
-        while time > self.latest_time {
-            self.latest_time += 1;
-            self.system.accelerate_and_move_bodies_recursive(self.latest_time, &mut vec![]);
+    /// If the new time is greater than the current time, then update dynamic bodies. \
+    /// Update visual objects in the query to the new time. \
+    /// BE CERTAIN THAT new_time ISNT NEGATIVE OR ELSE UB OCCURS
+    pub fn update_visual_objects(&mut self, new_time: GravitySystemTime, object_query: &mut Query<&mut VisualObjectData>) {
+        // to_int rounds down, so add 1
+        let new_discrete_time = unsafe { new_time.to_int_unchecked::<DiscreteGravitySystemTime>() + 1 };
+
+        // update dynamic bodies until current_time = new_discrete_time
+        while self.current_time < new_discrete_time {
+            self.current_time += 1;
+            self.body_store.update_dynamic_bodies(&mut self.system_tree, self.current_time);
         }
 
+        // Set the position of all static bodies
+        self.body_store.update_static_bodies(&self.system_tree, new_time);
 
-        self.dynamic_body_entities
-            .iter()
-            .cloned()
-            .zip(
-                self.dynamic_bodies
-                    .iter()
-                    .map(|x| VisualObjectData::from_dynamic_body(&x.borrow(), time))
-            ).chain(
-                self.static_body_entities
-                    .iter()
-                    .cloned()
-                    .zip(
-                        self.static_bodies
-                            .iter()
-                            .map(|x| VisualObjectData::from_static_body(x, time))
-                    )
-            ).collect_vec()
+        // Set visual objects using the query
+        let interpolation_factor = new_time - (new_discrete_time as f64 - 1.);
+        self.body_store.update_visual_objects(object_query, interpolation_factor);
     }
 
-    pub fn spawn_entities(&mut self, world: &mut World) {
-        let bundle_iter = self.dynamic_bodies
-            .iter()
-            .map(|x| VisualObjectBundle::new(VisualObjectData::from_dynamic_body(&x.borrow(), 0)));
-        self.dynamic_body_entities = world.spawn_batch(bundle_iter).collect_vec();
+    pub fn step(&mut self) {
+        self.current_time += 1;
+        self.body_store.update_dynamic_bodies(&mut self.system_tree, self.current_time);
+    }
 
-        let bundle_iter = self.static_bodies
-            .iter()
-            .map(|x| VisualObjectBundle::new(VisualObjectData::from_static_body(x, 0)));
-        self.static_body_entities = world.spawn_batch(bundle_iter).collect_vec();
+    /// Populate the body store with entities
+    pub fn spawn_bodies(&mut self, commands: &mut Commands) {
+        self.body_store.spawn_visual_objects(commands);
+    }
+
+    pub fn get_current_time(&self) -> DiscreteGravitySystemTime {
+        self.current_time
     }
 }

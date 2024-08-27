@@ -1,6 +1,5 @@
 pub mod static_body;
 pub mod dynamic_body;
-pub mod position_generator;
 pub mod builder;
 pub mod system_manager;
 pub mod generate;

@@ -12,12 +12,14 @@ pub fn draw_future_paths(
     mut gizmos: Gizmos<FuturePathLineConfig>,
     draw_options: Res<DrawOptions>,
     selected_objects: Res<SelectedObjects>,
-    gravity_system: NonSend<GravitySystemManager>,
+    gravity_system: Res<GravitySystemManager>,
 ) {
     if draw_options.draw_future_path == false { return }
     let Some((entity, _)) = selected_objects.focused else { return };
     let camera_state = camera_query.single();
 
+
+    /*
     if let Some(i) = gravity_system.static_body_entities.iter().position(|x| *x == entity) {
         let StaticBody { position_generator, .. } = &gravity_system.static_bodies[i];
         let Some((position, radius)) = position_generator.get_orbit_circle(gravity_system.latest_time) else { return };
@@ -58,6 +60,7 @@ pub fn draw_future_paths(
         You tried to get the future position of a visual object that doesnt appear to exist in the gravity system.
         ")
     }
+    */
 }
 
 

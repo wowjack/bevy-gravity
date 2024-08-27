@@ -59,11 +59,9 @@ fn main() {
         .with_children(&[stellar_system]);
 
 
-    let mut system = galactic_system.build().unwrap();
+    let mut system = GravitySystemManager::new(galactic_system);
     for i in 1..1_000_000 {
-        system.accelerate_and_move_bodies_recursive(i, &mut vec![]);
+        system.step();
     }
-    let mut v = vec![];
-    system.get_dynamic_bodies_recursive(&mut v);
-    assert_eq!(v.len(), 1);
+    assert_eq!(system.body_store.dynamic_bodies.len(), 1);
 }

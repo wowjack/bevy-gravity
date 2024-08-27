@@ -24,21 +24,18 @@ fn single_layer_single_body_tree_benchmark(c: &mut Criterion) {
         ])
         .with_dynamic_bodies(&vec![
             DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., 1., WHITE.into()),
-        ])
-        .build().expect("why did this fail?");
+        ]);
+    
+    let manager = GravitySystemManager::new(test_system);
 
 
     c.bench_function("single body single layer", |b| b.iter(|| {
-        let mut system = test_system.clone();
-        // 100_000 ticks is about 28 mins at 20 text per second
-        let mut elevator = vec![];
-        for i in 1..=100_000 {
-            system.accelerate_and_move_bodies_recursive(i, &mut elevator)
+        let mut system = manager.clone();
+        for _ in 0..100_000 {
+            system.step();
         }
-        let x = black_box(system);
+        black_box(system);
     }));
-
-
 }
 
 
@@ -125,7 +122,7 @@ fn two_layer_populated_tree_benchmark(c: &mut Criterion) {
     let mut time = 1;
 
     c.bench_function("two layer populated tree", |b| b.iter(|| {
-        manager.get_state_at_time(time);
+        manager.step();
         time += 1;
     }));
     black_box(manager);
@@ -188,12 +185,10 @@ fn deep_tree_single_body(c: &mut Criterion) {
         .with_children(&[stellar_system]);
 
 
-    let mut system = galactic_system.build().unwrap();
-    let mut time = 1;
+    let mut system = GravitySystemManager::new(galactic_system);
 
     c.bench_function("deep tree single body", |b| b.iter(|| {
-        system.accelerate_and_move_bodies_recursive(time, &mut vec![]);
-        time += 1;
+        system.step();
     }));
     black_box(system);
 }

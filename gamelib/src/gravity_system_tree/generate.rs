@@ -13,7 +13,7 @@ Planets:
 Moons will orbit the planet every 30 seconds to 2 minutes
 */
 
-
+/*
 const ONE_HOUR_SPEED: f64 = std::f64::consts::TAU/(60.*60.*60.);
 const ONE_MINUTE_SPEED: f64 = std::f64::consts::TAU/(60.*60.);
 
@@ -61,3 +61,6 @@ fn generate_planet_system(rng: &mut StdRng, position: StaticPosition) -> Gravity
     GravitySystemBuilder::new();
     todo!()
 }
+
+
+*/

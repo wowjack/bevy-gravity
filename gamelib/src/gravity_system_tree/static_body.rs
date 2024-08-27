@@ -1,11 +1,27 @@
-// A Body that effects gravity but is not affected.
-// Can follow a set path or be still
+use bevy::{color::Color, math::DVec2};
 
-use bevy::{color::Color, math::DVec2, prelude::Entity};
-use crate::{math, G};
+use super::dynamic_body::BodyStats;
 
-use super::position_generator::PositionGenerator;
 
+#[derive(Clone, Debug)]
+pub struct StaticBody {
+    pub stats: BodyStats,
+    pub static_position: StaticPosition,
+    pub mu: f64,
+    pub radius: f64,
+    pub color: Color,
+}
+impl StaticBody {
+    pub fn new(static_position: StaticPosition, mu: f64, radius: f64, color: Color) -> Self {
+        Self {
+            stats: BodyStats::default(),
+            static_position,
+            mu,
+            radius,
+            color
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq)]
 pub enum StaticPosition {
     /// A Body that remains motionless relative to the system, staying perfectly in the center
@@ -21,10 +37,10 @@ pub enum StaticPosition {
     // Arbitrary orbits determined by a vec of positions?
 }
 impl StaticPosition {
-    pub fn get_polar_position(&self, time: u64) -> [f64;2] {
+    pub fn get_polar_position(&self, time: f64) -> [f64;2] {
         match self {
             Self::Still => [0., 0.],
-            Self::Circular { radius, speed, start_angle } => [*radius, (start_angle+speed*time as f64) % std::f64::consts::TAU]
+            Self::Circular { radius, speed, start_angle } => [*radius, (start_angle+speed*time)]
         }
     }
     pub fn get_radius(&self) -> f64 {
@@ -36,26 +52,31 @@ impl StaticPosition {
 
 
     /// Get cartesian coordinates at time t assuming the center of the orbit is (0, 0)
-    pub fn get_cartesian_position(&self, time: u64) -> DVec2 {
-        math::polar_to_cartesian(self.get_polar_position(time))
+    pub fn get_cartesian_position(&self, time: f64) -> DVec2 {
+        match self {
+            Self::Still => DVec2::ZERO,
+            Self::Circular { radius, speed, start_angle } => {
+                let angle = start_angle+speed*time;
+                DVec2 { x: radius*angle.cos(), y: radius*angle.sin() }
+            }
+        }
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct StaticBody {
-    pub position_generator: PositionGenerator,
-    /// Gravitational parameter (mass * G)
-    pub mu: f64,
-    pub radius: f64,
-    pub color: Color
-}
-
-impl StaticBody {
-    pub fn new(position: StaticPosition, mu: f64, radius: f64, color: Color) -> Self {
-        Self { position_generator: PositionGenerator::from(position), mu, radius, color}
+    pub fn get_velocity(&self, time: f64) -> DVec2 {
+        match self {
+            Self::Still => DVec2::ZERO,
+            Self::Circular { radius, speed, start_angle } => DVec2::from_angle(start_angle+speed*time + std::f64::consts::FRAC_PI_2) * (speed * radius)
+        }
     }
-
-    pub fn mass(&self) -> f64 {
-        self.mu / G
+    pub fn get_position_and_velocity(&self, time: f64) -> (DVec2, DVec2) {
+        match self {
+            Self::Still => (DVec2::ZERO, DVec2::ZERO),
+            Self::Circular { radius, speed, start_angle } => {
+                let angle = start_angle+speed*time;
+                (
+                    DVec2::new(radius*angle.cos(), radius*angle.sin()),
+                    DVec2::from_angle(angle + std::f64::consts::FRAC_PI_2) * (speed * radius)
+                )
+            }
+        }
     }
 }
