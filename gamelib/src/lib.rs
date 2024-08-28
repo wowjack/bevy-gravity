@@ -5,6 +5,10 @@ use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::camera::V
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_vector_shapes::Shape2dPlugin;
+use gravity_system_tree::builder::GravitySystemBuilder;
+use gravity_system_tree::dynamic_body::DynamicBody;
+use gravity_system_tree::static_body::{StaticBody, StaticPosition};
+use math::get_orbital_speed;
 use pseudo_camera::camera::CameraState;
 use pseudo_camera::pseudo_camera_plugin;
 use gravity_system_tree::system_manager::GravitySystemManager;
@@ -51,23 +55,26 @@ pub const G: f64 = 6.6743015e-11;
 fn init(
     mut commands: Commands
 ) {
-    let galaxy_mu = 1e34*G/1e5;
+    let galaxy_mass = 1e34;
     let galaxy_system_radius = 1e20;
-    let galaxy_system_time_step = 100;
-    let galaxy_radius = 1000.;
+    let galaxy_system_time_step = 1000;
+    let galaxy_radius = 51.8e6;
     let galaxy_color = Color::from(PURPLE);
+    let galaxy_name = "Galactic Center".to_string();
 
-    //let galactic_system = GravitySystemBuilder::new()
-    //    .with_radius(galaxy_system_radius)
-    //    .with_position(StaticPosition::Still)
-    //    .with_time_step(galaxy_system_time_step)
-    //    .with_static_bodies(&[
-    //        StaticBody::new(StaticPosition::Still, galaxy_mu, galaxy_radius, galaxy_color)
-    //    ])
-    //    .with_dynamic_bodies(&[
-    //        DynamicBody::new(DVec2::X*100_000_000., DVec2::Y*50_000., 1e-30, 1., CORNFLOWER_BLUE.into()),
-    //    ])
-    //    .with_children(&[stellar_system]);
+    let galactic_system = GravitySystemBuilder::new()
+        .with_radius(galaxy_system_radius)
+        .with_position(StaticPosition::Still)
+        .with_time_step(galaxy_system_time_step)
+        .with_static_bodies(&[
+            StaticBody::new(StaticPosition::Still, galaxy_mass, galaxy_radius, galaxy_color, galaxy_name)
+        ])
+        .with_dynamic_bodies(&[
+            //DynamicBody::new(DVec2::X*100_000_000., DVec2::Y*50_000., 1e-30, 1., CORNFLOWER_BLUE.into()),
+        ])
+        .with_children(&[
+            solar_system().with_position(StaticPosition::Circular { radius: SUN_ORBITAL_RADIUS, speed: get_orbital_speed(galaxy_mass, SUN_ORBITAL_RADIUS), start_angle: 0. })
+        ]);
 
 
     let mut manager = GravitySystemManager::new(solar_system());
