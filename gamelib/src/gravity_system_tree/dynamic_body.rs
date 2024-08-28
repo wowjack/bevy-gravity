@@ -183,4 +183,6 @@ impl DynamicBody {
     pub fn get_color(&self) -> Color { self.color }
     pub fn get_name(&self) -> String { self.name.clone() }
     pub fn get_system_depth(&self) -> usize { self.system_depth }
+    pub fn get_parent_generator(&self) -> &StaticGenerator { &self.parent_generator }
+    pub fn get_previous_relative_position(&self) -> BodyPosition { self.previous_relative_position }
 }

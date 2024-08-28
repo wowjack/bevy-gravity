@@ -100,7 +100,7 @@ pub const MOON_COLOR: Srgba = WHITE;
 pub const MOON_NAME: &str = "Moon";
 
 pub fn earth_system() -> GravitySystemBuilder {
-    let planet_orbiter = DynamicBody::new(DVec2::X*-7_000., DVec2::Y*get_orbital_speed(EARTH_MASS, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Sattelite".into());
+    let planet_orbiter = DynamicBody::new(DVec2::X*-7_000., 1.428698*DVec2::Y*get_orbital_speed(EARTH_MASS, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());
     //planet_orbiter.future_actions.extend((1650..1670).map(|x| (x, DVec2::Y)));
     //planet_orbiter.future_actions.extend((1900..1920).map(|x| (x, DVec2::Y)));
     //planet_orbiter.future_actions.extend((2250..2270).map(|x| (x, DVec2::Y)));
@@ -354,31 +354,31 @@ pub const NEPTUNE_RADIUS: f64 = 24_622.;
 pub const NEPTUNE_COLOR: Srgba = BLUE;
 pub const NEPTUNE_NAME: &str = "Neptune";
 
-pub const DESPINA_ORBITAL_RADIUS: f64 = 27_700.;
+pub const DESPINA_ORBITAL_RADIUS: f64 = 52_526. * 1.5;
 pub const DESPINA_MASS: f64 = 170e16/MASS_DIVISOR;
 pub const DESPINA_RADIUS: f64 = 78.;
 pub const DESPINA_COLOR: Srgba = LIGHT_GRAY;
 pub const DESPINA_NAME: &str = "Despina";
 
-pub const GALATEA_ORBITAL_RADIUS: f64 = 37_200.;
+pub const GALATEA_ORBITAL_RADIUS: f64 = 61_953.*1.5;
 pub const GALATEA_MASS: f64 = 280e16/MASS_DIVISOR;
 pub const GALATEA_RADIUS: f64 = 140.;
 pub const GALATEA_COLOR: Srgba = LIGHT_GRAY;
 pub const GALATEA_NAME: &str = "Galatea";
 
-pub const LARISSA_ORBITAL_RADIUS: f64 = 48_800.;
+pub const LARISSA_ORBITAL_RADIUS: f64 = 73_548. * 1.5;
 pub const LARISSA_MASS: f64 = 380e16/MASS_DIVISOR;
 pub const LARISSA_RADIUS: f64 = 190.;
 pub const LARISSA_COLOR: Srgba = LIGHT_GRAY;
 pub const LARISSA_NAME: &str = "Larissa";
 
-pub const PROTEUS_ORBITAL_RADIUS: f64 = 117_647.;
+pub const PROTEUS_ORBITAL_RADIUS: f64 = 117_647. * 1.5;
 pub const PROTEUS_MASS: f64 = 3_900e16/MASS_DIVISOR;
 pub const PROTEUS_RADIUS: f64 = 210.;
 pub const PROTEUS_COLOR: Srgba = LIGHT_GRAY;
 pub const PROTEUS_NAME: &str = "Proteus";
 
-pub const TRITON_ORBITAL_RADIUS: f64 = 354_800.;
+pub const TRITON_ORBITAL_RADIUS: f64 = 354_759. * 2.;
 pub const TRITON_MASS: f64 = 2_139_000e16/MASS_DIVISOR;
 pub const TRITON_RADIUS: f64 = 1_352.6;
 pub const TRITON_COLOR: Srgba = GRAY;

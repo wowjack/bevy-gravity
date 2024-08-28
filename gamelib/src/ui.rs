@@ -89,14 +89,14 @@ pub fn side_panel(
                     bevy_egui::egui::color_picker::color_edit_button_rgb(ui, &mut spawn_options.rgb);
                 });
                 if ui.button("Spawn").clicked() {
-                    let object_data = VisualObjectData::new(
-                        spawn_options.position,
-                        spawn_options.velocity,
-                        spawn_options.mass,
-                        spawn_options.radius,
-                        Color::linear_rgb(spawn_options.rgb[0], spawn_options.rgb[1], spawn_options.rgb[2]),
-                    );
-                    let bundle = VisualObjectBundle::new(object_data.clone());
+                    //let object_data = VisualObjectData::new(
+                    //    spawn_options.position,
+                    //    spawn_options.velocity,
+                    //    spawn_options.mass,
+                    //    spawn_options.radius,
+                    //    Color::linear_rgb(spawn_options.rgb[0], spawn_options.rgb[1], spawn_options.rgb[2]),
+                    //);
+                    //let bundle = VisualObjectBundle::new(object_data.clone());
                     //let entity = commands.spawn(bundle).id();
                     //let event = ChangeEvent { entity, change: crate::physics::Change::CreateObject(MassiveObject::from(object_data))};
                     //change_event_writer.send(event);
@@ -110,7 +110,7 @@ pub fn side_panel(
                     ui.label("No Object Focused");
                     return;
                 };
-                ui.label(format!("{:?}", e));
+                ui.label(format!("{}", data.name));
                 ui.horizontal(|ui| {
                     ui.label("Position");
                     let x_pos_changed = ui.add(DragValue::new(&mut data.position.x).prefix("X: ")).changed();

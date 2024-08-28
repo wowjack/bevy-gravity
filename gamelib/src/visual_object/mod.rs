@@ -38,12 +38,9 @@ pub struct VisualObjectData {
     pub mass: f64,
     pub radius: f64,
     pub color: Color,
+    pub name: String,
 }
 impl VisualObjectData {
-    pub fn new(position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Color) -> Self {
-        Self { position, velocity, mass, radius, color }
-    }
-
     pub fn from_dynamic_body(dynamic_body: &DynamicBody) -> Self {
         Self {
             position: dynamic_body.get_interpolated_absolute_position(0.),
@@ -51,6 +48,7 @@ impl VisualObjectData {
             mass: dynamic_body.get_mass(),
             radius: dynamic_body.get_radius(),
             color: dynamic_body.get_color(),
+            name: dynamic_body.get_name(),
         }
     }
 
@@ -61,6 +59,7 @@ impl VisualObjectData {
             mass: static_body.get_mass(),
             radius: static_body.get_radius(),
             color: static_body.get_color(),
+            name: static_body.get_name()
         }
     }
 }
