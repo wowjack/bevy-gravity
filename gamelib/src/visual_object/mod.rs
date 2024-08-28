@@ -46,21 +46,21 @@ impl VisualObjectData {
 
     pub fn from_dynamic_body(dynamic_body: &DynamicBody) -> Self {
         Self {
-            position: dynamic_body.stats.current_absolute_position,
-            velocity: dynamic_body.stats.current_relative_velocity,
-            mass: dynamic_body.mu / G,
-            radius: dynamic_body.radius,
-            color: dynamic_body.color,
+            position: dynamic_body.get_interpolated_absolute_position(0.),
+            velocity: dynamic_body.get_interpolated_relative_velocity(0.),
+            mass: dynamic_body.get_mass(),
+            radius: dynamic_body.get_radius(),
+            color: dynamic_body.get_color(),
         }
     }
 
     pub fn from_static_body(static_body: &StaticBody) -> Self {
         Self {
-            position: static_body.stats.current_absolute_position,
-            velocity: static_body.stats.current_relative_velocity,
-            mass: static_body.mu / G,
-            radius: static_body.radius,
-            color: static_body.color,
+            position: static_body.get_absolute_position(),
+            velocity: static_body.get_relative_velocity(),
+            mass: static_body.get_mass(),
+            radius: static_body.get_radius(),
+            color: static_body.get_color(),
         }
     }
 }

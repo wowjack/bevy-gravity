@@ -2,7 +2,7 @@
 use std::{cell::RefCell, rc::Rc};
 use bevy::math::DVec2;
 
-use super::{dynamic_body::DynamicBody, static_body::{StaticBody, StaticPosition}, system_manager::GravitySystemManager, system_tree::{BodyStore, GravitySystemTree}};
+use super::{dynamic_body::DynamicBody, static_body::{StaticBody, StaticPosition}, static_generator::StaticGenerator, system_manager::GravitySystemManager, system_tree::{BodyStore, GravitySystemTree}, BodyPosition};
 
 
 /// Only way to construct SystemTree objects
@@ -59,22 +59,22 @@ impl GravitySystemBuilder {
     /// Assign each static and dynamic body with a bevy entity used to associate it with a visual object
     pub fn build(self) -> Result<(GravitySystemTree, BodyStore), SystemTreeError> {
         let mut body_store = BodyStore::default();
-        let mut tree = self.build_recursive(&mut body_store, DVec2::ZERO)?;
+        let mut tree = self.build_recursive(&mut body_store, 0, &StaticGenerator::new())?;
 
         body_store.update_static_bodies(&mut tree, 0.);
         //body_store.update_dynamic_bodies(&mut tree, 0);
 
-        //println!("{:?}", body_store);
-
         return Ok((tree, body_store));
     }
 
-    fn build_recursive(mut self, body_store: &mut BodyStore, parent_position: DVec2) -> Result<GravitySystemTree, SystemTreeError> {
+    fn build_recursive(mut self, body_store: &mut BodyStore, system_depth: usize, parent_generator: &StaticGenerator) -> Result<GravitySystemTree, SystemTreeError> {
         if !self.set_position { return Err(SystemTreeError::NoPosition) }
+        self.system.parent_generator = parent_generator.clone();
 
+        let mut child_generator = parent_generator.clone();
+        child_generator.push_end(self.system.position.clone());
         for child_system in self.child_systems {
-            let child_pos = child_system.system.position.get_cartesian_position(0.);
-            let child_system = child_system.build_recursive(body_store, parent_position+child_pos)?;
+            let child_system = child_system.build_recursive(body_store, system_depth+1, &child_generator)?;
             self.system.child_systems.push(child_system);
         }
 
@@ -82,18 +82,18 @@ impl GravitySystemBuilder {
         self.system.mu = self.system.child_systems
             .iter()
             .map(|x| x.mu)
-            .chain(self.static_bodies.iter().map(|x| x.mu))
+            .chain(self.static_bodies.iter().map(|x| x.get_mu()))
             .sum();
 
 
         for mut body in self.dynamic_bodies {
-            body.stats.previous_absolute_position = parent_position + body.stats.current_relative_position;
-            body.stats.current_absolute_position = body.stats.previous_absolute_position;
+            body.initialize_in_system_tree(system_depth, &child_generator);
             let index = body_store.add_dynamic_body_to_store(body);
             self.system.dynamic_body_indices.push(index);
         }
 
-        for body in self.static_bodies {
+        for mut body in self.static_bodies {
+            body.initialize_in_system_tree(system_depth, &child_generator);
             let index = body_store.add_static_body_to_store(body);
             self.system.static_body_indices.push(index);
         }

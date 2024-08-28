@@ -23,8 +23,7 @@ pub fn draw_future_paths(
     if let Some(i) = gravity_system.body_store.static_entities.iter().position(|x| *x == entity) {
         // This does not work for still bodies in a moving system
         let Some(static_body) = gravity_system.body_store.static_bodies.get(i) else { return };
-        let position = static_body.stats.current_absolute_position - static_body.stats.current_relative_position;
-        let radius = static_body.static_position.get_radius();
+        let (position, radius) = static_body.get_orbit_parameters(gravity_system.get_current_time() as f64);
         let center_pos = camera_state.physics_to_world_pos(position);
 
         painter.hollow = true;
@@ -33,11 +32,15 @@ pub fn draw_future_paths(
 
     }
     else if let Some(mut new_system) = gravity_system.retain_clone(entity) {
-        let iter = (0..50_000).map(|_| {
+        let body = unsafe { new_system.body_store.dynamic_bodies.get_unchecked(0) };
+        let center_pos = body.get_interpolated_absolute_position(0.) - body.get_interpolated_relative_position(0.);
+        let depth = body.get_system_depth();
+        let iter = (0..100_000).map_while(|_| {
             let body = unsafe { new_system.body_store.dynamic_bodies.get_unchecked(0) };
-            let ret = camera_state.physics_to_world_pos(body.stats.previous_absolute_position);
+            if body.get_system_depth() != depth { return None }
+            let ret = camera_state.physics_to_world_pos(center_pos + body.get_interpolated_relative_position(0.));
             new_system.step();
-            ret
+            Some(ret)
         });
         gizmos.linestrip_2d(
             iter,
