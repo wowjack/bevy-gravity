@@ -1,6 +1,8 @@
 
 use std::{cell::RefCell, rc::Rc};
-use super::{dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::{StaticBody, StaticPosition}, system_tree::GravitySystemTree};
+use bevy::math::DVec2;
+
+use super::{dynamic_body::DynamicBody, static_body::{StaticBody, StaticPosition}, static_generator::StaticGenerator, system_manager::GravitySystemManager, system_tree::{BodyStore, GravitySystemTree}, BodyPosition};
 
 
 /// Only way to construct SystemTree objects
@@ -9,26 +11,29 @@ use super::{dynamic_body::DynamicBody, position_generator::PositionGenerator, st
 pub struct GravitySystemBuilder {
     system: GravitySystemTree,
     set_position: bool,
+
+    dynamic_bodies: Vec<DynamicBody>,
+    static_bodies: Vec<StaticBody>,
     /// Store child system builders so they can be built with proper coordinates from the top down
     child_systems: Vec<GravitySystemBuilder>,
 }
 
 impl GravitySystemBuilder {
     pub fn new() -> Self { 
-        Self { system: Default::default(), set_position: false, child_systems: vec![] }
+        Self { system: Default::default(), set_position: false, dynamic_bodies: vec![], static_bodies: vec![], child_systems: vec![] }
     }
 
     pub fn with_static_bodies(mut self, bodies: &[StaticBody]) -> Self {
-        self.system.static_bodies.extend_from_slice(bodies);
+        self.static_bodies.extend_from_slice(bodies);
         self
     }
     /// Add dynamic bodies relative to the current system
     pub fn with_dynamic_bodies(mut self, bodies: &[DynamicBody]) -> Self {
-        self.system.dynamic_bodies.extend(bodies.iter().map(|b| Rc::new(RefCell::new(b.clone()))));
+        self.dynamic_bodies.extend_from_slice(bodies);
         self
     }
     pub fn with_position(mut self, position: StaticPosition) -> Self {
-        self.system.position_generator = PositionGenerator::from(position);
+        self.system.position = position;
         self.set_position = true;
         self
     }
@@ -52,25 +57,24 @@ impl GravitySystemBuilder {
     /// Position needs to be calculated from the top down
     /// mass and child bodies needs to be calculated from the bottom up
     /// Assign each static and dynamic body with a bevy entity used to associate it with a visual object
-    pub fn build(self) -> Result<GravitySystemTree, SystemTreeError> {
-        GravitySystemBuilder::validate_tree(self.build_recursive(PositionGenerator::default())?)
+    pub fn build(self) -> Result<(GravitySystemTree, BodyStore), SystemTreeError> {
+        let mut body_store = BodyStore::default();
+        let mut tree = self.build_recursive(&mut body_store, 0, &StaticGenerator::new())?;
+
+        body_store.update_static_bodies(&mut tree, 0.);
+        //body_store.update_dynamic_bodies(&mut tree, 0);
+
+        return Ok((tree, body_store));
     }
 
-    fn build_recursive(mut self, parent_generator: PositionGenerator) -> Result<GravitySystemTree, SystemTreeError> {
+    fn build_recursive(mut self, body_store: &mut BodyStore, system_depth: usize, parent_generator: &StaticGenerator) -> Result<GravitySystemTree, SystemTreeError> {
         if !self.set_position { return Err(SystemTreeError::NoPosition) }
+        self.system.parent_generator = parent_generator.clone();
 
-        self.system.position_generator = parent_generator.extend_generator(self.system.position_generator);
-
-        for body in &self.system.dynamic_bodies {
-            body.borrow_mut().relative_stats.set_generator(self.system.position_generator.clone());
-        }
-
-        for body in &mut self.system.static_bodies {
-            body.position_generator.prepend_generator(&self.system.position_generator);
-        }
-
+        let mut child_generator = parent_generator.clone();
+        child_generator.push_end(self.system.position.clone());
         for child_system in self.child_systems {
-            let child_system = child_system.build_recursive(self.system.position_generator.clone())?;
+            let child_system = child_system.build_recursive(body_store, system_depth+1, &child_generator)?;
             self.system.child_systems.push(child_system);
         }
 
@@ -78,55 +82,63 @@ impl GravitySystemBuilder {
         self.system.mu = self.system.child_systems
             .iter()
             .map(|x| x.mu)
-            .chain(self.system.static_bodies.iter().map(|x| x.mu))
+            .chain(self.static_bodies.iter().map(|x| x.get_mu()))
             .sum();
+
+
+        for mut body in self.dynamic_bodies {
+            body.initialize_in_system_tree(system_depth, &child_generator);
+            let index = body_store.add_dynamic_body_to_store(body);
+            self.system.dynamic_body_indices.push(index);
+        }
+
+        for mut body in self.static_bodies {
+            body.initialize_in_system_tree(system_depth, &child_generator);
+            let index = body_store.add_static_body_to_store(body);
+            self.system.static_body_indices.push(index);
+        }
+
+        
+        
         self.system.total_child_dynamic_bodies = self.system.child_systems
             .iter()
             .map(|s| s.total_child_dynamic_bodies)
-            .sum::<usize>() + self.system.dynamic_bodies.len();
-
-        self.system.set_static_masses_to(0);
-        self.system.calculate_accelerations();
+            .sum::<usize>() + self.system.dynamic_body_indices.len();
 
         return Ok(self.system)
     }
 
-    fn validate_tree(tree: GravitySystemTree) -> Result<GravitySystemTree, SystemTreeError> {
-        for (index, child) in tree.child_systems.iter().enumerate() {
-            if child.time_step > tree.time_step {
-                return Err(SystemTreeError::MinTimeScale)
-            } else if tree.time_step % child.time_step != 0 {
-                return Err(SystemTreeError::NonDivisibleTimeScale)
-            }
-
-            // Going to leave this part for another time
-            // I want the possibility of multiple star systems around the galaxy to be able to exist in the same orbital radius with similar velocity so they dont collide
-            /*
-            let has_close_children = self.system.child_systems
-                .iter()
-                .enumerate()
-                .find(|(i, os)| *i != index && are_systems_near(os, child))
-                .is_some();
-            if has_close_children { return Some(SystemTreeError::ChildRadiusOverlap) }
-
-            self.system.stat
-            */
-
-        }
+    fn validate_tree(tree: GravitySystemManager) -> Result<GravitySystemManager, SystemTreeError> {
+        //for (index, child) in tree.child_systems.iter().enumerate() {
+        //    if child.time_step > tree.time_step {
+        //        return Err(SystemTreeError::MinTimeScale)
+        //    } else if tree.time_step % child.time_step != 0 {
+        //        return Err(SystemTreeError::NonDivisibleTimeScale)
+        //    }
+        //
+        //    // Going to leave this part for another time
+        //    // I want the possibility of multiple star systems around the galaxy to be able to exist in the same orbital radius with similar velocity so they dont collide
+        //    /*
+        //    let has_close_children = self.system.child_systems
+        //        .iter()
+        //        .enumerate()
+        //        .find(|(i, os)| *i != index && are_systems_near(os, child))
+        //        .is_some();
+        //    if has_close_children { return Some(SystemTreeError::ChildRadiusOverlap) }
+        //
+        //    self.system.stat
+        //    */
+        //
+        //}
         return Ok(tree)
     }
 
-    pub fn total_bodies(&self) -> usize {
-        self.system.dynamic_bodies.len() + 
-        self.system.static_bodies.len() + 
-        self.child_systems.iter().map(|x| x.total_bodies()).sum::<usize>()
-    }
 }
 
 /// Difference between orbital radii must be greater than the sum of system radii to ensure they dont potentially
-fn are_systems_near(system1: &GravitySystemTree, system2: &GravitySystemTree) -> bool {
-    (system1.position_generator.get_end().get_radius() - system2.position_generator.get_end().get_radius()).abs() > (system1.radius + system2.radius)
-}
+//fn are_systems_near(system1: &GravitySystemTree, system2: &GravitySystemTree) -> bool {
+//    (system1.position_generator.get_end().get_radius() - system2.position_generator.get_end().get_radius()).abs() > (system1.radius + system2.radius)
+//}
 
 
 #[derive(Debug)]

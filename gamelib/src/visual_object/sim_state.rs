@@ -6,17 +6,15 @@ use super::*;
 #[derive(Resource)]
 pub struct SimulationState {
     pub running: bool,
-    pub current_time: u64,
-    pub run_speed: u64,
-    pub timer: Timer
+    pub current_time: f64,
+    pub run_speed: f64,
 }
 impl Default for SimulationState {
     fn default() -> Self {
         Self {
             running: false,
-            current_time: 0,
-            run_speed: 1,
-            timer: Timer::new(Duration::from_millis(17), TimerMode::Repeating)
+            current_time: 0.,
+            run_speed: 1.,
         }
     }
 }

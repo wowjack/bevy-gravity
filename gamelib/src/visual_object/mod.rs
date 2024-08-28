@@ -26,7 +26,7 @@ pub use spawn::*;
 mod follow_object;
 pub use follow_object::*;
 
-use crate::{gravity_system_tree::{dynamic_body::DynamicBody, position_generator::PositionGenerator, static_body::StaticBody}, G};
+use crate::{gravity_system_tree::{dynamic_body::DynamicBody, static_body::StaticBody}, G};
 
 pub const CIRCLE_VERTICES: usize = 100;
 
@@ -38,29 +38,28 @@ pub struct VisualObjectData {
     pub mass: f64,
     pub radius: f64,
     pub color: Color,
+    pub name: String,
 }
 impl VisualObjectData {
-    pub fn new(position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Color) -> Self {
-        Self { position, velocity, mass, radius, color }
-    }
-
-    pub fn from_dynamic_body(dynamic_body: &DynamicBody, time: u64) -> Self {
+    pub fn from_dynamic_body(dynamic_body: &DynamicBody) -> Self {
         Self {
-            position: dynamic_body.relative_stats.get_position_absolute(time),
-            velocity: dynamic_body.relative_stats.get_velocity_relative(),
-            mass: dynamic_body.mu / G,
-            radius: dynamic_body.radius,
-            color: dynamic_body.color,
+            position: dynamic_body.get_interpolated_absolute_position(0.),
+            velocity: dynamic_body.get_interpolated_relative_velocity(0.),
+            mass: dynamic_body.get_mass(),
+            radius: dynamic_body.get_radius(),
+            color: dynamic_body.get_color(),
+            name: dynamic_body.get_name(),
         }
     }
 
-    pub fn from_static_body(static_body: &StaticBody, time: u64) -> Self {
+    pub fn from_static_body(static_body: &StaticBody) -> Self {
         Self {
-            position: static_body.position_generator.get(time),
-            velocity: static_body.position_generator.get(time+1) - static_body.position_generator.get(time),
-            mass: static_body.mu / G,
-            radius: static_body.radius,
-            color: static_body.color,
+            position: static_body.get_absolute_position(),
+            velocity: static_body.get_relative_velocity(),
+            mass: static_body.get_mass(),
+            radius: static_body.get_radius(),
+            color: static_body.get_color(),
+            name: static_body.get_name()
         }
     }
 }

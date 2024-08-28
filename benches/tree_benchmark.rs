@@ -11,34 +11,31 @@ fn single_layer_single_body_tree_benchmark(c: &mut Criterion) {
         .with_position(StaticPosition::Still)
         .with_time_step(1)
         .with_static_bodies(&vec![
-            StaticBody::new(StaticPosition::Still, 100., 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 400., speed: 0.001, start_angle: 0. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.0005, start_angle: 1. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 600., speed: 0.005, start_angle: 2. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 700., speed: 0.005, start_angle: 3. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 800., speed: 0.005, start_angle: 4. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 900., speed: 0.005, start_angle: 5. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 1000., speed: 0.005, start_angle: 6. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 1100., speed: 0.005, start_angle: 0.5 }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 1200., speed: 0.005, start_angle: 1.5 }, 0.00000000001, 1., WHITE.into()),
+            StaticBody::new(StaticPosition::Still, 100., 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 400., speed: 0.001, start_angle: 0. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.0005, start_angle: 1. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 600., speed: 0.005, start_angle: 2. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 700., speed: 0.005, start_angle: 3. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 800., speed: 0.005, start_angle: 4. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 900., speed: 0.005, start_angle: 5. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 1000., speed: 0.005, start_angle: 6. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 1100., speed: 0.005, start_angle: 0.5 }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 1200., speed: 0.005, start_angle: 1.5 }, 0.00000000001, 1., WHITE.into(), "".into()),
         ])
         .with_dynamic_bodies(&vec![
-            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., 1., WHITE.into()),
-        ])
-        .build().expect("why did this fail?");
+            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., 1., WHITE.into(), "".into()),
+        ]);
+    
+    let manager = GravitySystemManager::new(test_system);
 
 
     c.bench_function("single body single layer", |b| b.iter(|| {
-        let mut system = test_system.clone();
-        // 100_000 ticks is about 28 mins at 20 text per second
-        let mut elevator = vec![];
-        for i in 1..=100_000 {
-            system.accelerate_and_move_bodies_recursive(i, &mut elevator)
+        let mut system = manager.clone();
+        for _ in 0..100_000 {
+            system.step();
         }
-        let x = black_box(system);
+        black_box(system);
     }));
-
-
 }
 
 
@@ -48,66 +45,66 @@ fn two_layer_populated_tree_benchmark(c: &mut Criterion) {
         .with_position(StaticPosition::Circular { radius: 100_000., speed: 0.0005, start_angle: 0. })
         .with_time_step(1)
         .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, 100., 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 600., speed: 0.001, start_angle: 0. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 800., speed: 0.0005, start_angle: 0. }, 0.00000000001, 1., WHITE.into()),
-            StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.005, start_angle: 0. }, 0.00000000001, 1., WHITE.into()),
+            StaticBody::new(StaticPosition::Still, 100., 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 600., speed: 0.001, start_angle: 0. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 800., speed: 0.0005, start_angle: 0. }, 0.00000000001, 1., WHITE.into(), "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: 500., speed: 0.005, start_angle: 0. }, 0.00000000001, 1., WHITE.into(), "".into()),
         ])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::new(10., 0.), DVec2::new(0., 3.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(35., 0.), DVec2::new(0., 2.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(100., 0.), DVec2::new(0., 1.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(120., 0.), DVec2::new(0., 0.5), 1., 1., WHITE.into()),
+            DynamicBody::new(DVec2::new(10., 0.), DVec2::new(0., 3.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(20., 0.), DVec2::new(0., 2.5), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(35., 0.), DVec2::new(0., 2.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(100., 0.), DVec2::new(0., 1.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(120., 0.), DVec2::new(0., 0.5), 1., 1., WHITE.into(), "".into()),
 
-            DynamicBody::new(DVec2::new(-10., 0.), DVec2::new(0., 3.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-20., 0.), DVec2::new(0., 2.5), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-35., 0.), DVec2::new(0., 2.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-100., 0.), DVec2::new(0., 1.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-120., 0.), DVec2::new(0., 0.5), 1., 1., WHITE.into()),
+            DynamicBody::new(DVec2::new(-10., 0.), DVec2::new(0., 3.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-20., 0.), DVec2::new(0., 2.5), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-35., 0.), DVec2::new(0., 2.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-100., 0.), DVec2::new(0., 1.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-120., 0.), DVec2::new(0., 0.5), 1., 1., WHITE.into(), "".into()),
 
 
-            DynamicBody::new(DVec2::new(0., 10.), DVec2::new(3., 0.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(0., 20.), DVec2::new(2.5, 0.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(0., 35.), DVec2::new(2., 0.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(0., 100.), DVec2::new(1., 0.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(0., 120.), DVec2::new(0.5, 0.), 1., 1., WHITE.into()),
+            DynamicBody::new(DVec2::new(0., 10.), DVec2::new(3., 0.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(0., 20.), DVec2::new(2.5, 0.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(0., 35.), DVec2::new(2., 0.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(0., 100.), DVec2::new(1., 0.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(0., 120.), DVec2::new(0.5, 0.), 1., 1., WHITE.into(), "".into()),
 
-            DynamicBody::new(DVec2::new(0., -10.), DVec2::new(3., 0.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(0., -20.), DVec2::new(2.5, 0.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(0., -35.), DVec2::new(2., 0.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(0., -100.), DVec2::new(1., 0.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(0., -120.), DVec2::new(0.5, 0.), 1., 1., WHITE.into()),
+            DynamicBody::new(DVec2::new(0., -10.), DVec2::new(3., 0.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(0., -20.), DVec2::new(2.5, 0.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(0., -35.), DVec2::new(2., 0.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(0., -100.), DVec2::new(1., 0.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(0., -120.), DVec2::new(0.5, 0.), 1., 1., WHITE.into(), "".into()),
         ]);
     let parent_system = GravitySystemBuilder::new()
         .with_radius(1_000_000_000.)
         .with_position(StaticPosition::Still)
         .with_time_step(10)
         .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, 1_000_000_000., 100., WHITE.into())
+            StaticBody::new(StaticPosition::Still, 1_000_000_000., 100., WHITE.into(), "".into())
         ])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::new(51_000., 0.), DVec2::new(0., 140.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(40_000., 0.), DVec2::new(0., 160.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(42_000., 0.), DVec2::new(0., 140.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(43_000., 0.), DVec2::new(0., 140.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(45_000., 0.), DVec2::new(0., 150.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(50_000., 0.), DVec2::new(0., 150.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(52_000., 0.), DVec2::new(0., 140.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(56_000., 0.), DVec2::new(0., 120.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(58_000., 0.), DVec2::new(0., 120.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(60_000., 0.), DVec2::new(0., 100.), 1., 1., WHITE.into()),
+            DynamicBody::new(DVec2::new(51_000., 0.), DVec2::new(0., 140.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(40_000., 0.), DVec2::new(0., 160.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(42_000., 0.), DVec2::new(0., 140.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(43_000., 0.), DVec2::new(0., 140.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(45_000., 0.), DVec2::new(0., 150.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(50_000., 0.), DVec2::new(0., 150.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(52_000., 0.), DVec2::new(0., 140.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(56_000., 0.), DVec2::new(0., 120.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(58_000., 0.), DVec2::new(0., 120.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(60_000., 0.), DVec2::new(0., 100.), 1., 1., WHITE.into(), "".into()),
 
-            DynamicBody::new(DVec2::new(-51_000., 0.), DVec2::new(0., -140.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-40_000., 0.), DVec2::new(0., -160.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-42_000., 0.), DVec2::new(0., -140.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-43_000., 0.), DVec2::new(0., -140.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-45_000., 0.), DVec2::new(0., -150.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-50_000., 0.), DVec2::new(0., -150.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-52_000., 0.), DVec2::new(0., -140.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-56_000., 0.), DVec2::new(0., -120.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-58_000., 0.), DVec2::new(0., -120.), 1., 1., WHITE.into()),
-            DynamicBody::new(DVec2::new(-60_000., 0.), DVec2::new(0., -100.), 1., 1., WHITE.into()),
+            DynamicBody::new(DVec2::new(-51_000., 0.), DVec2::new(0., -140.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-40_000., 0.), DVec2::new(0., -160.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-42_000., 0.), DVec2::new(0., -140.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-43_000., 0.), DVec2::new(0., -140.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-45_000., 0.), DVec2::new(0., -150.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-50_000., 0.), DVec2::new(0., -150.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-52_000., 0.), DVec2::new(0., -140.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-56_000., 0.), DVec2::new(0., -120.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-58_000., 0.), DVec2::new(0., -120.), 1., 1., WHITE.into(), "".into()),
+            DynamicBody::new(DVec2::new(-60_000., 0.), DVec2::new(0., -100.), 1., 1., WHITE.into(), "".into()),
         ])
         .with_children(&[
             test_system.clone().with_position(StaticPosition::Circular { radius: 105_000., speed: 0.00045, start_angle: 0.5 }),
@@ -121,12 +118,13 @@ fn two_layer_populated_tree_benchmark(c: &mut Criterion) {
             test_system.clone().with_position(StaticPosition::Circular { radius: 110_000., speed: 0.0005, start_angle: 4. }),
             test_system,
         ]);
-    let mut manager = GravitySystemManager::new(parent_system);
-    let mut time = 1;
+    let manager = GravitySystemManager::new(parent_system);
 
     c.bench_function("two layer populated tree", |b| b.iter(|| {
-        manager.get_state_at_time(time);
-        time += 1;
+        let mut manager = manager.clone();
+        for _ in 0..1_000 {
+            manager.step();
+        }
     }));
     black_box(manager);
 }
@@ -164,18 +162,18 @@ fn deep_tree_single_body(c: &mut Criterion) {
         .with_position(StaticPosition::Circular { radius: planet_orbital_radius, speed: get_orbital_speed(stellar_mu, planet_orbital_radius), start_angle: 0. })
         .with_time_step(planet_system_time_step)
         .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, planet_mu, planet_radius, planet_color),
-            StaticBody::new(StaticPosition::Circular { radius: moon_orbital_radius, speed: get_orbital_speed(planet_mu, moon_orbital_radius), start_angle: 0. }, moon_mu, moon_radius, moon_color),
+            StaticBody::new(StaticPosition::Still, planet_mu, planet_radius, planet_color, "".into()),
+            StaticBody::new(StaticPosition::Circular { radius: moon_orbital_radius, speed: get_orbital_speed(planet_mu, moon_orbital_radius), start_angle: 0. }, moon_mu, moon_radius, moon_color, "".into()),
         ])
         .with_dynamic_bodies(&[
-            DynamicBody::new(DVec2::X*-100_000., 1.3*DVec2::Y*get_orbital_speed(planet_mu, 100_000.)*100_000., 1e-20, 1., WHITE.into()),
+            DynamicBody::new(DVec2::X*-100_000., 1.3*DVec2::Y*get_orbital_speed(planet_mu, 100_000.)*100_000., 1e-20, 1., WHITE.into(), "".into()),
         ]);
     let stellar_system = GravitySystemBuilder::new()
         .with_radius(stellar_system_radius)
         .with_position(StaticPosition::Circular { radius: stellar_orbital_radius, speed: get_orbital_speed(galaxy_mu, stellar_orbital_radius), start_angle: 0. })
         .with_time_step(stellar_system_time_step)
         .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, stellar_mu, stellar_radius, stellar_color),
+            StaticBody::new(StaticPosition::Still, stellar_mu, stellar_radius, stellar_color, "".into()),
         ])
         .with_children(&[planet_system]);
     let galactic_system = GravitySystemBuilder::new()
@@ -183,17 +181,18 @@ fn deep_tree_single_body(c: &mut Criterion) {
         .with_position(StaticPosition::Still)
         .with_time_step(galaxy_system_time_step)
         .with_static_bodies(&[
-            StaticBody::new(StaticPosition::Still, galaxy_mu, galaxy_radius, galaxy_color)
+            StaticBody::new(StaticPosition::Still, galaxy_mu, galaxy_radius, galaxy_color, "".into())
         ])
         .with_children(&[stellar_system]);
 
 
-    let mut system = galactic_system.build().unwrap();
-    let mut time = 1;
+    let system = GravitySystemManager::new(galactic_system);
 
     c.bench_function("deep tree single body", |b| b.iter(|| {
-        system.accelerate_and_move_bodies_recursive(time, &mut vec![]);
-        time += 1;
+        let mut system = system.clone();
+        for _ in 0..100_000 {
+            system.step();
+        }
     }));
     black_box(system);
 }

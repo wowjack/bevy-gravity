@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use bevy_vector_shapes::{painter, prelude::ShapePainter, shapes::DiscPainter};
+use bevy_vector_shapes::{prelude::ShapePainter, shapes::DiscPainter};
 use crate::{gravity_system_tree::system_manager::GravitySystemManager, pseudo_camera::camera::CameraState};
-use super::{follow_object::StaticBody, DrawOptions, SelectedObjects};
+use super::{DrawOptions, SelectedObjects, SimulationState};
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
 pub struct FuturePathLineConfig {}
@@ -12,15 +12,19 @@ pub fn draw_future_paths(
     mut gizmos: Gizmos<FuturePathLineConfig>,
     draw_options: Res<DrawOptions>,
     selected_objects: Res<SelectedObjects>,
-    gravity_system: NonSend<GravitySystemManager>,
+    gravity_system: Res<GravitySystemManager>,
+    sim_state: Res<SimulationState>,
 ) {
     if draw_options.draw_future_path == false { return }
     let Some((entity, _)) = selected_objects.focused else { return };
     let camera_state = camera_query.single();
 
-    if let Some(i) = gravity_system.static_body_entities.iter().position(|x| *x == entity) {
-        let StaticBody { position_generator, .. } = &gravity_system.static_bodies[i];
-        let Some((position, radius)) = position_generator.get_orbit_circle(gravity_system.latest_time) else { return };
+
+    
+    if let Some(i) = gravity_system.body_store.static_entities.iter().position(|x| *x == entity) {
+        // This does not work for still bodies in a moving system
+        let Some(static_body) = gravity_system.body_store.static_bodies.get(i) else { return };
+        let (position, radius) = static_body.get_orbit_parameters(sim_state.current_time);
         let center_pos = camera_state.physics_to_world_pos(position);
 
         painter.hollow = true;
@@ -28,29 +32,21 @@ pub fn draw_future_paths(
         painter.circle(radius as f32);
 
     }
-    else if let Some(i) = gravity_system.dynamic_body_entities.iter().position(|x| *x == entity) {
-        let body = &gravity_system.dynamic_bodies[i];
-        let mut new_system = gravity_system.system.empty_copy(body.clone());
-            let mut new_dynamic_bodies = vec![];
-            new_system.get_dynamic_bodies_recursive(&mut new_dynamic_bodies);
-            let body = new_dynamic_bodies.first().unwrap().clone();
-            let system_depth = body.borrow().relative_stats.num_ancestors();
-
-            let iter = (1..50_000).map_while(|i| {
-                let body = body.borrow();
-                if body.relative_stats.num_ancestors() != system_depth {
-                    return None
-                }
-                let ret = Some(camera_state.physics_to_world_pos(body.relative_stats.get_ancestor_position(gravity_system.latest_time, 1) + body.relative_stats.get_position_relative_to_ancestor(gravity_system.latest_time, 1)));
-                std::mem::drop(body);
-                new_system.accelerate_and_move_bodies_recursive(gravity_system.latest_time+i, &mut vec![]);
-                
-                ret
-            });
-            gizmos.linestrip_2d(
-                iter,
-                Color::linear_rgb(0.75, 0.75, 0.75)
-            );
+    else if let Some(mut new_system) = gravity_system.retain_clone(entity) {
+        let body = unsafe { new_system.body_store.dynamic_bodies.get_unchecked(0) };
+        let center_pos = body.get_parent_generator().get_position(sim_state.current_time);
+        let depth = body.get_system_depth();
+        let iter = (0..100_000).map_while(|_| {
+            let body = unsafe { new_system.body_store.dynamic_bodies.get_unchecked(0) };
+            if body.get_system_depth() != depth { return None }
+            let ret = camera_state.physics_to_world_pos(center_pos + body.get_previous_relative_position());
+            new_system.step();
+            Some(ret)
+        });
+        gizmos.linestrip_2d(
+            iter,
+            Color::linear_rgb(0.75, 0.75, 0.75)
+        );
     }
     else {
         panic!("

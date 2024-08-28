@@ -23,13 +23,9 @@ impl Default for ObjectSpawnOptions {
 
 pub fn side_panel(
     mut contexts: EguiContexts,
-    //mut change_event_writer: EventWriter<ChangeEvent>,
-    mut commands: Commands,
     mut sim_state: ResMut<SimulationState>,
     mut draw_options: ResMut<DrawOptions>,
     mut spawn_options: Local<ObjectSpawnOptions>,
-    circle_mesh: Res<CircleMesh>,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
     selected_objects: Res<SelectedObjects>,
     mut follow_object_resource: ResMut<FollowObjectResource>,
 ) {
@@ -46,9 +42,9 @@ pub fn side_panel(
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.checkbox(&mut sim_state.running, "Run:");
-                    ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 1..=50_000).logarithmic(true))
+                    ui.add(bevy_egui::egui::Slider::new(&mut sim_state.run_speed, 0.01..=50_000.0).logarithmic(true))
                 });
-                ui.label(format!("tick: {}", sim_state.current_time))
+                ui.label(format!("tick: {}", unsafe { sim_state.current_time.to_int_unchecked::<u64>() }))
             });
             
 
@@ -93,14 +89,14 @@ pub fn side_panel(
                     bevy_egui::egui::color_picker::color_edit_button_rgb(ui, &mut spawn_options.rgb);
                 });
                 if ui.button("Spawn").clicked() {
-                    let object_data = VisualObjectData::new(
-                        spawn_options.position,
-                        spawn_options.velocity,
-                        spawn_options.mass,
-                        spawn_options.radius,
-                        Color::linear_rgb(spawn_options.rgb[0], spawn_options.rgb[1], spawn_options.rgb[2]),
-                    );
-                    let bundle = VisualObjectBundle::new(object_data.clone());
+                    //let object_data = VisualObjectData::new(
+                    //    spawn_options.position,
+                    //    spawn_options.velocity,
+                    //    spawn_options.mass,
+                    //    spawn_options.radius,
+                    //    Color::linear_rgb(spawn_options.rgb[0], spawn_options.rgb[1], spawn_options.rgb[2]),
+                    //);
+                    //let bundle = VisualObjectBundle::new(object_data.clone());
                     //let entity = commands.spawn(bundle).id();
                     //let event = ChangeEvent { entity, change: crate::physics::Change::CreateObject(MassiveObject::from(object_data))};
                     //change_event_writer.send(event);
@@ -114,7 +110,7 @@ pub fn side_panel(
                     ui.label("No Object Focused");
                     return;
                 };
-                ui.label(format!("{:?}", e));
+                ui.label(format!("{}", data.name));
                 ui.horizontal(|ui| {
                     ui.label("Position");
                     let x_pos_changed = ui.add(DragValue::new(&mut data.position.x).prefix("X: ")).changed();

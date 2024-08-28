@@ -1,26 +1,14 @@
 use core::f64;
-use std::collections::VecDeque;
-
-use bevy::color::palettes::css::{ALICE_BLUE, BLUE, CORNFLOWER_BLUE, GRAY, GREEN, MAGENTA, ORANGE, PURPLE, WHITE, YELLOW};
-use bevy::color::palettes::tailwind::YELLOW_100;
-use bevy::math::DVec2;
+use bevy::color::palettes::css::PURPLE;
 use bevy::window::WindowResized;
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, render::camera::Viewport};
 use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
-use bevy_vector_shapes::prelude::ShapePainter;
-use bevy_vector_shapes::shapes::DiscPainter;
 use bevy_vector_shapes::Shape2dPlugin;
-use gravity_system_tree::builder::GravitySystemBuilder;
-use gravity_system_tree::dynamic_body::DynamicBody;
-use gravity_system_tree::position_generator::PositionGenerator;
-use gravity_system_tree::static_body::StaticBody;
-use math::{get_orbital_radius, get_orbital_speed};
 use pseudo_camera::camera::CameraState;
 use pseudo_camera::pseudo_camera_plugin;
-use gravity_system_tree::{static_body::StaticPosition, system_manager::GravitySystemManager};
+use gravity_system_tree::system_manager::GravitySystemManager;
 use ui::SIDE_PANEL_WIDTH;
-use visual_object::SimulationState;
 pub use bevy;
 pub use itertools;
 use solar_system::*;
@@ -53,7 +41,6 @@ pub fn library_main() {
         .add_systems(Update, (
             window_resize,
             ui::side_panel,
-            draw_system_circles,
         ))
         .run();
 }
@@ -62,7 +49,7 @@ pub const G: f64 = 6.6743015e-11;
 
 
 fn init(
-    world: &mut World
+    mut commands: Commands
 ) {
     let galaxy_mu = 1e34*G/1e5;
     let galaxy_system_radius = 1e20;
@@ -84,35 +71,11 @@ fn init(
 
 
     let mut manager = GravitySystemManager::new(solar_system());
-    let systems_details = manager.system.get_system_position_gens_and_radii();
-    world.insert_resource(SystemCircleResource { draw: true, gens: systems_details });
-    manager.spawn_entities(world);
-    world.insert_non_send_resource(manager);
+    manager.spawn_bodies(&mut commands);
+    commands.insert_resource(manager);
 }
 
-#[derive(Resource)]
-struct SystemCircleResource {
-    pub draw: bool,
-    pub gens: Vec<(PositionGenerator, f64)>
-}
 
-fn draw_system_circles(
-    mut painter: ShapePainter,
-    systems_resource: Res<SystemCircleResource>,
-    state: Res<SimulationState>,
-    camera_query: Query<&CameraState>
-) {
-    if systems_resource.draw == false { return }
-    let camera = camera_query.single();
-    painter.hollow = true;
-    painter.color = CORNFLOWER_BLUE.into();
-
-    for (gen, radius) in &systems_resource.gens {
-        let position = camera.physics_to_world_pos(gen.get(state.current_time));
-        painter.transform.translation = position.extend(0.);
-        painter.circle(*radius as f32*camera.get_scale());
-    }
-}
 
 
 //need to adjust the viewport whenever the window is resized. (these events come ever frame for some reason)

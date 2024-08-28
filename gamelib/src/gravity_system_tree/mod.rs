@@ -1,11 +1,21 @@
+use bevy::math::DVec2;
+
 pub mod static_body;
 pub mod dynamic_body;
-pub mod position_generator;
 pub mod builder;
 pub mod system_manager;
 pub mod generate;
 pub mod system_tree;
+pub mod future_actions;
+pub mod static_generator;
 
+
+type BodyPosition = DVec2;
+type BodyVelocity = DVec2;
+type BodyAcceleration = DVec2;
+type GravitationalParameter = f64;
+type BodyMass = f64;
+type BodyRadius = f64;
 
 /*
 Gravitational acceleration will be updated based on the time step of individual bodies and stored in a map.

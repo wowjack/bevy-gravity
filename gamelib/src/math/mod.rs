@@ -1,13 +1,15 @@
 use bevy::math::DVec2;
 
+use crate::G;
+
 
 pub fn polar_to_cartesian(polar: [f64;2]) -> DVec2 {
     DVec2 { x: polar[0]*polar[1].cos(), y: polar[0]*polar[1].sin() }
 }
 
 
-pub fn get_orbital_speed(center_mu: f64, radius: f64) -> f64 {
-    (center_mu/radius.powi(3)).sqrt()
+pub fn get_orbital_speed(center_mass: f64, radius: f64) -> f64 {
+    ((center_mass*G)/radius.powi(3)).sqrt()
 }
 pub fn get_orbital_radius(center_mu: f64, speed: f64) -> f64 {
     (center_mu*speed.powi(-2)).powf(1./3.)

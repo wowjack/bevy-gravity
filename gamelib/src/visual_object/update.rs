@@ -2,27 +2,22 @@ use crate::{gravity_system_tree::system_manager::GravitySystemManager, pseudo_ca
 use super::*;
 
 pub fn update_object_data(
-    mut object_query: Query<(&mut VisualObjectData, &mut Transform)>,
+    mut object_query: Query<&mut VisualObjectData>,
     mut sim_state: ResMut<SimulationState>,
     delta_time: Res<Time>,
-    mut gravity_system_manager: NonSendMut<GravitySystemManager>,
+    mut gravity_system_manager: ResMut<GravitySystemManager>,
 ) {
-    sim_state.timer.tick(delta_time.delta());
-
-    for (entity, change) in gravity_system_manager.get_state_at_time(sim_state.current_time) {
-        let Ok((mut object, _)) = object_query.get_mut(entity) else { return };
-        object.position = change.position;
-        object.velocity = change.velocity;
+    // About 60 updates per second
+    if sim_state.running {
+        sim_state.current_time += delta_time.delta().as_millis() as f64/17.0 * sim_state.run_speed;
     }
 
-    // About 60 updates per second
-    if sim_state.running == false { return }
-    sim_state.current_time = sim_state.current_time + (sim_state.timer.times_finished_this_tick() as u64 * sim_state.run_speed);
+    gravity_system_manager.update_visual_objects(sim_state.current_time as f64, &mut object_query);
 }
 
 
 pub fn update_object_positions(
-    mut object_query: Query<(&mut VisualObjectData, &mut Transform)>,
+    mut object_query: Query<(&VisualObjectData, &mut Transform)>,
     mut camera_query: Query<&mut CameraState>,
     follow_resource: Res<FollowObjectResource>,
     selected_objects: Res<SelectedObjects>,
