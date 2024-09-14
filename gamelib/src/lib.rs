@@ -26,6 +26,7 @@ mod util;
 pub mod math;
 pub mod gravity_system_tree;
 mod solar_system;
+mod path_calculator;
 
 
 pub fn library_main() {

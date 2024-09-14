@@ -17,6 +17,8 @@ type GravitationalParameter = f64;
 type BodyMass = f64;
 type BodyRadius = f64;
 
+pub const CALCULATION_TIME_STEP: f64 = 0.0001;
+
 /*
 Gravitational acceleration will be updated based on the time step of individual bodies and stored in a map.
 Every dynamic body will be updated every individual time step.

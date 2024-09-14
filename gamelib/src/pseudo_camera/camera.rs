@@ -28,8 +28,8 @@ impl Default for CameraState {
 impl CameraState {
     /// Convert a coordinate in the physics sim to a coordinate in the bevy world by translating and scaling
     #[inline]
-    pub fn physics_to_world_pos(&self, point: DVec2) -> Vec2 {
-        (point - self.position).as_vec2() * self.scale
+    pub fn physics_to_world_pos(&self, point: &DVec2) -> Vec2 {
+        (*point - self.position).as_vec2() * self.scale
     }
     /// Convert a coordinate in the bevy world to a coordinate in the physics world by scaling and translating
     #[inline]

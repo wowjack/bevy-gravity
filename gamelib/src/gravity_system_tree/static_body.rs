@@ -2,7 +2,7 @@ use bevy::{color::Color, math::DVec2};
 
 use crate::G;
 
-use super::{static_generator::StaticGenerator, system_tree::GravitySystemTime, BodyMass, BodyPosition, BodyRadius, BodyVelocity, GravitationalParameter};
+use super::{static_generator::StaticGenerator, system_tree::GravitySystemTime, BodyMass, BodyPosition, BodyRadius, BodyVelocity, GravitationalParameter, CALCULATION_TIME_STEP};
 
 
 #[derive(Clone, Debug)]
@@ -128,7 +128,7 @@ impl StaticPosition {
         match self {
             Self::Still => DVec2::ZERO,
             Self::Circular { radius, speed, start_angle } => {
-                let angle = start_angle+speed*time;
+                let angle = start_angle+speed*time*CALCULATION_TIME_STEP;
                 DVec2 { x: radius*angle.cos(), y: radius*angle.sin() }
             }
         }
@@ -136,14 +136,14 @@ impl StaticPosition {
     pub fn get_velocity(&self, time: GravitySystemTime) -> BodyVelocity {
         match self {
             Self::Still => DVec2::ZERO,
-            Self::Circular { radius, speed, start_angle } => DVec2::from_angle(start_angle+speed*time + std::f64::consts::FRAC_PI_2) * (speed * radius)
+            Self::Circular { radius, speed, start_angle } => DVec2::from_angle(start_angle+speed*time*CALCULATION_TIME_STEP + std::f64::consts::FRAC_PI_2) * (speed * radius)
         }
     }
     pub fn get_position_and_velocity(&self, time: GravitySystemTime) -> (BodyPosition, BodyVelocity) {
         match self {
             Self::Still => (DVec2::ZERO, DVec2::ZERO),
             Self::Circular { radius, speed, start_angle } => {
-                let angle = start_angle+speed*time;
+                let angle = start_angle+speed*time*CALCULATION_TIME_STEP;
                 (
                     DVec2::new(radius*angle.cos(), radius*angle.sin()),
                     DVec2::from_angle(angle + std::f64::consts::FRAC_PI_2) * (speed * radius)

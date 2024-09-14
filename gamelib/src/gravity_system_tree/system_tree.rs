@@ -52,11 +52,10 @@ impl GravitySystemTree {
         }
     }
 
-    pub fn move_dynamic_bodies(&mut self, new_time: DiscreteGravitySystemTime, body_vec: &mut Vec<DynamicBody>, step: u64, parent_pos: BodyPosition, parent_vel: BodyVelocity) {
-        let should_rotate_acceleration_vector = step+1 == self.time_step;
+    pub fn move_dynamic_bodies(&mut self, new_time: DiscreteGravitySystemTime, body_vec: &mut Vec<DynamicBody>, should_accelerate: bool, parent_pos: BodyPosition, parent_vel: BodyVelocity) {
         for index in self.dynamic_body_indices.iter().cloned() {
             let body = unsafe { body_vec.get_unchecked_mut(index) };
-            body.accelerate_and_move_body(new_time, should_rotate_acceleration_vector, parent_pos, parent_vel)
+            body.accelerate_and_move_body(new_time, should_accelerate, parent_pos, parent_vel, self.time_step as f64)
         }
     }
 
@@ -154,11 +153,11 @@ impl BodyStore {
     ) {
         let new_ftime = new_time as GravitySystemTime;
         if system_tree.dynamic_body_indices.len() != 0 {
-            let step = new_time % system_tree.time_step;
-            if step == 0 {
+            let should_accelerate = new_time % system_tree.time_step == 0;
+            if should_accelerate {
                 system_tree.calculate_gravity(new_ftime-1., &self.static_bodies, &mut self.dynamic_bodies);
             }
-            system_tree.move_dynamic_bodies(new_time, &mut self.dynamic_bodies, step, parent_pos, parent_vel);
+            system_tree.move_dynamic_bodies(new_time, &mut self.dynamic_bodies, should_accelerate, parent_pos, parent_vel);
         } 
         
 

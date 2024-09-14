@@ -26,7 +26,7 @@ pub use spawn::*;
 mod follow_object;
 pub use follow_object::*;
 
-use crate::{gravity_system_tree::{dynamic_body::DynamicBody, static_body::StaticBody}, G};
+use crate::{gravity_system_tree::{dynamic_body::DynamicBody, static_body::StaticBody}, path_calculator::draw_path, G};
 
 pub const CIRCLE_VERTICES: usize = 100;
 
@@ -81,6 +81,7 @@ impl Plugin for VisualObjectPlugin {
             .add_systems(Startup, (init, spawn_background_rect, set_future_path_gizmo_config))
             .add_systems(PreUpdate, (update_object_data, update_object_positions.after(update_object_data)))
             .add_systems(Update, (
+                draw_path,
                 add_material_mesh,
                 move_pseudo_camera,
                 draw_selection_rect,

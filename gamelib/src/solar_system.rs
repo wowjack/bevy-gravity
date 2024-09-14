@@ -3,7 +3,7 @@ use crate::{gravity_system_tree::{builder::GravitySystemBuilder, dynamic_body::D
 
 use super::G;
 
-const MASS_DIVISOR: f64 = 1e6;
+const MASS_DIVISOR: f64 = 1.;//e6;
 
 // SOLAR SYSTEM ////////////////////////////////////////
 pub const SUN_ORBITAL_RADIUS: f64 = 2.45979e14;
@@ -17,6 +17,7 @@ pub const SUN_COLOR: Srgba = YELLOW;
 pub const SUN_NAME: &str = "Sun";
 
 pub fn solar_system() -> GravitySystemBuilder {
+    let sun_orbiter = DynamicBody::new(DVec2::X*100_000_000., /*1.402**/DVec2::Y*get_orbital_speed(SUN_MASS, 100_000_000.)*100_000_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());
     GravitySystemBuilder::new()
         .with_position(StaticPosition::Still)
         .with_radius(SUN_SYSTEM_RADIUS)
@@ -34,6 +35,9 @@ pub fn solar_system() -> GravitySystemBuilder {
             uranus_system().with_position(StaticPosition::Circular { radius: URANUS_ORBITAL_RADIUS, speed: get_orbital_speed(SUN_MASS, URANUS_ORBITAL_RADIUS), start_angle: 0. }),
             neptune_system().with_position(StaticPosition::Circular { radius: NEPTUNE_ORBITAL_RADIUS, speed: get_orbital_speed(SUN_MASS, NEPTUNE_ORBITAL_RADIUS), start_angle: 0. }),
             pluto_system().with_position(StaticPosition::Circular { radius: PLUTO_ORBITAL_RADIUS, speed: get_orbital_speed(SUN_MASS, PLUTO_ORBITAL_RADIUS), start_angle: 0. }),
+        ])
+        .with_dynamic_bodies(&[
+            //sun_orbiter
         ])
 }
 ////////////////////////////////////////////////////////
@@ -101,19 +105,8 @@ pub const MOON_NAME: &str = "Moon";
 
 pub fn earth_system() -> GravitySystemBuilder {
     let planet_orbiter = DynamicBody::new(DVec2::NEG_Y*7_000., 1.402*DVec2::X*get_orbital_speed(EARTH_MASS, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());
-    //planet_orbiter.future_actions.extend((1650..1670).map(|x| (x, DVec2::Y)));
-    //planet_orbiter.future_actions.extend((1900..1920).map(|x| (x, DVec2::Y)));
-    //planet_orbiter.future_actions.extend((2250..2270).map(|x| (x, DVec2::Y)));
-    //planet_orbiter.future_actions.extend((2865..2885).map(|x| (x, DVec2::Y)));
-    //planet_orbiter.future_actions.extend((4470..4511).map(|x| (x, DVec2::Y)));
-    //planet_orbiter.future_actions.push_back((4511, DVec2::Y*0.59));
-    //planet_orbiter.future_actions.extend((7310..7350).map(|x| (x, DVec2::new(-1., -0.3))));
-    //planet_orbiter.future_actions.extend((7350..8000).map(|x| (x, DVec2::new(1., -0.25))));
-    //planet_orbiter.future_actions.extend((136_000..141_300).map(|x| (x, DVec2::new(-0.1, 0.))));
-    //planet_orbiter.future_actions.extend((178_000..178_200).map(|x| (x, DVec2::new(-0.1, 0.1))));
-    //planet_orbiter.future_actions.extend((178_665..178_700).map(|x| (x, DVec2::new(-0.41, 0.))));
-    //planet_orbiter.future_actions.extend((179_200..179_220).map(|x| (x, DVec2::new(1., -1.))));
-    //planet_orbiter.future_actions.extend((179_470..179_481).map(|x| (x, DVec2::new(0., -1.))));
+    //planet_orbiter.future_actions.extend((2300..3000).map(|x| (x, DVec2::Y)));
+    
 
     GravitySystemBuilder::new()
         .with_position(StaticPosition::Still)

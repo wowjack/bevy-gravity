@@ -7,9 +7,8 @@ pub fn update_object_data(
     delta_time: Res<Time>,
     mut gravity_system_manager: ResMut<GravitySystemManager>,
 ) {
-    // About 60 updates per second
     if sim_state.running {
-        sim_state.current_time += delta_time.delta().as_millis() as f64/17.0 * sim_state.run_speed;
+        sim_state.current_time += delta_time.delta().as_millis() as f64 * sim_state.run_speed;
     }
 
     gravity_system_manager.update_visual_objects(sim_state.current_time as f64, &mut object_query);
@@ -33,7 +32,7 @@ pub fn update_object_positions(
     }
     
     for (object, mut transform) in object_query.iter_mut() {
-        transform.translation = camera.physics_to_world_pos(object.position).extend(0.);
+        transform.translation = camera.physics_to_world_pos(&object.position).extend(0.);
         transform.scale = Vec3::splat(camera.get_scale() * object.radius as f32);
     }
 }

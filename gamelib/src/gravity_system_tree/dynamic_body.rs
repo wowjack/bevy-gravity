@@ -1,6 +1,6 @@
 use bevy::{color::Color, math::DVec2};
 use crate::G;
-use super::{future_actions::FutureActions, static_body::StaticPosition, static_generator::StaticGenerator, system_tree::{DiscreteGravitySystemTime, GravitySystemTime}, BodyAcceleration, BodyMass, BodyPosition, BodyRadius, BodyVelocity, GravitationalParameter};
+use super::{future_actions::FutureActions, static_body::StaticPosition, static_generator::StaticGenerator, system_tree::{DiscreteGravitySystemTime, GravitySystemTime}, BodyAcceleration, BodyMass, BodyPosition, BodyRadius, BodyVelocity, GravitationalParameter, CALCULATION_TIME_STEP};
 
 
 /// A body that does not effect gravity but is effected by gravity
@@ -85,13 +85,16 @@ impl DynamicBody {
     }
 
     /// Use the body's gravitational acceleration, velocity, and future actions to advance position 
-    pub fn accelerate_and_move_body(&mut self, new_time: DiscreteGravitySystemTime, should_rotate_acceleration_vector: bool, parent_pos: BodyPosition, parent_vel: BodyVelocity) {
-        let acceleration = self.gravitational_acceleration + self.future_actions.get_acceleration(new_time-1, self.mass);
+    pub fn accelerate_and_move_body(&mut self, new_time: DiscreteGravitySystemTime, should_accelerate: bool, parent_pos: BodyPosition, parent_vel: BodyVelocity, system_time_step: f64) {
+        let mut acceleration = self.future_actions.get_acceleration(new_time-1, self.mass);
+        if should_accelerate {
+            acceleration += self.gravitational_acceleration;
+        }
 
         self.previous_relative_velocity = self.current_relative_velocity;
-        self.current_relative_velocity += acceleration;
+        self.current_relative_velocity += acceleration * CALCULATION_TIME_STEP * system_time_step;
         self.previous_relative_position = self.current_relative_position;
-        self.current_relative_position += self.current_relative_velocity;
+        self.current_relative_position += self.current_relative_velocity * CALCULATION_TIME_STEP;
 
         self.previous_absolute_position = self.current_absolute_position;
         self.previous_absolute_velocity = self.current_absolute_velocity;
@@ -99,13 +102,13 @@ impl DynamicBody {
         self.current_absolute_velocity = self.current_relative_velocity + parent_vel;
 
         // Only rotate and scale gravitational acceleration vector if gravity will not be recalculated on the next time step
-        if should_rotate_acceleration_vector {
-            // Get the scalar change in distance to the system center squared
-            // This is used to scale the acceleration vector as a body changes distance from the system center within iterations in a system's time_step
-            // Without this, elliptical orbits decay into circular ones
-            let distance_diff = self.previous_relative_position.length_squared() / self.current_relative_position.length_squared();
-            self.gravitational_acceleration = DVec2::from_angle(self.previous_relative_position.angle_between(self.current_relative_position)).rotate(self.gravitational_acceleration)*distance_diff;
-        }
+        //if should_rotate_acceleration_vector {
+        //    // Get the scalar change in distance to the system center squared
+        //    // This is used to scale the acceleration vector as a body changes distance from the system center within iterations in a system's time_step
+        //    // Without this, elliptical orbits decay into circular ones
+        //    let distance_diff = self.previous_relative_position.length_squared() / self.current_relative_position.length_squared();
+        //    self.gravitational_acceleration = DVec2::from_angle(self.previous_relative_position.angle_between(self.current_relative_position)).rotate(self.gravitational_acceleration)*distance_diff;
+        //}
     }
 
     pub fn translate_to_parent(&mut self, time: GravitySystemTime) {
@@ -185,4 +188,5 @@ impl DynamicBody {
     pub fn get_system_depth(&self) -> usize { self.system_depth }
     pub fn get_parent_generator(&self) -> &StaticGenerator { &self.parent_generator }
     pub fn get_previous_relative_position(&self) -> BodyPosition { self.previous_relative_position }
+    pub fn get_previous_absolute_position(&self) -> BodyPosition { self.previous_absolute_position }
 }

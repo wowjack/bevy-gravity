@@ -1,7 +1,7 @@
 use bevy::{math::DVec2, prelude::*};
 use bevy_egui::{egui::{panel, DragValue, RichText, SidePanel, Slider, Button}, EguiContexts};
 use rand::Rng;
-use crate::visual_object::{CircleMesh, DrawOptions, FollowObjectResource, SelectedObjects, SimulationState, VisualObjectBundle, VisualObjectData};
+use crate::{gravity_system_tree::system_manager::{self, GravitySystemManager}, path_calculator::PathCalculator, visual_object::{CircleMesh, DrawOptions, FollowObjectResource, SelectedObjects, SimulationState, VisualObjectBundle, VisualObjectData}};
 
 
 
@@ -28,6 +28,8 @@ pub fn side_panel(
     mut spawn_options: Local<ObjectSpawnOptions>,
     selected_objects: Res<SelectedObjects>,
     mut follow_object_resource: ResMut<FollowObjectResource>,
+    system_manager: Res<GravitySystemManager>,
+    mut commands: Commands,
 ) {
     SidePanel::new(panel::Side::Right, "sidepanel")
         .exact_width(SIDE_PANEL_WIDTH)
@@ -152,6 +154,13 @@ pub fn side_panel(
                     ui.label("Color");
                     let color_changed = bevy_egui::egui::color_picker::color_edit_button_rgb(ui, &mut rgb).changed();
                 });
+
+                if ui.button("add path calculator").clicked() {
+                    if let Some(mut ec) = commands.get_entity(e) {
+                        let path_calc = PathCalculator::new(&system_manager, e);
+                        ec.insert(path_calc);
+                    }
+                }
             });
         });
 }

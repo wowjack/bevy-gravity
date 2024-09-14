@@ -32,14 +32,14 @@ pub fn draw_scale_grid(
     //chose center position
     let size = 10.0f32.powf(-camera_state.get_scale().log10().ceil() + 3.) as f64;
     let pos = (camera_state.position/size).round()*size;
-    let world_pos = camera_state.physics_to_world_pos(pos);
+    let world_pos = camera_state.physics_to_world_pos(&pos);
 
     //draw grids
     large_grid.grid_2d(world_pos, 0., UVec2::splat(20), Vec2::splat(scalar*10.), Color::linear_rgb(0.5, 0.5, 0.5));
     small_grid.grid_2d(world_pos, 0., UVec2::splat(200), Vec2::splat(scalar), Color::linear_rgb(0.5, 0.5, 0.5));
 
     //draw axes
-    axes.grid_2d(camera_state.physics_to_world_pos(DVec2::ZERO), 0., UVec2::splat(2), Vec2::splat(5000.), Color::linear_rgb(0.5, 0.5, 0.5));
+    axes.grid_2d(camera_state.physics_to_world_pos(&DVec2::ZERO), 0., UVec2::splat(2), Vec2::splat(5000.), Color::linear_rgb(0.5, 0.5, 0.5));
 
     //draw meter stick
     //really fucked up way of putting things in the upper right hand corner
