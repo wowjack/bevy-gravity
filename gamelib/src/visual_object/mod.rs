@@ -88,7 +88,6 @@ impl Plugin for VisualObjectPlugin {
                 rect_select,
                 draw_selected_object_halo,
                 update_focused_object_data,
-                draw_future_paths,
                 draw_velocity_arrows,
                 draw_mini_object_point,
             ));

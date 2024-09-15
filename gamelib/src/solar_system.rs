@@ -104,8 +104,7 @@ pub const MOON_COLOR: Srgba = WHITE;
 pub const MOON_NAME: &str = "Moon";
 
 pub fn earth_system() -> GravitySystemBuilder {
-    let planet_orbiter = DynamicBody::new(DVec2::NEG_Y*7_000., 1.402*DVec2::X*get_orbital_speed(EARTH_MASS, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());
-    //planet_orbiter.future_actions.extend((2300..3000).map(|x| (x, DVec2::Y)));
+    let planet_orbiter = DynamicBody::new(DVec2::NEG_Y*7_000., 1.402*DVec2::X*get_orbital_speed(EARTH_MASS, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());    //planet_orbiter.future_actions.extend((2300..3000).map(|x| (x, DVec2::Y)));
     
 
     GravitySystemBuilder::new()

@@ -6,7 +6,7 @@ use super::{static_body::StaticPosition, system_tree::GravitySystemTime, BodyPos
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct StaticGenerator {
     chain: VecDeque<StaticPosition>
 }
@@ -55,5 +55,9 @@ impl StaticGenerator {
     pub fn push_end(&mut self, static_position: StaticPosition) {
         if let StaticPosition::Still = static_position { return }
         self.chain.push_back(static_position)
+    }
+
+    pub fn len(&self) -> usize {
+        self.chain.len()
     }
 }
