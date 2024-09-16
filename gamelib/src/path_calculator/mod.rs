@@ -68,13 +68,10 @@ impl PathCalculator {
 /// Struct to hold more detailed information about the future path of an object
 #[derive(Default)]
 pub struct FuturePaths {
-    absolute_path: FuturePath,
     relative_path_segments: VecDeque<FuturePath>,
 }
 impl FuturePaths {
     pub fn process_new_body_state(&mut self, body: &DynamicBody, time: DiscreteGravitySystemTime) {
-        self.absolute_path.insert_new_position(body.get_previous_absolute_position(), time);
-
         let should_create_new_path = self.relative_path_segments
             .back()
             .map_or(true, |fp| 
@@ -88,11 +85,7 @@ impl FuturePaths {
     }
 
     pub fn should_stop(&self) -> bool {
-        self.absolute_path.len() > 500_000 && self.relative_path_segments.iter().map(|rp| rp.len()).sum::<usize>() > 500_000
-    }
-
-    pub fn draw_absolute_path(&self, gizmos: &mut Gizmos<FuturePathLineConfig>, camera: &CameraState) {
-        self.absolute_path.draw_without_center_position(gizmos, camera);
+        self.relative_path_segments.iter().map(|rp| rp.len()).sum::<usize>() > 500_000
     }
 
     pub fn draw_relative_path(&self, gizmos: &mut Gizmos<FuturePathLineConfig>, camera: &CameraState, time: GravitySystemTime) {
@@ -102,8 +95,6 @@ impl FuturePaths {
     }
 
     pub fn drop_until_time(&mut self, time: DiscreteGravitySystemTime) {
-        self.absolute_path.drop_until_time(time);
-
         for fp in &mut self.relative_path_segments {
             fp.drop_until_time(time);
         }

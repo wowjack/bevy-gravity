@@ -30,7 +30,7 @@ This way bodies in high level systems are able to accelerate themselves at any d
 
 Large time jumps are still possible of the dynamic body does not accelerate too much.
 A body in a 1000 time scale system can easily calculate its position at time 1000 as long as it doesn't accelerate itself.
-If that body begins accelerating itself at time 500, then you can calculate position at time 500, accelerate it, then use the new acceleration to calculate time at 1000.
+If that body accelerates itself at time 500, then you can calculate position at time 500, accelerate it, then use the new acceleration to calculate time at 1000.
 
 Possibly just forget fast forwarding so it is super easy to determine when a body leaves a system or enters a lower one. This also removes the need for a wait list.
 This might also make it easier to flatten the structure so it can conceptually be reasoned about as a tree but is not actually a tree.
@@ -43,22 +43,21 @@ still only occurs according to the time_step of the system.
 
 
 /*
-Updating position every iteration but updating acceleration only based on system time_step causes bodies to slowly increase their orbit.
-
-Possibly rotate the acceleration vector based on the movement of the body. This causes elliptical orbits to decay into circular ones.
-*/
-
-
-/*
-To get a suggested system radius:
-    Find distance to system where force exerted by system and force exerted by parent system center is equal.
-    Divide the distance by some scalar? 0.5?
-    Maybe depends on the distance to the parent systemn center.
+to get suggested systme radius, use hill sphere radius
 
 To determine if a single static body should have its own system:
     Find the orbital radius where the orbital speed causes the body to orbit its center is < 60 time steps ( < 1 second per revolution)
     tau / 60. radians per second
     If this radius is withing the radius of the static body, dont bother creating a smaller system
+*/
+
+
+
+/*
+Define collision behavior between bodies.
+
+Dynamic bodies colliding with dynamic bodies should explode unless both are capable of docking and are travelling at a slow enough speed relative to eachother.
+Dynamic bodies colliding with static bodies should explode unless the dynamic body is capable of landing and travelling at a slow enough speed.
 */
 
 

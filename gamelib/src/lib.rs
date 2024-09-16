@@ -6,7 +6,6 @@ use bevy_egui::EguiPlugin;
 use bevy_mod_picking::prelude::*;
 use bevy_vector_shapes::Shape2dPlugin;
 use gravity_system_tree::builder::GravitySystemBuilder;
-use gravity_system_tree::dynamic_body::DynamicBody;
 use gravity_system_tree::static_body::{StaticBody, StaticPosition};
 use math::get_orbital_speed;
 use pseudo_camera::camera::CameraState;

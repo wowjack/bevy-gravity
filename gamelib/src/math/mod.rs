@@ -44,4 +44,12 @@ mod tests {
 }
 
 
+/// Get the radius of the hill sphere 
+pub fn get_suggested_system_radius(central_mass: f64, orbital_mass: f64, orbital_radius: f64) -> f64 {
+    0.75 * orbital_radius * (orbital_mass / (3.*central_mass)).powf(1./3.)
+}
+
+
+
+
 

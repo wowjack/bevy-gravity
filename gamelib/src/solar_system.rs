@@ -1,5 +1,5 @@
 use bevy::{color::{palettes::{css::*, tailwind::*}, Srgba}, math::DVec2};
-use crate::{gravity_system_tree::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, static_body::{StaticBody, StaticPosition}}, math::get_orbital_speed};
+use crate::{gravity_system_tree::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, static_body::{StaticBody, StaticPosition}}, math::{get_suggested_system_radius, get_orbital_speed}};
 
 use super::G;
 
@@ -17,7 +17,6 @@ pub const SUN_COLOR: Srgba = YELLOW;
 pub const SUN_NAME: &str = "Sun";
 
 pub fn solar_system() -> GravitySystemBuilder {
-    let sun_orbiter = DynamicBody::new(DVec2::X*100_000_000., /*1.402**/DVec2::Y*get_orbital_speed(SUN_MASS, 100_000_000.)*100_000_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());
     GravitySystemBuilder::new()
         .with_position(StaticPosition::Still)
         .with_radius(SUN_SYSTEM_RADIUS)
@@ -35,9 +34,6 @@ pub fn solar_system() -> GravitySystemBuilder {
             uranus_system().with_position(StaticPosition::Circular { radius: URANUS_ORBITAL_RADIUS, speed: get_orbital_speed(SUN_MASS, URANUS_ORBITAL_RADIUS), start_angle: 0. }),
             neptune_system().with_position(StaticPosition::Circular { radius: NEPTUNE_ORBITAL_RADIUS, speed: get_orbital_speed(SUN_MASS, NEPTUNE_ORBITAL_RADIUS), start_angle: 0. }),
             pluto_system().with_position(StaticPosition::Circular { radius: PLUTO_ORBITAL_RADIUS, speed: get_orbital_speed(SUN_MASS, PLUTO_ORBITAL_RADIUS), start_angle: 0. }),
-        ])
-        .with_dynamic_bodies(&[
-            //sun_orbiter
         ])
 }
 ////////////////////////////////////////////////////////
@@ -104,12 +100,11 @@ pub const MOON_COLOR: Srgba = WHITE;
 pub const MOON_NAME: &str = "Moon";
 
 pub fn earth_system() -> GravitySystemBuilder {
-    let planet_orbiter = DynamicBody::new(DVec2::NEG_Y*7_000., 1.402*DVec2::X*get_orbital_speed(EARTH_MASS, 7_000.)*7_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());    //planet_orbiter.future_actions.extend((2300..3000).map(|x| (x, DVec2::Y)));
-    
+    let planet_orbiter = DynamicBody::new(DVec2::NEG_Y*9_000., 1.4*DVec2::X*get_orbital_speed(EARTH_MASS, 9_000.)*9_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());    //planet_orbiter.future_actions.extend((2300..3000).map(|x| (x, DVec2::Y)));
 
     GravitySystemBuilder::new()
         .with_position(StaticPosition::Still)
-        .with_radius(EARTH_SYSTEM_RADIUS)
+        .with_radius(get_suggested_system_radius(SUN_MASS, EARTH_MASS, EARTH_ORBITAL_RADIUS))
         .with_time_step(EARTH_SYSTEM_TIME_STEP)
         .with_static_bodies(&[
             StaticBody::new(StaticPosition::Still, EARTH_MASS, EARTH_RADIUS, EARTH_COLOR.into(), EARTH_NAME.into()),
