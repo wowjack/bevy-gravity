@@ -1,4 +1,5 @@
 use bevy::{color::{palettes::{css::*, tailwind::*}, Srgba}, math::DVec2};
+use itertools::Itertools;
 use crate::{gravity_system_tree::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, static_body::{StaticBody, StaticPosition}}, math::{get_suggested_system_radius, get_orbital_speed}};
 
 use super::G;
@@ -100,7 +101,8 @@ pub const MOON_COLOR: Srgba = WHITE;
 pub const MOON_NAME: &str = "Moon";
 
 pub fn earth_system() -> GravitySystemBuilder {
-    let planet_orbiter = DynamicBody::new(DVec2::NEG_Y*9_000., 1.4*DVec2::X*get_orbital_speed(EARTH_MASS, 9_000.)*9_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());    //planet_orbiter.future_actions.extend((2300..3000).map(|x| (x, DVec2::Y)));
+    let planet_orbiter = DynamicBody::new(DVec2::NEG_Y*9_000., 1.4*DVec2::X*get_orbital_speed(EARTH_MASS, 9_000.)*9_000., 1e-30, 1., CORNFLOWER_BLUE.into(), "Satellite".into());
+    //planet_orbiter.future_actions.extend((2300..3000).map(|x| (x, DVec2::Y)));
 
     GravitySystemBuilder::new()
         .with_position(StaticPosition::Still)
@@ -111,7 +113,7 @@ pub fn earth_system() -> GravitySystemBuilder {
             StaticBody::new(StaticPosition::Circular { radius: MOON_ORBITAL_RADIUS, speed: get_orbital_speed(EARTH_MASS, MOON_ORBITAL_RADIUS), start_angle: 0. }, MOON_MASS, MOON_RADIUS, MOON_COLOR.into(), MOON_NAME.into()),
         ])
         .with_dynamic_bodies(&[
-            planet_orbiter,
+            
         ])
 }
 ////////////////////////////////////////////////////////

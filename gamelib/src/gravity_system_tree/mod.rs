@@ -61,3 +61,15 @@ Dynamic bodies colliding with static bodies should explode unless the dynamic bo
 */
 
 
+
+
+/*
+Bevy begins slowing down when drawing around 2500+ objects.
+Is this due to updating VisualObjectData components or using the camera to draw all the objects?
+
+Perhaps implement some logic to avoid drawing objects if the system they exist within is too small given the camera scale.
+
+Pass the object query to a system tree draw method.
+*/
+
+

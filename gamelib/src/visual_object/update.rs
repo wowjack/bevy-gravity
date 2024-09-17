@@ -2,7 +2,8 @@ use crate::{gravity_system_tree::system_manager::GravitySystemManager, pseudo_ca
 use super::*;
 
 pub fn update_object_data(
-    mut object_query: Query<&mut VisualObjectData>,
+    mut object_query: Query<(&mut VisualObjectData, &mut Visibility)>,
+    camera_query: Query<&CameraState>,
     mut sim_state: ResMut<SimulationState>,
     delta_time: Res<Time>,
     mut gravity_system_manager: ResMut<GravitySystemManager>,
@@ -11,7 +12,9 @@ pub fn update_object_data(
         sim_state.current_time += delta_time.delta().as_millis() as f64 * sim_state.run_speed;
     }
 
-    gravity_system_manager.update_visual_objects(sim_state.current_time as f64, &mut object_query);
+    let Ok(camera) = camera_query.get_single() else { return };
+
+    gravity_system_manager.update_visual_objects(sim_state.current_time as f64, &mut object_query, camera);
 }
 
 

@@ -1,6 +1,6 @@
-use bevy::{ecs::system, prelude::{Commands, Entity, Query, Resource}};
+use bevy::{ecs::system, prelude::{Commands, Entity, Query, Resource, Visibility}};
 
-use crate::visual_object::VisualObjectData;
+use crate::{pseudo_camera::camera::CameraState, visual_object::VisualObjectData};
 
 use super::{builder::GravitySystemBuilder, system_tree::{BodyStore, DiscreteGravitySystemTime, GravitySystemTime, GravitySystemTree}};
 
@@ -24,7 +24,12 @@ impl GravitySystemManager {
     /// If the new time is greater than the current time, then update dynamic bodies. \
     /// Update visual objects in the query to the new time. \
     /// BE CERTAIN THAT new_time ISNT NEGATIVE OR ELSE UB OCCURS
-    pub fn update_visual_objects(&mut self, new_time: GravitySystemTime, object_query: &mut Query<&mut VisualObjectData>) {
+    pub fn update_visual_objects(
+        &mut self,
+        new_time: GravitySystemTime,
+        object_query: &mut Query<(&mut VisualObjectData, &mut Visibility)>,
+        camera: &CameraState,
+    ) {
         // to_int rounds down, so add 1
         let new_discrete_time = unsafe { new_time.to_int_unchecked::<DiscreteGravitySystemTime>() + 1 };
 
@@ -39,7 +44,8 @@ impl GravitySystemManager {
 
         // Set visual objects using the query
         let interpolation_factor = new_time - (new_discrete_time as f64 - 1.);
-        self.body_store.update_visual_objects(object_query, interpolation_factor);
+        self.system_tree.update_visual_objects(&self.body_store, object_query, camera, true, interpolation_factor)
+        //self.body_store.update_visual_objects(object_query, interpolation_factor);
     }
 
     pub fn step(&mut self) {

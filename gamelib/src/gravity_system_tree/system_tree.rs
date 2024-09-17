@@ -1,10 +1,10 @@
 use core::f64;
 use std::collections::VecDeque;
 
-use bevy::{color::Color, math::DVec2, prelude::{Commands, Entity, Query}};
+use bevy::{color::Color, math::DVec2, prelude::{Commands, Entity, Query, Visibility}};
 use itertools::Itertools;
 
-use crate::visual_object::{VisualObjectBundle, VisualObjectData};
+use crate::{pseudo_camera::camera::CameraState, visual_object::{VisualObjectBundle, VisualObjectData}};
 
 use super::{builder::GravitySystemBuilder, dynamic_body::DynamicBody, static_body::{StaticBody, StaticPosition}, static_generator::StaticGenerator, BodyPosition, BodyVelocity};
 
@@ -104,6 +104,41 @@ impl GravitySystemTree {
         }
     }
 
+    pub fn update_visual_objects(
+        &self,
+        body_store: &BodyStore,
+        object_query: &mut Query<(&mut VisualObjectData, &mut Visibility)>,
+        camera: &CameraState,
+        is_parent_visible: bool,
+        interpolation_factor: f64,
+    ) {
+        let is_system_visible = camera.get_scale() as f64*self.radius > 2.5;
+
+        for i in &self.dynamic_body_indices {
+            let e = unsafe { body_store.dynamic_entities.get_unchecked(*i) };
+            let db = unsafe { body_store.dynamic_bodies.get_unchecked(*i) };
+            let Ok((mut vo, mut vis)) = object_query.get_mut(*e) else { continue };
+            vo.position = db.get_interpolated_absolute_position(interpolation_factor);
+            vo.velocity = db.get_interpolated_relative_velocity(interpolation_factor);
+            *vis = if is_system_visible { Visibility::Visible } else { Visibility::Hidden };
+        }
+
+        // If this system is not visible but the parent is visible, then only draw the center body of the system
+        // IMPORTANT: If the system does not have a center body and instead has a smaller system at the center then the entire system will disappear with no mini object point
+        for (vec_index, store_index) in self.static_body_indices.iter().enumerate() {
+            let e = unsafe { body_store.static_entities.get_unchecked(*store_index) };
+            let sb = unsafe { body_store.static_bodies.get_unchecked(*store_index) };
+            let Ok((mut vo, mut vis)) = object_query.get_mut(*e) else { continue };
+            vo.position = sb.get_absolute_position();
+            vo.velocity = sb.get_relative_velocity();
+            *vis = if is_system_visible || (vec_index==0 && is_parent_visible) { Visibility::Visible } else { Visibility::Hidden };
+        }
+
+        for child_system in &self.child_systems {
+            child_system.update_visual_objects(body_store, object_query, camera, is_system_visible, interpolation_factor)
+        }
+    }
+
 
     /// Clone the system tree, retaining only the dynamic body index \
     /// The provided index will be replaced with 0 in the result
@@ -196,23 +231,6 @@ impl BodyStore {
             self.update_static_bodies_recursive(child_system, time, (parent_stats.0+child_stats.0, parent_stats.1+child_stats.1));
         }
     }
-    /// Updates visual objects in the query based on the values currently in the body store. \
-    /// You probably want to call update_static_bodies with your requested time before calling this.
-    pub fn update_visual_objects(&self, object_query: &mut Query<&mut VisualObjectData>, interpolation_factor: f64) {
-        for (db, e) in self.dynamic_bodies.iter().zip(self.dynamic_entities.iter()) {
-            let Ok(mut vo) = object_query.get_mut(*e) else { continue };
-            vo.position = db.get_interpolated_absolute_position(interpolation_factor);
-            vo.velocity = db.get_interpolated_relative_velocity(interpolation_factor);
-        }
-        for (sb, e) in self.static_bodies.iter().zip(self.static_entities.iter()) {
-            let Ok(mut vo) = object_query.get_mut(*e) else { continue };
-            // I am not interpolating here since the update_static_bodies method sets the same value for current and previous
-            vo.position = sb.get_absolute_position(); //get_interpolated_absolute_position(interpolation_factor);
-            vo.velocity = sb.get_absolute_velocity(); //get_interpolated_relative_velocity(interpolation_factor);
-        }
-    }
-
-
 
 
     /// Spawns visual objects using the dynamic and static bodies currently in the body store. \
