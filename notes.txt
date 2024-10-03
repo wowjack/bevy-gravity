@@ -1,51 +1,16 @@
-Using polar coordinates will make it easy to
-compress circular orbits and eliminate repeat data.
-The radius will remain the same for perfectly circular orbits.
+Gravity will only be calculated based on the position of the central body of the current system and the parent system
 
-A system consists of a central body or system and any orbiting bodies or systems.
-This allows them to be stored in a tree-like structure.
+In a galaxy, the gravitational acceleration exerted by stars is negligible outside of their hill sphere
 
-Should the path of main bodies in the tree be fixed?
-So for the main bodies, it doesn't actually do a gravity calculation.
-All bodies will have a predetermined circular or elliptical orbit,
-allowing their future positions to be instantly calculated for any time.
+In a stellar system, the gravitational acceleration of planets is negligible outside of their hill sphere
 
-Only important objects (like the player and their projectiles) will really move
-according to gravitational acceleration.
+The hill sphere only roughly dictates whether a body of negligible mass within it can be gravitationally
+captured by the center body. The sun will still perturb orbits of bodies orbiting at the outer reaches 
+of the earth's hill sphere. Is it worth calculating gravity for the center body of the parent system?
 
-Important objects moving through lower-level systems will need to perform
-the gravity calculation with a much higher speed than those in a larger system.
-An object orbiting around a planet requires a finer resolution of movement than
-one orbiting a star. Ideally each level scales proportionately, so if a system
-orbits its parent with a period 100 times smaller than its parent's period,
-then it should calculate gravity with 100 times the resolution.
-
-This means lower levels of the tree require more
-calculation than higher levels. So lower levels should have
-fewer bodies with very stable orbits.
-
-The real future should follow the predicted future
-as closely as possible for gameplay purposes.
-
-
-All important objects that interact with gravity will stay small 
-so wont effect each other. This allows asteroids to exist without
-making things intractable.
-(maybe precompute the path of some large inter-system bodies to add physics-effecting
-bodies with interesting trajectories)
-
-
-What happens if a body is moving fast enough to escape its system
-and its parent system in one time step?
-
-fn do_gravity(root):
-    for dynamic_body in root.dynamic_bodies:
-        # calculate acceleration based on root.child_systems, root.child_bodies, and root.center
-        # move bodies based on acceleration
-    for system in root.child_systems ?
-    for body in root.dynamic_bodies ?
-
-    
+Having to consider the effect of one or two bodies should massively simplfy things and keep computation
+consistent across levels of the tree. The only difference is that systems with lots of child systems will
+still need to calculate distance to detect if a body is entering the child system.
 
 
 
