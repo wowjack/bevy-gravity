@@ -113,7 +113,7 @@ pub fn earth_system() -> GravitySystemBuilder {
             StaticBody::new(StaticPosition::Circular { radius: MOON_ORBITAL_RADIUS, speed: get_orbital_speed(EARTH_MASS, MOON_ORBITAL_RADIUS), start_angle: 0. }, MOON_MASS, MOON_RADIUS, MOON_COLOR.into(), MOON_NAME.into()),
         ])
         .with_dynamic_bodies(&[
-            
+            planet_orbiter
         ])
 }
 ////////////////////////////////////////////////////////

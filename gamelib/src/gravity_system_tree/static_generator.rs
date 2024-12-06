@@ -21,7 +21,7 @@ impl StaticGenerator {
             .fold(DVec2::ZERO, |acc, e| acc + e.get_position(time))
     }
     pub fn get_last_position(&self, time: GravitySystemTime) -> BodyPosition {
-        todo!()
+        self.chain.back().map(|p| p.get_position(time)).unwrap_or(DVec2::ZERO)
     }
 
     pub fn get_velocity(&self, time: GravitySystemTime) -> BodyVelocity {
@@ -30,7 +30,7 @@ impl StaticGenerator {
             .fold(DVec2::ZERO, |acc, e| acc + e.get_velocity(time))
     }
     pub fn get_last_velocity(&self, time: GravitySystemTime) -> BodyVelocity {
-        todo!()
+        self.chain.back().map(|p| p.get_velocity(time)).unwrap_or(DVec2::ZERO)
     }
 
     pub fn get_position_and_velocity(&self, time: GravitySystemTime) -> (BodyPosition, BodyVelocity) {
@@ -43,7 +43,7 @@ impl StaticGenerator {
             })
     }
     pub fn get_last_position_and_velocity(&self, time: GravitySystemTime) -> (BodyPosition, BodyVelocity) {
-        todo!()
+        self.chain.back().map(|p| p.get_position_and_velocity(time)).unwrap_or((DVec2::ZERO, DVec2::ZERO))
     }
 
     pub fn pop_end(&mut self) -> StaticPosition {
